@@ -1,4 +1,6 @@
 branch-defaults:
+  create-event-initial-branch:
+    environment: seproject-cheerup-env
   create-project:
     environment: seproject-cheerup-env
   default:
