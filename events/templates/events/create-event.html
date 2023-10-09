@@ -1,0 +1,9 @@
+<form action="{% url 'events:save-event' %}" method="post">
+{% csrf_token %}
+<fieldset>
+    <legend><h1>Create an Event</h1></legend>
+    {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+    <input type="text" name="event_name" placeholder="ADD Event Name">
+</fieldset>
+<input type="submit" value="CREATE">
+</form>
