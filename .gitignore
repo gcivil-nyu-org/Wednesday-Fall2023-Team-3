@@ -5,4 +5,4 @@
 !.elasticbeanstalk/*.global.yml
 
 # Python cache files
-**/*.py
+**/*.pyc
