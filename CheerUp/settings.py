@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ['seproject-cheerup-env.eba-vmpudkzi.us-west-2.elasticbeanstalk.
 # Application definition
 
 INSTALLED_APPS = [
+    'location.apps.LocationConfig',
     'events.apps.EventsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
