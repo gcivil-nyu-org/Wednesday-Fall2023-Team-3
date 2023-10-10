@@ -13,11 +13,13 @@ def saveEvent(request):
     event = Event()
     try:
         event_name = request.POST['event_name']
+        capacity = request.POST['capacity']
     except (KeyError, Event.DoesNotExist):
         # Redisplay the question voting form.
         return redirect('events:index')
     else:
         event.event_name = event_name
+        event.capacity = capacity
         event.save()
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
