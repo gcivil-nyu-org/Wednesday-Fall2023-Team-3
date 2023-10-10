@@ -4,6 +4,28 @@
     <legend><h1>Create an Event</h1></legend>
     {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
     <input type="text" name="event_name" placeholder="ADD Event Name">
+    <input type="text" id="tags"  name= "location_name" placeholder="ADD Event Location" >
 </fieldset>
 <input type="submit" value="CREATE">
 </form>
+
+<!-- HTML -->
+
+<!-- jQuery and jQuery UI Libraries -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+<!-- Autocomplete Script -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="https://jqueryui.com/resources/demos/style.css">
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#tags").autocomplete({
+            source: "/locations/autocomplete/",
+            minLength: 2,  // Minimum characters to trigger the autocomplete
+            select: function (event, ui) {
+                // You can do something when an item is selected
+                console.log(ui.item.id);  // This will log the ID of the selected location
+            }
+        });
+    });
+</script>
