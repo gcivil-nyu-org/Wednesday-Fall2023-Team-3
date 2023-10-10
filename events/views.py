@@ -4,6 +4,7 @@ from .forms import EventsForm
 from django.urls import reverse
 from .models import Event
 
+
 # Create your views here.
 
 def index(request):
@@ -28,6 +29,7 @@ def createEvent(request):
     if request.method == 'POST':
         form = EventsForm(request.POST)
         if form.is_valid():
+            event = form.save()  # This will save the event with start and end times
             return redirect('events:index')
     else:
         form = EventsForm()
