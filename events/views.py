@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
 from .forms import EventsForm
 from django.urls import reverse
-from .models import Event
+from .models import Event,Location
 
 
 # Create your views here.
@@ -14,6 +14,9 @@ def saveEvent(request):
     event = Event()
     try:
         event_name = request.POST['event_name']
+        event_location_id = request.POST['event_location_id']
+        location_object = Location.objects.get(id=event_location_id)
+
         start_time = request.POST['start_time']
         end_time = request.POST['end_time']
         capacity = request.POST['capacity']
@@ -22,6 +25,7 @@ def saveEvent(request):
         return redirect('events:index')
     else:
         event.event_name = event_name
+        event.event_location = location_object
         event.start_time = start_time
         event.end_time = end_time
         event.capacity = capacity
