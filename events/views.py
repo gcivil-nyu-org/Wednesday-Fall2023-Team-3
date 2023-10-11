@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
 from .forms import EventsForm
 from django.urls import reverse
-from .models import Event
+from .models import Event,Location
 
 # Create your views here.
 
@@ -13,11 +13,15 @@ def saveEvent(request):
     event = Event()
     try:
         event_name = request.POST['event_name']
+        event_location_id = request.POST['event_location_id']
+        location_object = Location.objects.get(id=event_location_id)
+
     except (KeyError, Event.DoesNotExist):
         # Redisplay the question voting form.
         return redirect('events:index')
     else:
         event.event_name = event_name
+        event.event_location = location_object
         event.save()
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
