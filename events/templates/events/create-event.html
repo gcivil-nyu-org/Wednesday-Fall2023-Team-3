@@ -3,12 +3,21 @@
 <fieldset>
     <legend><h1>Create an Event</h1></legend>
     {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
-    <p>Event Name - </p>
-    <input type="text" name="event_name" placeholder="ADD Event Name">
-    <br>
-    <p>Event Location - </p>
+    <label for="event_name">Event Name:</label>
+    <input type="text" name="event_name" id="event_name" placeholder="Add Event Name" required>
+    
+    <label for="start_time">Start Time:</label>
+    <input type="datetime-local" name="start_time" id="start_time" required>
+    
+    <label for="end_time">End Time:</label>
+    <input type="datetime-local" name="end_time" id="end_time" required>
+
+    <label for="capacity">Capacity:</label>
+    <input type="number" name="capacity" id="capacity" placeholder="Capacity" required>
+
     <input type="hidden" id="selected-location-id" name="event_location_id"> <!-- Hidden input to store the ID -->
-    <input type="text" id="autocomplete-input">
+    <label for="autocomplete-input">Location:</label>
+    <input type="text" name="location" placeholder="Location" id="autocomplete-input" required>
     <ul id="autocomplete-list"></ul></fieldset>
 <input type="submit" value="CREATE">
 </form>
