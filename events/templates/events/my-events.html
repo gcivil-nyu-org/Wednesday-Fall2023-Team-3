@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Event List</title>
+</head>
+<body>
+    <h1>Events</h1>
+    <ul>
+        {% for event in events %}
+            <li>
+                <strong>{{ event.event_name }}</strong>
+                <p>Event Location: {{ event.event_location }}</p>
+                <p>Start time: {{ event.start_time}}</p>
+                <p>End Time: {{ event.end_time }}</p>
+                <p>Capacity: {{ event.capacity }}</p>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
