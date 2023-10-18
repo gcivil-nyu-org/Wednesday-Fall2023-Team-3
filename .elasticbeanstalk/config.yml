@@ -6,6 +6,10 @@ branch-defaults:
   default:
     environment: seproject-cheerup-env
     group_suffix: null
+  develop:
+    environment: seproject-cheerup-env
+  fix-errors:
+    environment: seproject-cheerup-env
 environment-defaults:
   seproject-cheerup-env:
     branch: null
