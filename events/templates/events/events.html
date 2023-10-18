@@ -14,6 +14,11 @@
                 <p>Start time: {{ event.start_time}}</p>
                 <p>End Time: {{ event.end_time }}</p>
                 <p>Capacity: {{ event.capacity }}</p>
+                <form method="post" action="{% url 'events:delete-event' event.id %}" onsubmit="return confirm('Are you sure you want to delete this event?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <button type="submit">Delete Event</button>
+                </form>
             </li>
         {% endfor %}
     </ul>
