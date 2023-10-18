@@ -7,7 +7,7 @@ class Event(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     capacity = models.IntegerField()
-
+    is_active = models.BooleanField(default = True)
     def __str__(self):
         return self.event_name
     

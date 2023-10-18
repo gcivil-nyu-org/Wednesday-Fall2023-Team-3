@@ -8,12 +8,8 @@ from .models import Event,Location
 # Create your views here.
 
 def index(request):
-    events = Event.objects.all()
+    events = Event.objects.filter(is_active=True)
     return render(request, 'events/events.html',{'events': events})
-
-def myEvents(request):
-    events = Event.objects.all()
-    return render(request, 'events/my-events.html',{'events': events})
 
 def saveEvent(request):
     event = Event()
@@ -27,7 +23,7 @@ def saveEvent(request):
         capacity = request.POST['capacity']
     except (KeyError, Event.DoesNotExist):
         # Redisplay the question voting form.
-        return redirect('events:my-events')
+        return redirect('events:index')
     else:
         event.event_name = event_name
         event.event_location = location_object
@@ -38,7 +34,7 @@ def saveEvent(request):
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
-        return HttpResponseRedirect(reverse('events:my-events'))
+        return HttpResponseRedirect(reverse('events:index'))
     
 def createEvent(request):
     if request.method == 'POST':
@@ -49,4 +45,16 @@ def createEvent(request):
     else:
         form = EventsForm()
     return render(request, 'events/create-event.html', {'form': form})
+
+def deleteEvent(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    print(request)
+    print(event)
+    if request.method == 'POST':
+        if request.POST.get('action') == 'delete':
+            # Set is_active to False instead of deleting
+            event.is_active = False
+            event.save()
+            return redirect('events:index')
     
+    return redirect('events:index')
