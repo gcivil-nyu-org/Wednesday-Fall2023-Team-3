@@ -5,23 +5,37 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('location', '__first__'),
+        ("location", "__first__"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Event',
+            name="Event",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('event_name', models.CharField(max_length=200)),
-                ('start_time', models.DateTimeField()),
-                ('end_time', models.DateTimeField()),
-                ('capacity', models.IntegerField()),
-                ('event_location', models.ForeignKey(default=261, on_delete=django.db.models.deletion.CASCADE, to='location.location')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("event_name", models.CharField(max_length=200)),
+                ("start_time", models.DateTimeField()),
+                ("end_time", models.DateTimeField()),
+                ("capacity", models.IntegerField()),
+                (
+                    "event_location",
+                    models.ForeignKey(
+                        default=261,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="location.location",
+                    ),
+                ),
             ],
         ),
     ]

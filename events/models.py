@@ -1,7 +1,6 @@
-
-
 from django.db import models
 from location.models import Location
+
 # Create your models here.
 
 

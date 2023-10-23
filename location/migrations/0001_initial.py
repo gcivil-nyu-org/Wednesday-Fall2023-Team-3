@@ -4,24 +4,36 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Location',
+            name="Location",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('location_name', models.CharField(default='Prospect Park', max_length=200)),
-                ('latitude', models.FloatField(default=0.0)),
-                ('longitude', models.FloatField(default=0.0)),
-                ('zipcode', models.IntegerField(default=0)),
-                ('address', models.CharField(default='Prospect Road', max_length=400)),
-                ('url', models.CharField(default='https://example.com', max_length=400)),
-                ('category', models.CharField(default='park', max_length=100)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "location_name",
+                    models.CharField(default="Prospect Park", max_length=200),
+                ),
+                ("latitude", models.FloatField(default=0.0)),
+                ("longitude", models.FloatField(default=0.0)),
+                ("zipcode", models.IntegerField(default=0)),
+                ("address", models.CharField(default="Prospect Road", max_length=400)),
+                (
+                    "url",
+                    models.CharField(default="https://example.com", max_length=400),
+                ),
+                ("category", models.CharField(default="park", max_length=100)),
             ],
         ),
     ]

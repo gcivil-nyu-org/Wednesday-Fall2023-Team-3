@@ -11,6 +11,5 @@ class Location(models.Model):
     url = models.CharField(max_length=400, default="https://example.com")
     category = models.CharField(max_length=100, default="park")
 
-
     def __str__(self):
         return self.location_name
