@@ -1,15 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from .forms import EventsForm
 from django.urls import reverse
-from .models import Event,Location
+from .models import Event, Location
 
 
 # Create your views here.
 
 def index(request):
     events = Event.objects.filter(is_active=True)
-    return render(request, 'events/events.html',{'events': events})
+    return render(request, 'events/events.html', {'events': events})
+
 
 def saveEvent(request):
     event = Event()
@@ -35,16 +36,17 @@ def saveEvent(request):
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
         return HttpResponseRedirect(reverse('events:index'))
-    
+
+
 def createEvent(request):
     if request.method == 'POST':
         form = EventsForm(request.POST)
         if form.is_valid():
-         
             return redirect('events:index')
     else:
         form = EventsForm()
     return render(request, 'events/create-event.html', {'form': form})
+
 
 def deleteEvent(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
@@ -56,5 +58,4 @@ def deleteEvent(request, event_id):
             event.is_active = False
             event.save()
             return redirect('events:index')
-    
     return redirect('events:index')

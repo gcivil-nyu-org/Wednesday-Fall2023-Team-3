@@ -1,1 +1,5 @@
 Django>=4.2
+black>=23.10.0
+flake8>=6.1.0
+coverage>=6.5.0
+coveralls>=3.3.1

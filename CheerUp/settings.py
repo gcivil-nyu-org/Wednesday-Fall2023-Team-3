@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-7a(i$_$tw(o7y2(ad4u8==68h4qln2%g&^a#6d+gz4b66j3v$#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['seproject-cheerup-env.eba-vmpudkzi.us-west-2.elasticbeanstalk.com','localhost','127.0.0.1']
+ALLOWED_HOSTS = ['seproject-cheerup-env.eba-vmpudkzi.us-west-2.elasticbeanstalk.com', 'localhost', '127.0.0.1']
 
 
 # Application definition

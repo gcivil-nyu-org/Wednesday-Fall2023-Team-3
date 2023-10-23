@@ -10,6 +10,8 @@ branch-defaults:
     environment: seproject-cheerup-env
   fix-errors:
     environment: seproject-cheerup-env
+  setup-travis-integeration:
+    environment: seproject-cheerup-env
 environment-defaults:
   seproject-cheerup-env:
     branch: null

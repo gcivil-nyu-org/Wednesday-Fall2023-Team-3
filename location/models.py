@@ -1,5 +1,6 @@
 from django.db import models
 
+
 # Create your models here.
 class Location(models.Model):
     location_name = models.CharField(max_length=200, default="Prospect Park")
@@ -9,6 +10,7 @@ class Location(models.Model):
     address = models.CharField(max_length=400, default="Prospect Road")
     url = models.CharField(max_length=400, default="https://example.com")
     category = models.CharField(max_length=100, default="park")
+
 
     def __str__(self):
         return self.location_name
