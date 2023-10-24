@@ -1,4 +1,13 @@
-<form action="{% url 'events:save-event' %}" method="post">
+{% extends "events/base.html" %}
+
+{% block title %}
+Create Event
+{% endblock %}
+
+
+{% block content %}
+
+<!-- <form action="{% url 'events:save-event' %}" method="post">
 {% csrf_token %}
 <fieldset>
     <legend><h1>Create an Event</h1></legend>
@@ -15,15 +24,65 @@
     <label for="capacity">Capacity:</label>
     <input type="number" name="capacity" id="capacity" placeholder="Capacity" required>
 
-    <input type="hidden" id="selected-location-id" name="event_location_id"> <!-- Hidden input to store the ID -->
+    <input type="hidden" id="selected-location-id" name="event_location_id"> 
+   
     <label for="autocomplete-input">Location:</label>
     <input type="text" name="location" placeholder="Location" id="autocomplete-input" required>
     <ul id="autocomplete-list"></ul></fieldset>
 <input type="submit" value="CREATE">
-</form>
+</form> -->
+
+<div class="container mt-5">
+    <form action="{% url 'events:save-event' %}" method="post">
+        {% csrf_token %}
+        <fieldset>
+            <legend class="h1">Create an Event</legend>
+            
+            {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                {{ error_message }}
+            </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="event_name">Event Name:</label>
+                <input type="text" class="form-control" name="event_name" id="event_name" placeholder="Add Event Name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="start_time">Start Time:</label>
+                <input type="datetime-local" class="form-control" name="start_time" id="start_time" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="end_time">End Time:</label>
+                <input type="datetime-local" class="form-control" name="end_time" id="end_time" required>
+            </div>
+
+            <div class="form-group">
+                <label for="capacity">Capacity:</label>
+                <input type="number" class="form-control" name="capacity" id="capacity" placeholder="Capacity" required>
+            </div>
+
+            
+
+            <div class="form-group">
+                <input type="hidden" id="selected-location-id" name="event_location_id"> <!-- Hidden input to store the ID -->
+                <label for="autocomplete-input">Location:</label>
+                <input type="text" class="form-control" name="location" placeholder="Location" id="autocomplete-input" required>
+                <ul id="autocomplete-list" class="list-group mt-2"></ul>
+            </div>            
+
+            <button type="submit" class="btn btn-primary">CREATE</button>
+        </fieldset>
+    </form>
+</div>
+
+{% endblock %}
 
 <!-- HTML -->
 
+{% block extra_scripts %}
 <script type="text/javascript">
 
 const input = document.getElementById('autocomplete-input');
@@ -64,3 +123,4 @@ const input = document.getElementById('autocomplete-input');
             }
         });
 </script>
+{% endblock %}
