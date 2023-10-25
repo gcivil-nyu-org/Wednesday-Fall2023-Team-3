@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from .forms import EventsForm
 from django.urls import reverse
 from .models import Event, Location
@@ -59,5 +59,4 @@ def deleteEvent(request, event_id):
             event.is_active = False
             event.save()
             return redirect("events:index")
-
     return redirect("events:index")
