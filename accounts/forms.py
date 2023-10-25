@@ -1,6 +1,7 @@
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
 
+
 class CustomUserCreationForm(UserCreationForm):
     username = forms.CharField(
         label="Username",
@@ -23,3 +24,4 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = UserCreationForm.Meta.model
         fields = UserCreationForm.Meta.fields
+        
