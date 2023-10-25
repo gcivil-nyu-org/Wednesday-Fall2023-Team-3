@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Default Title{% endblock %}</title>
+    <!-- Link Bootstrap CSS -->
+    <link rel="stylesheet" href="{% static 'events/css/bootstrap.min.css' %}">
+    <!-- Your Custom CSS -->
+    <link rel="stylesheet" href="{% static 'events/styles.css' %}">
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+    <header>
+        <!-- You can put a common header content here -->
+    </header>
+
+    <main>
+        {% block content %}
+        <!-- Default content goes here, if any -->
+        {% endblock %}
+    </main>
+
+    <footer>
+        <!-- You can put common footer content here -->
+    </footer>
+
+    <!-- Link Bootstrap JS -->
+    <script src="{% static 'events/js/bootstrap.bundle.min.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

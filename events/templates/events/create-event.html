@@ -1,29 +1,140 @@
-<form action="{% url 'events:save-event' %}" method="post">
-{% csrf_token %}
-<fieldset>
-    <legend><h1>Create an Event</h1></legend>
-    {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
-    <label for="event_name">Event Name:</label>
-    <input type="text" name="event_name" id="event_name" placeholder="Add Event Name" required>
-    
-    <label for="start_time">Start Time:</label>
-    <input type="datetime-local" name="start_time" id="start_time" required>
-    
-    <label for="end_time">End Time:</label>
-    <input type="datetime-local" name="end_time" id="end_time" required>
+{% extends "events/base.html" %}
 
-    <label for="capacity">Capacity:</label>
-    <input type="number" name="capacity" id="capacity" placeholder="Capacity" required>
+{% block title %}
+Create Event
+{% endblock %}
 
-    <input type="hidden" id="selected-location-id" name="event_location_id"> <!-- Hidden input to store the ID -->
-    <label for="autocomplete-input">Location:</label>
-    <input type="text" name="location" placeholder="Location" id="autocomplete-input" required>
-    <ul id="autocomplete-list"></ul></fieldset>
-<input type="submit" value="CREATE">
-</form>
+{% block extra_styles %}
+<style>
+    .sticky-note-container {
+    width: 35%;
+    min-width: 380px;
+    min-height: 520px;
+    background-color: #a6cff4;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+    margin: 0 auto;
+}
+
+.create-event-form label, 
+.create-event-form textarea {
+    font-size: 2rem;
+    margin-top: 15px;
+    margin-bottom: 2px;
+    font-family: 'Caveat', cursive;
+    font-weight: 700
+}
+
+#create-event-button {
+    margin-top: 15px;
+    width: 100%;
+}
+
+.banner {
+    background-color: #ffffff;  /* Example color; adjust as needed */
+    padding: 20px 0;  /* Some padding for top and bottom */
+    text-align: center;  /* Center the text or content */
+    font-size: 5rem;  /* Increase font size for visibility */
+
+}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
+
+
+{% endblock %}
+
+{% block content %}
+<div class="banner">
+    <h1>Cheer↑</h1>
+</div>
+
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <!-- Brand/logo -->
+    <a class="navbar-brand" href="#">Cheer↑</a>
+    
+    <!-- Toggler/collapsible Button -->
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <!-- Navbar links -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item active">
+                <a class="nav-link" href="#">Home</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Find Out Events</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">My events</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Contact</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="sticky-note-container mt-5">
+    <form action="{% url 'events:save-event' %}" method="post" class="create-event-form">
+        {% csrf_token %}
+        <fieldset>
+            <!-- <legend class="h1">Create an Event</legend> -->
+            
+            {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                {{ error_message }}
+            </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="event_name">Event Name:</label>
+                <input type="text" class="form-control" name="event_name" id="event_name" placeholder="Add Event Name" required>
+            </div>
+
+            <div class="row">
+                
+                <div class="col-md-6 form-group">
+                    <label for="start_time">Start Time:</label>
+                    <input type="datetime-local" class="form-control" name="start_time" id="start_time" required>
+                </div>
+                <div class="col-md-6 form-group">
+                    <label for="end_time">End Time:</label>
+                    <input type="datetime-local" class="form-control" name="end_time" id="end_time" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="capacity">Capacity:</label>
+                <input type="number" class="form-control" name="capacity" id="capacity" placeholder="Capacity" required>
+            </div>
+
+            
+
+            <div class="form-group">
+                <input type="hidden" id="selected-location-id" name="event_location_id"> <!-- Hidden input to store the ID -->
+                <label for="autocomplete-input">Location:</label>
+                <input type="text" class="form-control" name="location" placeholder="Location" id="autocomplete-input" required>
+                <ul id="autocomplete-list" class="list-group mt-2"></ul>
+            </div>            
+
+            <button type="submit" class="btn btn-primary" id="create-event-button">CREATE MY EVENT</button>
+        </fieldset>
+    </form>
+</div>
+
+
+{% endblock %}
 
 <!-- HTML -->
 
+{% block extra_scripts %}
 <script type="text/javascript">
 
 const input = document.getElementById('autocomplete-input');
@@ -64,3 +175,4 @@ const input = document.getElementById('autocomplete-input');
             }
         });
 </script>
+{% endblock %}
