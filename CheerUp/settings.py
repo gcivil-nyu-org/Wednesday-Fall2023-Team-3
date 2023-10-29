@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-7a(i$_$tw(o7y2(ad4u8==68h4qln2%g&^a#6d+gz4b66j3v$#
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    "seproject-cheerup-env.eba-vmpudkzi.us-west-2.elasticbeanstalk.com",
+    "cheerup-env.eba-zwagtzdv.us-west-2.elasticbeanstalk.com",
     "localhost",
     "127.0.0.1",
 ]
@@ -123,6 +123,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = os.path.join('static')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
