@@ -2,29 +2,12 @@ branch-defaults:
   aws-deployment:
     environment: cheerup-env
     group_suffix: null
-  create-event-initial-branch:
-    environment: seproject-cheerup-env
-  create-project:
-    environment: seproject-cheerup-env
-  default:
-    environment: seproject-cheerup-env
-    group_suffix: null
-  develop:
-    environment: seproject-cheerup-env
-  fix-errors:
-    environment: seproject-cheerup-env
-  setup-travis-integeration:
-    environment: seproject-cheerup-env
-environment-defaults:
-  cheerup-env:
-    branch: null
-    repository: null
 global:
-  application_name: CheerUp
+  application_name: cheerup
   branch: null
   default_ec2_keyname: cheerup-se-project
-  default_platform: Python 3.11
-  default_region: us-west-2
+  default_platform: Python 3.11 running on 64bit Amazon Linux 2023
+  default_region: us-east-1
   include_git_submodules: true
   instance_profile: null
   platform_name: null
