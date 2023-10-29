@@ -16,7 +16,7 @@ branch-defaults:
   setup-travis-integeration:
     environment: seproject-cheerup-env
 environment-defaults:
-  seproject-cheerup-env:
+  cheerup-env:
     branch: null
     repository: null
 global:
