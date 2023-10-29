@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-7a(i$_$tw(o7y2(ad4u8==68h4qln2%g&^a#6d+gz4b66j3v$#
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    "cheerup-env.eba-zwagtzdv.us-west-2.elasticbeanstalk.com",
+    "cheerup-env.us-east-1.elasticbeanstalk.com",
     "localhost",
     "127.0.0.1",
 ]
