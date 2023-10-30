@@ -7,3 +7,4 @@
 # Python cache files
 **/*.pyc
 .DS_Store
+import_data.py
