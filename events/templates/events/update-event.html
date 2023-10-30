@@ -1,0 +1,98 @@
+{% extends "events/base.html" %}
+
+{% block title %}
+Update Event
+{% endblock %}
+
+{% block content %}
+<div class="banner">
+    <h1>Cheer↑</h1>
+</div>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <!-- Your navigation menu here -->
+</nav>
+
+<div class="sticky-note-container mt-5">
+    <form action="{% url 'events:update-event' event.id %}" method="post" class="create-event-form">
+        {% csrf_token %}
+        <fieldset>
+            {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                {{ error_message }}
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="event_name">Event Name:</label>
+                <input type="text" class="form-control" name="event_name" id="event_name" placeholder="Event Name" value="{{ event.event_name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="start_time">Start Time:</label>
+                <input type="datetime-local" class="form-control" name="start_time" id="start_time" value="{{ event.start_time|date:'Y-m-d\TH:i:s' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="end_time">End Time:</label>
+                <input type="datetime-local" class="form-control" name="end_time" id="end_time" value="{{ event.end_time|date:'Y-m-d\TH:i:s' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="capacity">Capacity:</label>
+                <input type="number" class="form-control" name="capacity" id="capacity" value="{{ event.capacity }}" required>
+            </div>
+
+            <div class="form-group">
+                <input type="hidden" id="selected-location-id" name="event_location_id">
+                <label for="autocomplete-input">Location:</label>
+                <input type="text" class="form-control" name="location" value="{{ event.event_location.location_name }}" id="autocomplete-input" required>
+                <ul id="autocomplete-list" class="list-group mt-2"></ul>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="update-event-button">UPDATE EVENT</button>
+        </fieldset>
+    </form>
+</div>
+{% endblock %}.
+{% block extra_scripts %}
+<script type="text/javascript">
+    const input = document.getElementById('autocomplete-input');
+    const list = document.getElementById('autocomplete-list');
+    const selectedIdInput = document.getElementById('selected-location-id');
+    console.log(input)
+    // Replace 'YOUR_API_ENDPOINT' with the actual API endpoint you want to use to fetch location data.
+    const API_ENDPOINT = '/locations/autocomplete/?term=';
+
+    input.addEventListener('input', async function () {
+        const query = input.value.toLowerCase();
+        list.innerHTML = '';
+        console.log(query)
+        if (query) {
+            try {
+                const response = await fetch(API_ENDPOINT + query);
+                const data = await response.json();
+
+                data.forEach(function (item) {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = item.text;
+                    listItem.addEventListener('click', function () {
+                        input.value = item.text;
+                        selectedIdInput.value = item.id;
+                        list.innerHTML = '';
+                    });
+                    list.appendChild(listItem);
+                });
+            } catch (error) {
+                console.error('Error fetching data from the API:', error);
+            }
+        }
+    });
+
+    document.addEventListener('click', function (event) {
+        if (event.target !== input) {
+            list.innerHTML = '';
+        }
+    });
+</script>
+{% endblock %}.
