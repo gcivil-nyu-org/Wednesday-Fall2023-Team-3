@@ -4,6 +4,8 @@ branch-defaults:
     group_suffix: null
   develop:
     environment: cheerup-env
+  static-deploy:
+    environment: cheerup-env
   test-deployment:
     environment: cheerup-env
 global:
