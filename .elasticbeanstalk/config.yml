@@ -2,6 +2,10 @@ branch-defaults:
   aws-deployment:
     environment: cheerup-env
     group_suffix: null
+  develop:
+    environment: cheerup-env
+  test-deployment:
+    environment: cheerup-env
 global:
   application_name: cheerup
   branch: null
