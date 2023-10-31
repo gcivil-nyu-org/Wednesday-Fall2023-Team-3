@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
-# import os
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,7 +28,7 @@ SECRET_KEY = "django-insecure-7a(i$_$tw(o7y2(ad4u8==68h4qln2%g&^a#6d+gz4b66j3v$#
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    "cheerup-env.us-east-1.elasticbeanstalk.com",
+    "cheerup-env.eba-sn3jjdga.us-east-1.elasticbeanstalk.com",
     "localhost",
     "127.0.0.1",
 ]
@@ -125,7 +125,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
-# STATIC_ROOT = os.path.join('static')
+STATIC_ROOT = os.path.join('static')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
