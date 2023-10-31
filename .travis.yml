@@ -25,12 +25,9 @@ env:
 after_success:
   coveralls
 
-before_deploy:
-  - python manage.py collectstatic --noinput
-
 deploy:
   on:
-    branch: static-deploy
+    branch: develop
   provider: elasticbeanstalk
   access_key_id: $AWS_ACCESS_KEY_ID
   secret_access_key: $AWS_SECRET_ACCESS_KEY
