@@ -7,6 +7,7 @@ python:
 before_install:
   - pip install 'urllib3<2.0'
   - sudo apt-get update
+  - python manage.py collectstatic --noinput
 
 # Define your build steps, for example:
 install:
@@ -26,7 +27,7 @@ after_success:
   coveralls
 deploy:
   on:
-    branch: develop
+    branch: static-deploy
   provider: elasticbeanstalk
   access_key_id: $AWS_ACCESS_KEY_ID
   secret_access_key: $AWS_SECRET_ACCESS_KEY
