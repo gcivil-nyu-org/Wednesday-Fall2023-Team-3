@@ -26,17 +26,6 @@ class CustomUserCreationForm(UserCreationForm):
         help_text="",
     )
 
-    class Meta:
-        model = get_user_model()
-        fields = (
-            "first_name",
-            "last_name",
-            "username",
-            "email",
-            "password1",
-            "password2",
-        )
-
     def clean_email(self):
         email = self.cleaned_data["email"]
         if not email.endswith("@nyu.edu"):
