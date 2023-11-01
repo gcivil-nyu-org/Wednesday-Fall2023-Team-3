@@ -2,6 +2,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django import forms
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from .models import UserProfile  # Import the UserProfile model
 
 class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(
@@ -24,6 +25,7 @@ class CustomUserCreationForm(UserCreationForm):
         widget=forms.EmailInput(attrs={"autocomplete": "email"}),
         help_text="",
     )
+
     class Meta:
         model = get_user_model()
         fields = ('first_name', 'last_name', 'username', 'email', 'password1', 'password2')
@@ -34,20 +36,13 @@ class CustomUserCreationForm(UserCreationForm):
             raise ValidationError("Only @nyu.edu email addresses are allowed.")
         return email
     
-    password1 = forms.CharField(
-        label="Password",
-        strip=False,
-        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
-        help_text="",
-    )
-    password2 = forms.CharField(
-        label="Password confirmation",
-        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
-        strip=False,
-        help_text="",
-    )
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data["email"]
+        if commit:
+            user.save()
 
-    class Meta:
-        model = get_user_model()  # Use get_user_model() to support custom user models
-        fields = ('first_name', 'last_name', 'username', 'email', 'password1', 'password2')
+            # Create the associated UserProfile
+            UserProfile.objects.create(user=user)
 
+        return user

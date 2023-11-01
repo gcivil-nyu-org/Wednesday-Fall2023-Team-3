@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "accounts",
+    "profiles",
 ]
 
 MIDDLEWARE = [
@@ -145,3 +146,7 @@ EMAIL_HOST_PASSWORD = 'emailaddress passcode' # Replace with email passcode
 
 DEFAULT_FROM_EMAIL = 'emailaddresshere@gmail.com'
 SERVER_EMAIL = 'emailaddresshere@gmail.com'
+
+# Allows our  Django project to serve media files during development.
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

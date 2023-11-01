@@ -1,0 +1,18 @@
+<!-- profiles/templates/profiles/profile.html -->
+
+<h1>{{ user_profile.user.username }}</h1>
+<img src="{{ user_profile.profile_picture.url }}" alt="Profile Picture">
+
+<h2>Events Created</h2>
+<ul>
+    {% for event in created_events %}
+        <li>{{ event.event_name }}</li>
+    {% endfor %}
+</ul>
+
+<h2>Profile Picture</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ profile_picture_form.as_p }}
+    <button type="submit">Upload</button>
+</form>
