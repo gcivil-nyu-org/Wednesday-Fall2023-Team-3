@@ -4,10 +4,29 @@
 Update Event
 {% endblock %}
 
+
+{% block extra_styles %}
+<style>
+.update-event-form label, 
+.update-event-form textarea {
+    font-size: 2rem;
+    margin-top: 15px;
+    margin-bottom: 2px;
+    font-family: 'Caveat', cursive;
+    font-weight: 700
+}
+
+#update-event-button {
+    margin-top: 15px;
+    width: 100%;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 
-<div class="sticky-note-container mt-5">
-    <form action="{% url 'events:update-event' event.id %}" method="post" class="create-event-form">
+<div class="sticky-note-container-mid mt-5">
+    <form action="{% url 'events:update-event' event.id %}" method="post" class="update-event-form">
         {% csrf_token %}
         <fieldset>
             {% if error_message %}

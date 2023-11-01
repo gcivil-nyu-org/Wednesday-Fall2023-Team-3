@@ -6,17 +6,6 @@ Create Event
 
 {% block extra_styles %}
 <style>
-    .sticky-note-container {
-    width: 35%;
-    min-width: 380px;
-    min-height: 520px;
-    background-color: #a6cff4;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
-    margin: 0 auto;
-}
-
 .create-event-form label, 
 .create-event-form textarea {
     font-size: 2rem;
@@ -33,17 +22,13 @@ Create Event
 
 
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
 
 
 {% endblock %}
 
 {% block content %}
 
-<div class="sticky-note-container mt-5">
+<div class="sticky-note-container-mid mt-5">
     <form action="{% url 'events:save-event' %}" method="post" class="create-event-form">
         {% csrf_token %}
         <fieldset>
