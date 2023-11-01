@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
 from django.views.generic import TemplateView
 from .forms import ProfilePictureForm
 from .models import UserProfile
