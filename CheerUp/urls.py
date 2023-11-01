@@ -24,8 +24,12 @@ urlpatterns = [
     path("locations/", include("location.urls")),
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
-    path('', include('accounts.urls')),
-    path('password_reset/confirm/<uidb64>/<token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-    path('admin/', admin.site.urls),
-    path('profiles/', include('profiles.urls')),
+    path("", include("accounts.urls")),
+    path(
+        "password_reset/confirm/<uidb64>/<token>/",
+        PasswordResetConfirmView.as_view(),
+        name="password_reset_confirm",
+    ),
+    path("admin/", admin.site.urls),
+    path("profiles/", include("profiles.urls")),
 ]

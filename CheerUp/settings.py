@@ -136,17 +136,17 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Where to redirect after a successful login
 LOGIN_REDIRECT_URL = "/events/"
 
-#For sending a reset your passcode email
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+# For sending a reset your passcode email
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'emailaddresshere@gmail.com' # REPLACE with actual email 
-EMAIL_HOST_PASSWORD = 'emailaddress passcode' # Replace with email passcode 
+EMAIL_HOST_USER = "emailaddresshere@gmail.com"  # REPLACE with actual email
+EMAIL_HOST_PASSWORD = "emailaddress passcode"  # Replace with email passcode
 
-DEFAULT_FROM_EMAIL = 'emailaddresshere@gmail.com'
-SERVER_EMAIL = 'emailaddresshere@gmail.com'
+DEFAULT_FROM_EMAIL = "emailaddresshere@gmail.com"
+SERVER_EMAIL = "emailaddresshere@gmail.com"
 
 # Allows our  Django project to serve media files during development.
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")

@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from .models import UserProfile  # Import the UserProfile model
 
+
 class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(
         label="First Name",
@@ -28,14 +29,21 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta:
         model = get_user_model()
-        fields = ('first_name', 'last_name', 'username', 'email', 'password1', 'password2')
+        fields = (
+            "first_name",
+            "last_name",
+            "username",
+            "email",
+            "password1",
+            "password2",
+        )
 
     def clean_email(self):
-        email = self.cleaned_data['email']
-        if not email.endswith('@nyu.edu'):
+        email = self.cleaned_data["email"]
+        if not email.endswith("@nyu.edu"):
             raise ValidationError("Only @nyu.edu email addresses are allowed.")
         return email
-    
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
