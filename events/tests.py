@@ -44,3 +44,32 @@ class UpdateEventViewTest(TestCase):
         self.assertEqual(
             Event.objects.get(pk=self.event.id).event_name, "Updated Event"
         )  # Verify data was updated
+
+class EventDetailPageTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='testpassword'
+        )
+        self.location = Location.objects.create(
+            location_name='Test Location',
+        )
+        self.event = Event.objects.create(
+            event_name='Test Event',
+            event_location=self.location,
+            start_time='2024-01-01T00:00:00Z',
+            end_time='2024-01-01T09:00:00Z',
+            capacity=100,
+            is_active=True,
+            creator=self.user
+        )
+
+    def test_event_detail_view(self):
+        url = reverse('events:event-detail', args=(self.event.id,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Test Event')
+        self.assertContains(response, 'Test Location')
+        self.assertContains(response, '100')
+        self.assertContains(response, 'testuser')
+
