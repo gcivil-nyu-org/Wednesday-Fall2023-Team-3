@@ -3,6 +3,16 @@ from django import forms
 
 
 class CustomUserCreationForm(UserCreationForm):
+    first_name = forms.CharField(
+        label="First Name",
+        widget=forms.TextInput(attrs={"autocomplete": "First Name"}),
+        help_text="",
+    )
+    last_name = forms.CharField(
+        label="Last Name",
+        widget=forms.TextInput(attrs={"autocomplete": "Last Name"}),
+        help_text="",
+    )
     username = forms.CharField(
         label="Username",
         widget=forms.TextInput(attrs={"autocomplete": "username"}),

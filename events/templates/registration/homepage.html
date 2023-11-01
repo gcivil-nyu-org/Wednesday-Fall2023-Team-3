@@ -1,0 +1,19 @@
+<!-- accounts/templates/homepage.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CheerUp Homepage</title>
+</head>
+<body>
+    <h1>Welcome to CheerUp!</h1>
+    <p>There's cool stuff going on now!.</p>
+
+    <a href="{% url 'login' %}">Sign In</a>
+    <p>To see what's going on</p>
+    <!-- Option to go to the registration page -->
+    <a href="{% url 'signup' %}">Register</a>
+    <p>To join the fun</p>
+    <!-- Add your design and content here -->
+</body>
+</html>
