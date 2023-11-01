@@ -31,13 +31,7 @@ Create Event
     width: 100%;
 }
 
-.banner {
-    background-color: #ffffff;  /* Example color; adjust as needed */
-    padding: 20px 0;  /* Some padding for top and bottom */
-    text-align: center;  /* Center the text or content */
-    font-size: 5rem;  /* Increase font size for visibility */
 
-}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,38 +42,6 @@ Create Event
 {% endblock %}
 
 {% block content %}
-<div class="banner">
-    <h1>Cheer↑</h1>
-</div>
-
-
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <!-- Brand/logo -->
-    <a class="navbar-brand" href="#">Cheer↑</a>
-    
-    <!-- Toggler/collapsible Button -->
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    
-    <!-- Navbar links -->
-    <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav">
-            <li class="nav-item active">
-                <a class="nav-link" href="#">Home</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">Find Out Events</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">My events</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">Contact</a>
-            </li>
-        </ul>
-    </div>
-</nav>
 
 <div class="sticky-note-container mt-5">
     <form action="{% url 'events:save-event' %}" method="post" class="create-event-form">

@@ -85,3 +85,7 @@ def deleteEvent(request, event_id):
             event.save()
             return redirect("events:index")
     return redirect("events:index")
+
+def eventDetail(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    return render(request, "events/event-detail.html", {"event": event})

@@ -3,3 +3,10 @@ body {
     background-repeat: repeat;
     /* background-color: #ffe777; */
 }
+
+.banner {
+    background-color: #ffffff;  /* Example color; adjust as needed */
+    padding: 20px 0;  /* Some padding for top and bottom */
+    text-align: center;  /* Center the text or content */
+    font-size: 5rem;  /* Increase font size for visibility */
+}
