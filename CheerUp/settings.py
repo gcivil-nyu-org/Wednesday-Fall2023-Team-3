@@ -134,3 +134,14 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Where to redirect after a successful login
 LOGIN_REDIRECT_URL = "/events/"
+
+#For sending a reset your passcode email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'emailaddresshere@gmail.com' # REPLACE with actual email 
+EMAIL_HOST_PASSWORD = 'emailaddress passcode' # Replace with email passcode 
+
+DEFAULT_FROM_EMAIL = 'emailaddresshere@gmail.com'
+SERVER_EMAIL = 'emailaddresshere@gmail.com'

@@ -1,6 +1,7 @@
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
-
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(
@@ -18,6 +19,21 @@ class CustomUserCreationForm(UserCreationForm):
         widget=forms.TextInput(attrs={"autocomplete": "username"}),
         help_text="",
     )
+    email = forms.EmailField(  # Add this email field
+        label="Email",
+        widget=forms.EmailInput(attrs={"autocomplete": "email"}),
+        help_text="",
+    )
+    class Meta:
+        model = get_user_model()
+        fields = ('first_name', 'last_name', 'username', 'email', 'password1', 'password2')
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if not email.endswith('@nyu.edu'):
+            raise ValidationError("Only @nyu.edu email addresses are allowed.")
+        return email
+    
     password1 = forms.CharField(
         label="Password",
         strip=False,
@@ -32,5 +48,6 @@ class CustomUserCreationForm(UserCreationForm):
     )
 
     class Meta:
-        model = UserCreationForm.Meta.model
-        fields = UserCreationForm.Meta.fields
+        model = get_user_model()  # Use get_user_model() to support custom user models
+        fields = ('first_name', 'last_name', 'username', 'email', 'password1', 'password2')
+
