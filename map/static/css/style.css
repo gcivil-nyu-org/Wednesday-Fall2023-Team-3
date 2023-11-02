@@ -1,0 +1,22 @@
+html{
+    box-sizing: border-box;
+    font-size: 100%;
+}
+
+*, *::before, *::after{
+    box-sizing: inherit;
+}
+body{
+    margin: 0;
+    padding: 0;
+}
+
+#map{
+    height: 60vh;
+    width: 50%;
+}
+#map_title{
+    position: relative;
+    text-align: center;
+    width: 50%;
+}
