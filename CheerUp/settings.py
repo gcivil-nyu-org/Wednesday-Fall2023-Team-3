@@ -44,11 +44,11 @@ DATABASES = {
         "PORT": "5432",  # Default PostgreSQL port
     }
 }
-if 'test' in sys.argv:
+if "test" in sys.argv:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
         }
     }
 # Application definition
