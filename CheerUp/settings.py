@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-
+import sys
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -33,6 +33,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
 ]
 
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
@@ -43,6 +44,13 @@ DATABASES = {
         "PORT": "5432",  # Default PostgreSQL port
     }
 }
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
 # Application definition
 
 INSTALLED_APPS = [
