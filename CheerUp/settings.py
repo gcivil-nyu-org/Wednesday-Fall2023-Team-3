@@ -34,13 +34,13 @@ ALLOWED_HOSTS = [
 ]
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'cheerup',
-        'USER': os.environ['DB_KEY'],
-        'PASSWORD': os.environ['DB_KEYP'],
-        'HOST': 'database-1.ceenqhnjmvnk.us-west-2.rds.amazonaws.com',
-        'PORT': '5432',  # Default PostgreSQL port
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": "cheerup",
+        "USER": os.environ["DB_KEY"],
+        "PASSWORD": os.environ["DB_KEYP"],
+        "HOST": "database-1.ceenqhnjmvnk.us-west-2.rds.amazonaws.com",
+        "PORT": "5432",  # Default PostgreSQL port
     }
 }
 # Application definition
