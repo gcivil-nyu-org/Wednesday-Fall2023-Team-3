@@ -97,6 +97,7 @@ def eventDetail(request, event_id):
 
 # Map Code
 
+
 def get_data(request):
     location_data = Event.objects.all()
     serialized_data = serialize("json", location_data)
