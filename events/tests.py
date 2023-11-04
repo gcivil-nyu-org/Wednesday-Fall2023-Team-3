@@ -2,7 +2,40 @@ from django.test import TestCase
 from django.urls import reverse
 from .models import Event, Location
 from django.contrib.auth.models import User
+from django.utils import timezone
+from datetime import timedelta
 
+class EventListViewTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        # Set up data for the whole TestCase
+        user = User.objects.create_user(username="testuser", password="testpassword")
+        location = Location.objects.create(location_name="Test Location")
+        now = timezone.now()
+        
+        events = [
+            Event(event_name="Past Event", event_location=location, start_time=now - timedelta(days=2), end_time=now - timedelta(days=1), capacity=50, creator=user),
+            Event(event_name="Future Event", event_location=location, start_time=now + timedelta(days=1), end_time=now + timedelta(days=2), capacity=50, creator=user),
+        ]
+        Event.objects.bulk_create(events)
+
+    def test_filter_events_by_date(self):
+        login = self.client.login(username='testuser', password='testpassword')
+        self.assertTrue(login)
+
+        url = reverse('events:index')
+        now = timezone.now()
+        
+        # Filter parameters should be based on your actual form fields
+        response = self.client.get(url, {'start_time': now.date(), 'end_time': now.date() + timedelta(days=1)})
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertQuerysetEqual(
+            response.context['events'],
+            ['<Event: Future Event>'],
+            ordered=False
+        )
+        self.assertNotContains(response, 'Past Event')
 
 class UpdateEventViewTest(TestCase):
     def setUp(self):
