@@ -4,6 +4,9 @@ from .forms import EventsForm
 from django.urls import reverse
 from .models import Event, Location
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.core.serializers import serialize
+import json
 
 # Create your views here.
 
@@ -90,3 +93,19 @@ def deleteEvent(request, event_id):
 def eventDetail(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     return render(request, "events/event-detail.html", {"event": event})
+
+
+# Map Code
+
+def get_data(request):
+    location_data = Event.objects.all()
+    serialized_data = serialize("json", location_data)
+    serialized_data = json.loads(serialized_data)
+    return JsonResponse({"location_data": serialized_data})
+
+
+def get_locations(request):
+    locations = Location.objects.all()
+    serialized_data = serialize("json", locations)
+    serialized_data = json.loads(serialized_data)
+    return JsonResponse({"locations": serialized_data})
