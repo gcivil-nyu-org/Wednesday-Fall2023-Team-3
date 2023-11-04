@@ -16,3 +16,19 @@ class Event(models.Model):
 
     def __str__(self):
         return self.event_name
+
+class EventJoin(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('removed', 'Removed'),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    status = models.CharField(max_length=8, choices=STATUS_CHOICES, default='pending')
+
+    class Meta:
+        unique_together = ('user', 'event')
+
