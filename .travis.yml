@@ -21,12 +21,15 @@ env:
   global:
     - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
     - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - DB_KEY=DB_KEY
+    - DB_KEYP=DB_KEYP
+
 
 after_success:
   coveralls
 deploy:
   on:
-    branch: develop
+    branch: master
   provider: elasticbeanstalk
   access_key_id: $AWS_ACCESS_KEY_ID
   secret_access_key: $AWS_SECRET_ACCESS_KEY

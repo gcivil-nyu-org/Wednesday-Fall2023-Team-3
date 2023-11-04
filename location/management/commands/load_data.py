@@ -18,9 +18,9 @@ class Command(BaseCommand):
                     location_name=row[1],
                     latitude=row[2],
                     longitude=row[3],
-                    zipcode=row[7],
-                    address=row[4],
-                    url=row[5],
-                    category=row[6],
+                    zipcode=row[4],
+                    address=row[5],
+                    url=row[6],
+                    category=row[7],
                 )
         self.stdout.write(self.style.SUCCESS("Data loaded successfully"))
