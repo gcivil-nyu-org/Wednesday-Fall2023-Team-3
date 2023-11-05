@@ -8,3 +8,5 @@
 **/*.pyc
 .DS_Store
 import_data.py
+
+.coverage
