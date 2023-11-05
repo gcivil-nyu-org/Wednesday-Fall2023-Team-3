@@ -73,6 +73,7 @@ class EventDetailPageTest(TestCase):
         self.assertContains(response, "100")
         self.assertContains(response, "testuser")
 
+
 class EventJoinTest(TestCase):
     def setup(self):
         self.user = User.objects.create_user(
@@ -94,5 +95,3 @@ class EventJoinTest(TestCase):
             creator=self.creator,
         )
         self.client = Client()
-
-    

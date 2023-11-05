@@ -143,10 +143,12 @@ def creatorApproveRequest(request, event_id, user_id):
     if request.user != event.creator:
         # handle the error when the user is not the creator of the event
         return redirect("events:event-detail", event_id=event.id)
-    approved_join_count = EventJoin.objects.filter(event=event, status="approved").count()
+    approved_join_count = EventJoin.objects.filter(
+        event=event, status="approved"
+    ).count()
     if approved_join_count + 1 >= event.capacity:
         messages.warning(request, "The event has reached its capacity.")
-    else: 
+    else:
         join = get_object_or_404(EventJoin, event=event, user=user)
         if join.status == "pending":
             join.status = "approved"
