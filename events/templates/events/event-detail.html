@@ -34,11 +34,8 @@
     display: flex;
     justify-content: space-between; /* This will space out the child elements */
     align-items: center; /* This will vertically align the child elements */
-    padding: 10px;
-    margin-bottom: 10px;
+    padding: 1%;
     gap: 10px;
-    /* border: 1px solid #ccc;
-    border-radius: 4px; */
 }
 
 .join-entry-text {
@@ -51,6 +48,18 @@
 {% endblock %}
 
 {% block content %}
+{% if messages %}
+    <div id="messages">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dimissable fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
 <div class="container-fluid m-5">
     <div class="row">
         <!-- Left 2/3 of the page for event details -->
@@ -98,11 +107,10 @@
                     {% elif join_status == "approved" %}
                     <!-- show that the request is approved-->
                     <div class="btn btn-primary btn-block join-button" id="approved-fake-button">Approved</div>  
-                    {% else %}
-                    not showing 
                     {% endif %}
                     <div class="approved-join-list sticky-note-container my-4">
                         <h3>Participants</h3>
+                        <div class="join-entry">{{ event.creator }}</div>
                         {% for join in approved_join %}
                             <div class="join-entry">
                                 {{ join.user }}
@@ -142,7 +150,7 @@
                 {% endif %}
             {% else %}
                 <!-- Link for non-authenticated users to log in and then join -->
-                <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="btn btn-primary btn-block join-button">Request to Join</a>
+                <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="btn btn-primary btn-block join-button">Join and See Participants</a>
             {% endif %} 
         </div>
     </div>

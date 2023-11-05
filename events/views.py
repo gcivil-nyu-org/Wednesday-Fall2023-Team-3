@@ -6,6 +6,7 @@ from .models import Event, Location, EventJoin
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
+from django.contrib import messages
 
 # Create your views here.
 
@@ -142,10 +143,15 @@ def creatorApproveRequest(request, event_id, user_id):
     if request.user != event.creator:
         # handle the error when the user is not the creator of the event
         return redirect("events:event-detail", event_id=event.id)
-    join = get_object_or_404(EventJoin, event=event, user=user)
-    if join.status == "pending":
-        join.status = "approved"
-        join.save()
+    approved_join_count = EventJoin.objects.filter(event=event, status="approved").count()
+    if approved_join_count + 1 >= event.capacity:
+        messages.warning(request, "The event has reached its capacity.")
+    else: 
+        join = get_object_or_404(EventJoin, event=event, user=user)
+        if join.status == "pending":
+            join.status = "approved"
+            join.save()
+            messages.success(request, "Request approved")
     return redirect("events:event-detail", event_id=event.id)
 
 

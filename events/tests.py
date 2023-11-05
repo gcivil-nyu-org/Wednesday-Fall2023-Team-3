@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.urls import reverse
 from .models import Event, Location
 from django.contrib.auth.models import User
@@ -72,3 +72,27 @@ class EventDetailPageTest(TestCase):
         self.assertContains(response, "Test Location")
         self.assertContains(response, "100")
         self.assertContains(response, "testuser")
+
+class EventJoinTest(TestCase):
+    def setup(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time="2024-03-01T00:00:00Z",
+            end_time="2024-03-01T09:00:00Z",
+            capacity=50,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.client = Client()
+
+    
