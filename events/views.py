@@ -9,21 +9,28 @@ from .forms import EventFilterForm
 
 # Create your views here.
 
+
 def index(request):
-    events = Event.objects.filter(end_time__gt=timezone.now(), is_active=True).order_by('-start_time')
+    events = Event.objects.filter(end_time__gt=timezone.now(), is_active=True).order_by(
+        "-start_time"
+    )
 
     # Process the filter form
     if request.GET:
         form = EventFilterForm(request.GET)
         if form.is_valid():
-            if form.cleaned_data['start_time']:
-                events = events.filter(start_time__gte=form.cleaned_data['start_time'])
-            if form.cleaned_data['end_time']:
-                if form.cleaned_data['end_time'] <= timezone.now():
+            if form.cleaned_data["start_time"]:
+                events = events.filter(start_time__gte=form.cleaned_data["start_time"])
+            if form.cleaned_data["end_time"]:
+                if form.cleaned_data["end_time"] <= timezone.now():
                     # Return an error message
                     # Handle this appropriately in your template
-                    return render(request, "events/events.html", {"error": "End time cannot be in the past."})
-                events = events.filter(end_time__lte=form.cleaned_data['end_time'])
+                    return render(
+                        request,
+                        "events/events.html",
+                        {"error": "End time cannot be in the past."},
+                    )
+                events = events.filter(end_time__lte=form.cleaned_data["end_time"])
     else:
         form = EventFilterForm()
 
@@ -37,7 +44,6 @@ def index(request):
         context["message"] = "No events that fit your schedule? How about CREATING one?"
 
     return render(request, "events/events.html", context)
-
 
 
 @login_required
