@@ -146,7 +146,6 @@ def toggleJoinRequest(request, event_id):
 def creatorApproveRequest(request, event_id, user_id):
     with transaction.atomic():
         event = get_object_or_404(Event, id=event_id)
-        user = get_object_or_404(User, id=user_id)
         if request.user != event.creator:
             # handle the error when the user is not the creator of the event
             return redirect("events:event-detail", event_id=event.id)
