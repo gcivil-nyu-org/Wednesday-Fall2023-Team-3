@@ -25,44 +25,50 @@
     <div class="row">
         <!-- Left 2/3 of the page for event details -->
         <div class="col-md-8">
-            <div class="my-3"><h1>{{ event.event_name }}</h1></div>
-            <h4>Creator</h4>
-            <p>{{ event.creator }}</p>
-            <h4>Date and Time</h4>
-            <p>from {{ event.start_time }} to {{ event.end_time }}</p>
-            <!-- <img src="event-image.jpg" alt="Event Image" class="img-fluid rounded"> -->
-            <h4>Location</h4>
-            <p>{{ event.event_location }}</p>
-            <h4>Capacity</h4>
-            <p>{{ event.capacity }}</p>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eget tortor in eros euismod dignissim. Vivamus posuere, 
-                justo sit amet vehicula eleifend, tortor purus viverra elit, ac convallis tortor urna at eros. 
-                Sed ac enim at purus bibendum placerat. Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                Nullam eget tortor in eros euismod dignissim. Vivamus posuere, justo sit amet vehicula eleifend, 
-                tortor purus viverra elit, ac convallis tortor urna at eros. 
-                Sed ac enim at purus bibendum placerat.
-            </p>
-            <!-- Add more event details here -->
+            <div class="sticky-note-container">
+                <div class="my-3"><h1>{{ event.event_name }}</h1></div>
+                <h4>Creator</h4>
+                <p>{{ event.creator }}</p>
+                <h4>Date and Time</h4>
+                <p>from {{ event.start_time }} to {{ event.end_time }}</p>
+                <!-- <img src="event-image.jpg" alt="Event Image" class="img-fluid rounded"> -->
+                <h4>Location</h4>
+                <p>{{ event.event_location }}</p>
+                <h4>Capacity</h4>
+                <p>{{ event.capacity }}</p>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eget tortor in eros euismod dignissim. Vivamus posuere, 
+                    justo sit amet vehicula eleifend, tortor purus viverra elit, ac convallis tortor urna at eros. 
+                    Sed ac enim at purus bibendum placerat. Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+                    Nullam eget tortor in eros euismod dignissim. Vivamus posuere, justo sit amet vehicula eleifend, 
+                    tortor purus viverra elit, ac convallis tortor urna at eros. 
+                    Sed ac enim at purus bibendum placerat.
+                </p>
+                <!-- Add more event details here -->
+            </div>
         </div>
         <!-- Right 1/3 of the page for the "Join Us" button -->
         <div class="col-md-4 my-3">
             {% if user.is_authenticated %}
-                {% if join_status == "pending" %}
-                    <!-- Button to withdraw request -->
-                    <form action="{% url 'events:toggle-join-request' event.id %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary btn-block join-button">Withdraw the Request</button>
-                    </form>
-                {% elif join_status == "withdrawn" or join_status == None %}
-                    <!-- Button to join again or create a new EventJoin object-->
-                    <form action="{% url 'events:toggle-join-request' event.id %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary btn-block join-button">Request to Join</button>
-                    </form>
-                {% endif %} 
+                {% if user != event.creator %}
+                    {% if join_status == "pending" %}
+                        <!-- Button to withdraw request -->
+                        <form action="{% url 'events:toggle-join-request' event.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-block join-button">Withdraw the Request</button>
+                        </form>
+                    {% elif join_status == "withdrawn" or join_status == None %}
+                        <!-- Button to join again or create a new EventJoin object-->
+                        <form action="{% url 'events:toggle-join-request' event.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-block join-button">Request to Join</button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    <div class="btn btn-primary btn-block join-button" id="my-event-fake-button">My Event</div>
+                {% endif %}
             {% else %}
                 <!-- Link for non-authenticated users to log in and then join -->
-                <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="btn btn-primary">Request to Join</a>
+                <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="btn btn-primary btn-block join-button">Request to Join</a>
             {% endif %} 
         </div>
     </div>
