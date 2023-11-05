@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseRedirect
 from .forms import EventsForm
 from django.urls import reverse
-from .models import Event, Location
+from .models import Event, Location, EventJoin
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 
 # Create your views here.
 
@@ -89,4 +90,52 @@ def deleteEvent(request, event_id):
 
 def eventDetail(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
-    return render(request, "events/event-detail.html", {"event": event})
+    join_status = None
+    #attempt to see if the user has logged in
+    if request.user.is_authenticated:
+        try:
+            join = EventJoin.objects.get(
+            user=request.user,
+            event=event
+            )
+            join_status = join.status
+        except EventJoin.DoesNotExist:
+            #if the user has no join record
+            pass   
+    context = {
+        'event': event,
+        'join_status': join_status,
+        # 'participants': EventJoin.objects.filter(event=event, status='approved')
+    }
+    return render(request, "events/event-detail.html", context)
+
+# @login_required
+# def requestJoin(request, event_id):
+#     if request.method == "POST":
+#         event = get_object_or_404(Event, pk=event_id)
+#         #prevent duplicate requests
+#         join, created = EventJoin.objects.get_or_create(
+#             user=request.user,
+#             event=event,
+#             defaults={'status': 'pending'}
+#         )
+#         return redirect('events:event-detail', event_id=event_id)
+#     else:
+#         return redirect('events:event-detail', event_id=event_id)
+
+@login_required
+@require_POST
+def toggleJoinRequest(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    join, created = EventJoin.objects.get_or_create(user=request.user, event=event)
+
+    # If a request was just created, it's already in 'pending' state
+    # If it exists, toggle between 'pending' and 'withdrawn'
+    if not created:
+        if join.status == "pending":
+            join.status = "withdrawn"
+        else:
+            join.status = "pending"
+        join.save()
+
+    return redirect('events:event-detail', event_id=event.id)  
