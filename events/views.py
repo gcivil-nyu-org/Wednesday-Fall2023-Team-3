@@ -115,6 +115,7 @@ def eventDetail(request, event_id):
     }
     return render(request, "events/event-detail.html", context)
 
+
 @login_required
 @require_POST
 def toggleJoinRequest(request, event_id):
