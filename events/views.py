@@ -91,23 +91,21 @@ def deleteEvent(request, event_id):
 def eventDetail(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     join_status = None
-    #attempt to see if the user has logged in
+    # attempt to see if the user has logged in
     if request.user.is_authenticated:
         try:
-            join = EventJoin.objects.get(
-            user=request.user,
-            event=event
-            )
+            join = EventJoin.objects.get(user=request.user, event=event)
             join_status = join.status
         except EventJoin.DoesNotExist:
-            #if the user has no join record
-            pass   
+            # if the user has no join record
+            pass
     context = {
-        'event': event,
-        'join_status': join_status,
+        "event": event,
+        "join_status": join_status,
         # 'participants': EventJoin.objects.filter(event=event, status='approved')
     }
     return render(request, "events/event-detail.html", context)
+
 
 # @login_required
 # def requestJoin(request, event_id):
@@ -122,6 +120,7 @@ def eventDetail(request, event_id):
 #         return redirect('events:event-detail', event_id=event_id)
 #     else:
 #         return redirect('events:event-detail', event_id=event_id)
+
 
 @login_required
 @require_POST
@@ -138,4 +137,4 @@ def toggleJoinRequest(request, event_id):
             join.status = "pending"
         join.save()
 
-    return redirect('events:event-detail', event_id=event.id)  
+    return redirect("events:event-detail", event_id=event.id)
