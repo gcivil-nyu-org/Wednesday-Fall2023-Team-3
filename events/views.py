@@ -102,29 +102,18 @@ def eventDetail(request, event_id):
             pass
     approved_join = event.eventjoin_set.filter(status="approved")
     pending_join = event.eventjoin_set.filter(status="pending")
+    approved_join_count = approved_join.count()
+    pending_join_count = pending_join.count()
+
     context = {
         "event": event,
         "join_status": join_status,
         "pending_join": pending_join,
         "approved_join": approved_join,
+        "approved_join_count": approved_join_count,
+        "pending_join_count": pending_join_count,
     }
     return render(request, "events/event-detail.html", context)
-
-
-# @login_required
-# def requestJoin(request, event_id):
-#     if request.method == "POST":
-#         event = get_object_or_404(Event, pk=event_id)
-#         #prevent duplicate requests
-#         join, created = EventJoin.objects.get_or_create(
-#             user=request.user,
-#             event=event,
-#             defaults={'status': 'pending'}
-#         )
-#         return redirect('events:event-detail', event_id=event_id)
-#     else:
-#         return redirect('events:event-detail', event_id=event_id)
-
 
 @login_required
 @require_POST
@@ -153,9 +142,9 @@ def creatorApproveRequest(request, event_id, user_id):
         # handle the error when the user is not the creator of the event
         return redirect("events:event-detail", event_id=event.id)
     join = get_object_or_404(EventJoin, event=event, user=user)
-
-    join.status = "approved"
-    join.save()
+    if join.status == "pending":
+        join.status = "approved"
+        join.save()
     return redirect("events:event-detail", event_id=event.id)
 
 
@@ -168,9 +157,9 @@ def creatorRejectRequest(request, event_id, user_id):
         # handle the error when the user is not the creator of the event
         return redirect("events:event-detail", event_id=event.id)
     join = get_object_or_404(EventJoin, event=event, user=user)
-
-    join.status = "rejected"
-    join.save()
+    if join.status == "pending":
+        join.status = "rejected"
+        join.save()
     return redirect("events:event-detail", event_id=event.id)
 
 
@@ -183,7 +172,7 @@ def creatorRemoveApprovedRequest(request, event_id, user_id):
         # handle the error when the user is not the creator of the event
         return redirect("events:event-detail", event_id=event.id)
     join = get_object_or_404(EventJoin, event=event, user=user)
-
-    join.status = "removed"
-    join.save()
+    if join.status == "approved":
+        join.status = "removed"
+        join.save()
     return redirect("events:event-detail", event_id=event.id)
