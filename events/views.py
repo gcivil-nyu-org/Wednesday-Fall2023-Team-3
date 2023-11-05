@@ -5,6 +5,7 @@ from django.urls import reverse
 from .models import Event, Location, EventJoin
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from django.contrib.auth.models import User
 
 # Create your views here.
 
@@ -99,10 +100,13 @@ def eventDetail(request, event_id):
         except EventJoin.DoesNotExist:
             # if the user has no join record
             pass
+    approved_join = event.eventjoin_set.filter(status="approved")
+    pending_join = event.eventjoin_set.filter(status="pending")
     context = {
         "event": event,
         "join_status": join_status,
-        # 'participants': EventJoin.objects.filter(event=event, status='approved')
+        "pending_join": pending_join,
+        "approved_join": approved_join,
     }
     return render(request, "events/event-detail.html", context)
 
@@ -137,4 +141,49 @@ def toggleJoinRequest(request, event_id):
             join.status = "pending"
         join.save()
 
+    return redirect("events:event-detail", event_id=event.id)
+
+
+@login_required
+@require_POST
+def creatorApproveRequest(request, event_id, user_id):
+    event = get_object_or_404(Event, id=event_id)
+    user = get_object_or_404(User, id=user_id)
+    if request.user != event.creator:
+        # handle the error when the user is not the creator of the event
+        return redirect("events:event-detail", event_id=event.id)
+    join = get_object_or_404(EventJoin, event=event, user=user)
+
+    join.status = "approved"
+    join.save()
+    return redirect("events:event-detail", event_id=event.id)
+
+
+@login_required
+@require_POST
+def creatorRejectRequest(request, event_id, user_id):
+    event = get_object_or_404(Event, id=event_id)
+    user = get_object_or_404(User, id=user_id)
+    if request.user != event.creator:
+        # handle the error when the user is not the creator of the event
+        return redirect("events:event-detail", event_id=event.id)
+    join = get_object_or_404(EventJoin, event=event, user=user)
+
+    join.status = "rejected"
+    join.save()
+    return redirect("events:event-detail", event_id=event.id)
+
+
+@login_required
+@require_POST
+def creatorRemoveApprovedRequest(request, event_id, user_id):
+    event = get_object_or_404(Event, id=event_id)
+    user = get_object_or_404(User, id=user_id)
+    if request.user != event.creator:
+        # handle the error when the user is not the creator of the event
+        return redirect("events:event-detail", event_id=event.id)
+    join = get_object_or_404(EventJoin, event=event, user=user)
+
+    join.status = "removed"
+    join.save()
     return redirect("events:event-detail", event_id=event.id)

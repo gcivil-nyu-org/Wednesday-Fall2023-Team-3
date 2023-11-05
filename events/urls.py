@@ -15,4 +15,19 @@ urlpatterns = [
         views.toggleJoinRequest,
         name="toggle-join-request",
     ),
+    path(
+        "<int:event_id>/approve/<int:user_id>/",
+        views.creatorApproveRequest,
+        name="approve-request",
+    ),
+    path(
+        "<int:event_id>/reject/<int:user_id>/",
+        views.creatorRejectRequest,
+        name="reject-request",
+    ),
+    path(
+        "<int:event_id>/remove/<int:user_id>/",
+        views.creatorRemoveApprovedRequest,
+        name="remove-approved-request",
+    ),
 ]
