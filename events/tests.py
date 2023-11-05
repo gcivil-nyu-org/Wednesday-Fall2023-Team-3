@@ -2,19 +2,17 @@ from django.test import TestCase
 from django.urls import reverse
 from .models import Event, Location
 from django.contrib.auth.models import User
-from django.utils import timezone
-
 
 
 class EventIndexViewFilterTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            username='testuser', password='testpassword'
+            username="testuser", password="testpassword"
         )
-        self.location = Location.objects.create(location_name='Test Location')
+        self.location = Location.objects.create(location_name="Test Location")
 
         self.future_event = Event.objects.create(
-            event_name='Future Event',
+            event_name="Future Event",
             start_time="2024-01-01T12:00",
             end_time="2024-01-01T14:00",
             capacity=100,
@@ -27,13 +25,14 @@ class EventIndexViewFilterTest(TestCase):
         # Ensure the datetime format matches what your application expects
         start_date_str = "2024-01-01T12:00"
         end_date_str = "2024-01-01T14:00"
-        url = reverse('events:index')
-        response = self.client.get(url, {'start_time': start_date_str, 'end_time': end_date_str})
+        url = reverse("events:index")
+        response = self.client.get(
+            url, {"start_time": start_date_str, "end_time": end_date_str}
+        )
         self.assertEqual(response.status_code, 200)
         # Assuming your events are passed to the template under the context variable 'events'
-        events = response.context['events']
+        events = response.context["events"]
         self.assertIn(self.future_event, events)
-
 
 
 class UpdateEventViewTest(TestCase):
