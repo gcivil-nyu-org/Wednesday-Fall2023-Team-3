@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from .forms import EventsForm
 from django.urls import reverse
 from .models import Event, Location, EventJoin
@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.db import transaction
 
 # Create your views here.
 
@@ -121,8 +122,13 @@ def eventDetail(request, event_id):
 @require_POST
 def toggleJoinRequest(request, event_id):
     event = get_object_or_404(Event, id=event_id)
+    # Prevent the creator from joining their own event
+    if request.user == event.creator:
+        messages.warning(
+            request, "As the creator of the event, you cannot join it as a participant."
+        )
+        return redirect("events:event-detail", event_id=event.id)
     join, created = EventJoin.objects.get_or_create(user=request.user, event=event)
-
     # If a request was just created, it's already in 'pending' state
     # If it exists, toggle between 'pending' and 'withdrawn'
     if not created:
@@ -138,23 +144,30 @@ def toggleJoinRequest(request, event_id):
 @login_required
 @require_POST
 def creatorApproveRequest(request, event_id, user_id):
-    event = get_object_or_404(Event, id=event_id)
-    user = get_object_or_404(User, id=user_id)
-    if request.user != event.creator:
-        # handle the error when the user is not the creator of the event
+    with transaction.atomic():
+        event = get_object_or_404(Event, id=event_id)
+        user = get_object_or_404(User, id=user_id)
+        if request.user != event.creator:
+            # handle the error when the user is not the creator of the event
+            return redirect("events:event-detail", event_id=event.id)
+        try:
+            # Lock the participant row for updating
+            join = EventJoin.objects.select_for_update().get(
+                event_id=event_id, user_id=user_id
+            )
+        except EventJoin.DoesNotExist:
+            raise Http404("Participant not found.")
+        approved_join_count = EventJoin.objects.filter(
+            event=event, status="approved"
+        ).count()
+        if approved_join_count + 1 >= event.capacity:
+            messages.warning(request, "The event has reached its capacity.")
+        else:
+            if join.status == "pending":
+                join.status = "approved"
+                join.save()
+                messages.success(request, "Request approved")
         return redirect("events:event-detail", event_id=event.id)
-    approved_join_count = EventJoin.objects.filter(
-        event=event, status="approved"
-    ).count()
-    if approved_join_count + 1 >= event.capacity:
-        messages.warning(request, "The event has reached its capacity.")
-    else:
-        join = get_object_or_404(EventJoin, event=event, user=user)
-        if join.status == "pending":
-            join.status = "approved"
-            join.save()
-            messages.success(request, "Request approved")
-    return redirect("events:event-detail", event_id=event.id)
 
 
 @login_required

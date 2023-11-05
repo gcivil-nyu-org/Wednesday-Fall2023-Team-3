@@ -11,7 +11,7 @@ urlpatterns = [
     path("update/<int:event_id>/", views.updateEvent, name="update-event"),
     path("<int:event_id>/", views.eventDetail, name="event-detail"),
     path(
-        "<int:event_id>/toggle-join/",
+        "<int:event_id>/toggle-join/,",
         views.toggleJoinRequest,
         name="toggle-join-request",
     ),
