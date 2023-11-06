@@ -169,14 +169,24 @@ class EventValidationTests(TestCase):
                 "creator": 1,
             },
         )
-        self.assertEqual(response['Content-Type'], 'application/json')
+        self.assertEqual(response["Content-Type"], "application/json")
         self.assertEqual(response.status_code, 400)  # Should stay on the same page
         content = json.loads(response.content)
-        self.assertEqual(content["event_name"], "Event name cannot be empty.")  # Replace with expected content
-        self.assertEqual(content["event_location_id"], "Event location is required.")  # Replace with expected content
-        self.assertEqual(content["start_time"], "Start time is required.")  # Replace with expected content
-        self.assertEqual(content["end_time"], "End time is required.")  # Replace with expected content
-        self.assertEqual(content["capacity"], "Capacity must be a valid number.")  # Replace with expected conten
+        self.assertEqual(
+            content["event_name"], "Event name cannot be empty."
+        )  # Replace with expected content
+        self.assertEqual(
+            content["event_location_id"], "Event location is required."
+        )  # Replace with expected content
+        self.assertEqual(
+            content["start_time"], "Start time is required."
+        )  # Replace with expected content
+        self.assertEqual(
+            content["end_time"], "End time is required."
+        )  # Replace with expected content
+        self.assertEqual(
+            content["capacity"], "Capacity must be a valid number."
+        )  # Replace with expected conten
 
     def test_save_event_with_valid_data(self):
         new_york_tz = pytz.timezone("America/New_York")
@@ -197,7 +207,7 @@ class EventValidationTests(TestCase):
             },
         )
         # Check if a new event was created in the database
-        new_event = Event.objects.get(event_name='New Event')
+        new_event = Event.objects.get(event_name="New Event")
         self.assertEqual(new_event.capacity, 50)
 
     def test_save_event_with_invalid_data(self):
@@ -214,11 +224,21 @@ class EventValidationTests(TestCase):
                 "creator": 1,
             },
         )
-        self.assertEqual(response['Content-Type'], 'application/json')
+        self.assertEqual(response["Content-Type"], "application/json")
         self.assertEqual(response.status_code, 400)  # Should stay on the same page
         content = json.loads(response.content)
-        self.assertEqual(content["event_name"], "Event name cannot be empty.")  # Replace with expected content
-        self.assertEqual(content["event_location_id"], "Event location is required.")  # Replace with expected content
-        self.assertEqual(content["start_time"], "Start time is required.")  # Replace with expected content
-        self.assertEqual(content["end_time"], "End time is required.")  # Replace with expected content
-        self.assertEqual(content["capacity"], "Capacity must be a valid number.")  # Replace with expected content
+        self.assertEqual(
+            content["event_name"], "Event name cannot be empty."
+        )  # Replace with expected content
+        self.assertEqual(
+            content["event_location_id"], "Event location is required."
+        )  # Replace with expected content
+        self.assertEqual(
+            content["start_time"], "Start time is required."
+        )  # Replace with expected content
+        self.assertEqual(
+            content["end_time"], "End time is required."
+        )  # Replace with expected content
+        self.assertEqual(
+            content["capacity"], "Capacity must be a valid number."
+        )  # Replace with expected content

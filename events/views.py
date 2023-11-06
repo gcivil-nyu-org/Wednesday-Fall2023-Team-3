@@ -31,10 +31,10 @@ def updateEvent(request, event_id):
         errors = {}
 
         if not event_name:
-            errors['event_name'] = "Event name cannot be empty."
+            errors["event_name"] = "Event name cannot be empty."
 
         if not start_time:
-            errors['start_time'] = "Start time is required."
+            errors["start_time"] = "Start time is required."
         else:
             start_time = timezone.make_aware(
                 timezone.datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
@@ -42,36 +42,36 @@ def updateEvent(request, event_id):
             new_york_tz = pytz.timezone("America/New_York")
             current_time_ny = datetime.now(new_york_tz)
             if start_time < current_time_ny:
-                errors['start_time'] = "Start time cannot be in the past."
+                errors["start_time"] = "Start time cannot be in the past."
 
         if not end_time:
-            errors['end_time'] = "End time is required."
+            errors["end_time"] = "End time is required."
         else:
             end_time = timezone.make_aware(
                 timezone.datetime.strptime(end_time, "%Y-%m-%dT%H:%M")
             )
             if end_time < start_time:
-                errors['end_time'] = "End time cannot be earlier than start time."
+                errors["end_time"] = "End time cannot be earlier than start time."
 
         if not capacity:
-            errors['capacity'] = "Capacity is required."
+            errors["capacity"] = "Capacity is required."
         else:
             try:
                 capacity = int(capacity)
                 if capacity < 0:
-                    errors['capacity'] = "Capacity must be a non-negative number."
+                    errors["capacity"] = "Capacity must be a non-negative number."
             except ValueError:
-                errors['capacity'] = "Capacity must be a valid number."
+                errors["capacity"] = "Capacity must be a valid number."
 
         if not event_location_id:
-            errors['event_location_id'] = "Event location is required."
+            errors["event_location_id"] = "Event location is required."
         else:
             try:
                 event_location_id = int(event_location_id)
                 if event_location_id <= 0:
-                    errors['event_location_id'] = "Event location must be selected."
+                    errors["event_location_id"] = "Event location must be selected."
             except ValueError:
-                errors['event_location_id'] = "Invalid event location."
+                errors["event_location_id"] = "Invalid event location."
 
         if errors:
             # Return a JSON response with a 400 status code and the error messages
