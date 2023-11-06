@@ -1,9 +1,39 @@
 from django.test import TestCase
 from django.urls import reverse
-from .models import Event, Location
+from .models import User, Event, Location
 from django.contrib.auth.models import User
+from django.utils import timezone
+from datetime import timedelta
 
 
+class EventIndexViewFilterNegativeTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.location = Location.objects.create(location_name="Test Location")
+
+        # Create event with past date for testing
+        self.past_event = Event.objects.create(
+            event_name="Past Event",
+            start_time=timezone.now() - timedelta(days=1),
+            end_time=timezone.now() - timedelta(days=1, hours=1),
+            capacity=50,
+            event_location=self.location,
+            is_active=True,
+            creator=self.user,
+        )
+
+    def test_event_index_view_with_past_start_time_filter(self):
+        # Attempt to filter events with a start time that is in the past
+        past_start_date_str = (timezone.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M")
+        url = reverse("events:index")
+        response = self.client.get(url, {"start_time": past_start_date_str})
+        self.assertNotIn(self.past_event, response.context.get("events", []))
+        # Assuming your error message is passed to the template under the context variable 'error'
+        self.assertEqual(response.context.get("error"), "Start time cannot be in the past.")
+
+       
 class UpdateEventViewTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
