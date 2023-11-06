@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
-from .models import User, Event, Location
+from .models import Event, Location
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
@@ -33,7 +33,7 @@ class EventIndexViewFilterNegativeTest(TestCase):
         # Assuming your error message is passed to the template under the context variable 'error'
         self.assertEqual(response.context.get("error"), "Start time cannot be in the past.")
 
-       
+
 class UpdateEventViewTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
