@@ -20,7 +20,6 @@ class Event(models.Model):
 
 
 class EventJoin(models.Model):
-
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
