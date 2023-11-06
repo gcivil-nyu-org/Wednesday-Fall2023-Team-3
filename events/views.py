@@ -4,6 +4,9 @@ from .forms import EventsForm
 from django.urls import reverse
 from .models import Event, Location, EventJoin
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.core.serializers import serialize
+import json
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -205,3 +208,21 @@ def creatorRemoveApprovedRequest(request, event_id, user_id):
         join.status = REMOVED
         join.save()
     return redirect("events:event-detail", event_id=event.id)
+    return render(request, "events/event-detail.html", {"event": event})
+
+
+# Map Code
+
+
+def get_data(request):
+    location_data = Event.objects.filter(is_active=True)
+    serialized_data = serialize("json", location_data)
+    serialized_data = json.loads(serialized_data)
+    return JsonResponse({"location_data": serialized_data})
+
+
+def get_locations(request):
+    locations = Location.objects.all()
+    serialized_data = serialize("json", locations)
+    serialized_data = json.loads(serialized_data)
+    return JsonResponse({"locations": serialized_data})
