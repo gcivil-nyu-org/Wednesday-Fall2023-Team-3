@@ -5,6 +5,8 @@ from django.urls import reverse
 from .models import Event, Location
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+import pytz
+from datetime import datetime
 
 # Create your views here.
 
@@ -33,7 +35,9 @@ def updateEvent(request, event_id):
         start_time = timezone.make_aware(
             timezone.datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
         )
-        if start_time < timezone.now():
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        if start_time < current_time_ny:
             return HttpResponse("Start time cannot be in the past.")
 
         if not end_time:
@@ -63,12 +67,14 @@ def updateEvent(request, event_id):
                 return HttpResponse("Event location must be selected.")
         except ValueError:
             return HttpResponse("Invalid event location.")
+        print("POST")
         location_object = Location.objects.get(id=event_location_id)
         event.event_location = location_object
         event.event_name = event_name
         event.start_time = start_time
         event.end_time = end_time
         event.capacity = capacity
+        print("POST 2")
         event.save()
 
         return redirect("events:index")  # Redirect to the event list or a success page
@@ -103,7 +109,9 @@ def saveEvent(request):
         start_time = timezone.make_aware(
             timezone.datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
         )
-        if start_time < timezone.now():
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        if start_time < current_time_ny:
             return redirect(
                 "events:index", error_message="Start time cannot be in the past."
             )
@@ -164,8 +172,6 @@ def createEvent(request):
 @login_required
 def deleteEvent(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
-    print(request)
-    print(event)
     if request.method == "POST":
         if request.POST.get("action") == "delete":
             # Set is_active to False instead of deleting
