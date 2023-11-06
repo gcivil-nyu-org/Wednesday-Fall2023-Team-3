@@ -2,7 +2,6 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from .models import Event, Location, EventJoin
 from django.contrib.auth.models import User
-from django.utils import timezone
 from datetime import datetime, timedelta
 import pytz
 
