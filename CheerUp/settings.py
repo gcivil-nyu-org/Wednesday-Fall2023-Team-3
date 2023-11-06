@@ -31,7 +31,6 @@ ALLOWED_HOSTS = [
     "cheerup-env.eba-sn3jjdga.us-east-1.elasticbeanstalk.com",
     "localhost",
     "127.0.0.1",
-    "172.31.27.228"
 ]
 
 
