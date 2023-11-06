@@ -9,5 +9,4 @@
 .DS_Store
 import_data.py
 
-# Coverage files
 .coverage

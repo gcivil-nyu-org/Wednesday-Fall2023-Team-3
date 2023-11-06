@@ -21,3 +21,11 @@ body {
     box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
     margin: 0 auto;
 }
+
+.sticky-note-container {
+    background-color: #a6cff4;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+    margin: 0;
+}
