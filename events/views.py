@@ -9,7 +9,9 @@ from django.contrib.auth.decorators import login_required
 
 
 def index(request):
-    search_query = request.GET.get('search', '')  # Get the search query from the URL parameter
+    search_query = request.GET.get(
+        "search", ""
+    )  # Get the search query from the URL parameter
     events = Event.objects.filter(event_name__icontains=search_query, is_active=True)
     return render(request, "events/events.html", {"events": events})
 
