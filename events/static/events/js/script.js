@@ -48,7 +48,6 @@ async function initMap() {
                 var eventNameDiv = document.createElement('div');
                 eventNameDiv.className = "eventnameDiv";
                 eventNameDiv.addEventListener("click", function(e){
-                    console.log("Hello");
                     window.location.href += `${locEvent.id}`;
                 });
                 eventNameDiv.innerHTML = `${locEvent.name}`+"\n";

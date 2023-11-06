@@ -52,17 +52,16 @@ li.event-item {
     margin: 0;
 }
 #map{
-    position: -webkit-sticky;
-    position: sticky;
-    height: 100vh;
+    position: sticky !important;
+    height: 100dvh;
     width: 50%;
-    align-self: flex-start;
+    align-items: flex-start;
     top:0;
 }
 .container{
     display: flex;
-    height: 100%;
-    overflow: auto;
+    /* height: 100%; */
     padding: 0;
+    align-items: start;
     
 }
