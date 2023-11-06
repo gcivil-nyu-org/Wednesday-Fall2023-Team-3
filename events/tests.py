@@ -4,6 +4,7 @@ from .models import Event, Location, EventJoin
 from django.contrib.auth.models import User
 from datetime import datetime, timedelta
 import pytz
+from .constants import PENDING, APPROVED, WITHDRAWN, REJECTED, REMOVED
 
 
 class EventDetailPageTest(TestCase):
@@ -67,12 +68,12 @@ class EventJoinRequestTest(TestCase):
         response = self.client.post(url)
         # Check that the EventJoin was created with the status 'pending'
         join = EventJoin.objects.get(user=self.user, event=self.event)
-        self.assertEqual(join.status, "pending")
+        self.assertEqual(join.status, PENDING)
         # Make the POST request again to toggle the status to 'withdrawn'
         response = self.client.post(url)
         # Fetch the updated join object and check its status
         join.refresh_from_db()
-        self.assertEqual(join.status, "withdrawn")
+        self.assertEqual(join.status, WITHDRAWN)
         # Check the response to ensure the user is redirected to the event detail page
         self.assertRedirects(
             response, reverse("events:event-detail", args=[self.event.id])
@@ -127,7 +128,7 @@ class EventCreatorManageRequestTest(TestCase):
         response = self.client.post(url)
         self.join_request.refresh_from_db()
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.join_request.status, "approved")
+        self.assertEqual(self.join_request.status, APPROVED)
 
     def test_reject_join_request(self):
         self.client.login(username="testcreator", password="testpassword")
@@ -135,7 +136,7 @@ class EventCreatorManageRequestTest(TestCase):
         response = self.client.post(url)
         self.join_request.refresh_from_db()
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.join_request.status, "rejected")
+        self.assertEqual(self.join_request.status, REJECTED)
 
     def test_non_creator_cannot_approve(self):
         self.client.logout()
@@ -143,7 +144,7 @@ class EventCreatorManageRequestTest(TestCase):
         url = reverse("events:approve-request", args=[self.event.id, self.user.id])
         response = self.client.post(url)
         self.join_request.refresh_from_db()
-        self.assertNotEqual(self.join_request.status, "approved")
+        self.assertNotEqual(self.join_request.status, APPROVED)
         self.assertEqual(response.status_code, 302)  # redirect
 
     def test_non_creator_cannot_reject(self):
@@ -152,7 +153,7 @@ class EventCreatorManageRequestTest(TestCase):
         url = reverse("events:reject-request", args=[self.event.id, self.user.id])
         response = self.client.post(url)
         self.join_request.refresh_from_db()
-        self.assertNotEqual(self.join_request.status, "rejected")
+        self.assertNotEqual(self.join_request.status, REJECTED)
         self.assertEqual(response.status_code, 302)
 
 
@@ -196,9 +197,9 @@ class EventCreatorApproveLimistTest(TestCase):
             self.join_requests[i].refresh_from_db()
             self.assertEqual(response.status_code, 302)
             if i < self.event.capacity - 1:
-                self.assertEqual(self.join_requests[i].status, "approved")
+                self.assertEqual(self.join_requests[i].status, APPROVED)
             else:
-                self.assertEqual(self.join_requests[i].status, "pending")
+                self.assertEqual(self.join_requests[i].status, PENDING)
 
 
 class EventCreatorRemoveApprovedRequestTest(TestCase):
@@ -224,7 +225,7 @@ class EventCreatorRemoveApprovedRequestTest(TestCase):
             creator=self.creator,
         )
         self.join_request = EventJoin.objects.create(
-            user=self.user, event=self.event, status="approved"
+            user=self.user, event=self.event, status=APPROVED
         )
         self.client = Client()
 
@@ -236,7 +237,7 @@ class EventCreatorRemoveApprovedRequestTest(TestCase):
         response = self.client.post(url)
         self.join_request.refresh_from_db()
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.join_request.status, "removed")
+        self.assertEqual(self.join_request.status, REMOVED)
 
     def test_non_creator_cannot_remove(self):
         self.client.logout()
@@ -246,5 +247,5 @@ class EventCreatorRemoveApprovedRequestTest(TestCase):
         )
         response = self.client.post(url)
         self.join_request.refresh_from_db()
-        self.assertNotEqual(self.join_request.status, "removed")
+        self.assertNotEqual(self.join_request.status, REMOVED)
         self.assertEqual(response.status_code, 302)  # redirect

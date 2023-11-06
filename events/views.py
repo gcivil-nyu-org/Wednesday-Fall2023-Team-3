@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db import transaction
+from .constants import PENDING, APPROVED, WITHDRAWN, REJECTED, REMOVED
 
 # Create your views here.
 
@@ -93,6 +94,7 @@ def deleteEvent(request, event_id):
 
 def eventDetail(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
+    location = event.event_location
     join_status = None
     # attempt to see if the user has logged in
     if request.user.is_authenticated:
@@ -102,8 +104,8 @@ def eventDetail(request, event_id):
         except EventJoin.DoesNotExist:
             # if the user has no join record
             pass
-    approved_join = event.eventjoin_set.filter(status="approved")
-    pending_join = event.eventjoin_set.filter(status="pending")
+    approved_join = event.eventjoin_set.filter(status=APPROVED)
+    pending_join = event.eventjoin_set.filter(status=PENDING)
     approved_join_count = approved_join.count()
     pending_join_count = pending_join.count()
 
@@ -114,6 +116,12 @@ def eventDetail(request, event_id):
         "approved_join": approved_join,
         "approved_join_count": approved_join_count,
         "pending_join_count": pending_join_count,
+        "location": location,
+        "APPROVED": APPROVED,
+        "PENDING": PENDING,
+        "WITHDRAWN": WITHDRAWN,
+        "REJECTED": REJECTED,
+        "REMOVED": REMOVED,
     }
     return render(request, "events/event-detail.html", context)
 
@@ -132,10 +140,10 @@ def toggleJoinRequest(request, event_id):
     # If a request was just created, it's already in 'pending' state
     # If it exists, toggle between 'pending' and 'withdrawn'
     if not created:
-        if join.status == "pending":
-            join.status = "withdrawn"
+        if join.status == PENDING:
+            join.status = WITHDRAWN
         else:
-            join.status = "pending"
+            join.status = PENDING
         join.save()
 
     return redirect("events:event-detail", event_id=event.id)
@@ -157,13 +165,13 @@ def creatorApproveRequest(request, event_id, user_id):
         except EventJoin.DoesNotExist:
             raise Http404("Participant not found.")
         approved_join_count = EventJoin.objects.filter(
-            event=event, status="approved"
+            event=event, status=APPROVED
         ).count()
         if approved_join_count + 1 >= event.capacity:
             messages.warning(request, "The event has reached its capacity.")
         else:
-            if join.status == "pending":
-                join.status = "approved"
+            if join.status == PENDING:
+                join.status = APPROVED
                 join.save()
                 messages.success(request, "Request approved")
         return redirect("events:event-detail", event_id=event.id)
@@ -178,8 +186,8 @@ def creatorRejectRequest(request, event_id, user_id):
         # handle the error when the user is not the creator of the event
         return redirect("events:event-detail", event_id=event.id)
     join = get_object_or_404(EventJoin, event=event, user=user)
-    if join.status == "pending":
-        join.status = "rejected"
+    if join.status == PENDING:
+        join.status = REJECTED
         join.save()
     return redirect("events:event-detail", event_id=event.id)
 
@@ -193,7 +201,7 @@ def creatorRemoveApprovedRequest(request, event_id, user_id):
         # handle the error when the user is not the creator of the event
         return redirect("events:event-detail", event_id=event.id)
     join = get_object_or_404(EventJoin, event=event, user=user)
-    if join.status == "approved":
-        join.status = "removed"
+    if join.status == APPROVED:
+        join.status = REMOVED
         join.save()
     return redirect("events:event-detail", event_id=event.id)

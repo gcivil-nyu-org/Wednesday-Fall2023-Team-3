@@ -1,6 +1,7 @@
 from django.db import models
 from location.models import Location
 from django.contrib.auth.models import User
+from .constants import STATUS_CHOICES, PENDING
 
 # Create your models here.
 
@@ -19,17 +20,10 @@ class Event(models.Model):
 
 
 class EventJoin(models.Model):
-    STATUS_CHOICES = (
-        ("pending", "Pending"),
-        ("withdrawn", "Withdrawn"),
-        ("approved", "Approved"),
-        ("rejected", "Rejected"),
-        ("removed", "Removed"),
-    )
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
 
     class Meta:
         unique_together = ("user", "event")
