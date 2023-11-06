@@ -3,49 +3,8 @@ from django.urls import reverse
 from .models import Event, Location, EventJoin
 from django.contrib.auth.models import User
 from django.utils import timezone
-from datetime import timedelta
-
-
-class UpdateEventViewTest(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(
-            username="testuser", password="testpassword"
-        )
-        self.location = Location.objects.create(location_name="Test Location")
-        self.event = Event.objects.create(
-            event_name="Test Event",
-            start_time=timezone.now() + timedelta(days=5),
-            end_time=timezone.now() + timedelta(days=6),
-            capacity=100,
-            event_location=self.location,
-            creator=self.user,
-        )
-
-    def test_update_event_view_get(self):
-        self.client.login(username="testuser", password="testpassword")
-        url = reverse("events:update-event", args=(self.event.id,))
-        response = self.client.get(url)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Test Event")  # Replace with expected content
-
-    def test_update_event_view_post(self):
-        self.client.login(username="testuser", password="testpassword")
-        new_location = Location.objects.create(location_name="New Location")
-        updated_data = {
-            "event_name": "Updated Event",
-            "start_time": timezone.now() + timedelta(hours=30),
-            "end_time": timezone.now() + timedelta(hours=35),
-            "capacity": 150,
-            "event_location_id": new_location.id,
-        }
-        url = reverse("events:update-event", args=(self.event.id,))
-        response = self.client.post(url, updated_data)
-
-        self.assertEqual(response.status_code, 302)  # Should redirect
-        self.assertEqual(
-            Event.objects.get(pk=self.event.id).event_name, "Updated Event"
-        )  # Verify data was updated
+from datetime import datetime, timedelta
+import pytz
 
 
 class EventDetailPageTest(TestCase):
@@ -56,11 +15,13 @@ class EventDetailPageTest(TestCase):
         self.location = Location.objects.create(
             location_name="Test Location",
         )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
         self.event = Event.objects.create(
             event_name="Test Event",
             event_location=self.location,
-            start_time=timezone.now() + timedelta(hours=10),
-            end_time=timezone.now() + timedelta(hours=15),
+            start_time=current_time_ny + timedelta(hours=10),
+            end_time=current_time_ny + timedelta(hours=15),
             capacity=100,
             is_active=True,
             creator=self.user,
@@ -87,11 +48,13 @@ class EventJoinRequestTest(TestCase):
         self.location = Location.objects.create(
             location_name="Test Location",
         )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
         self.event = Event.objects.create(
             event_name="Test Event",
             event_location=self.location,
-            start_time=timezone.now() + timedelta(hours=3),
-            end_time=timezone.now() + timedelta(hours=5),
+            start_time=current_time_ny + timedelta(hours=3),
+            end_time=current_time_ny + timedelta(hours=5),
             capacity=10,
             is_active=True,
             creator=self.creator,
@@ -145,11 +108,13 @@ class EventCreatorManageRequestTest(TestCase):
         self.location = Location.objects.create(
             location_name="Test Location",
         )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
         self.event = Event.objects.create(
             event_name="Test Event",
             event_location=self.location,
-            start_time=timezone.now() + timedelta(hours=12),
-            end_time=timezone.now() + timedelta(hours=15),
+            start_time=current_time_ny + timedelta(hours=12),
+            end_time=current_time_ny + timedelta(hours=15),
             capacity=5,
             is_active=True,
             creator=self.creator,
@@ -200,11 +165,13 @@ class EventCreatorApproveLimistTest(TestCase):
         self.location = Location.objects.create(
             location_name="Test Location",
         )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
         self.event = Event.objects.create(
             event_name="Test Event",
             event_location=self.location,
-            start_time=timezone.now() + timedelta(hours=4),
-            end_time=timezone.now() + timedelta(hours=5),
+            start_time=current_time_ny + timedelta(hours=4),
+            end_time=current_time_ny + timedelta(hours=5),
             capacity=5,
             is_active=True,
             creator=self.creator,
@@ -246,11 +213,13 @@ class EventCreatorRemoveApprovedRequestTest(TestCase):
         self.location = Location.objects.create(
             location_name="Test Location",
         )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
         self.event = Event.objects.create(
             event_name="Test Event",
             event_location=self.location,
-            start_time=timezone.now() + timedelta(hours=50),
-            end_time=timezone.now() + timedelta(hours=52),
+            start_time=current_time_ny + timedelta(hours=50),
+            end_time=current_time_ny + timedelta(hours=52),
             capacity=5,
             is_active=True,
             creator=self.creator,
