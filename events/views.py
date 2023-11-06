@@ -8,14 +8,17 @@ from django.utils import timezone
 from .forms import EventFilterForm
 import pytz
 
+
 # Modify the index view function
 def index(request):
     # Set the timezone to New York
-    ny_timezone = pytz.timezone('America/New_York')
+    ny_timezone = pytz.timezone("America/New_York")
     current_time_ny = timezone.now().astimezone(ny_timezone)
 
     # Filter events that are active and end time is greater than current time in NY
-    events = Event.objects.filter(end_time__gt=current_time_ny, is_active=True).order_by("-start_time")
+    events = Event.objects.filter(
+        end_time__gt=current_time_ny, is_active=True
+    ).order_by("-start_time")
 
     # Process the filter form
     if request.GET:
@@ -26,14 +29,22 @@ def index(request):
                 start_time_ny = form.cleaned_data["start_time"].astimezone(ny_timezone)
                 if start_time_ny < current_time_ny:
                     # Return an error message for start_time in the past
-                    return render(request, "events/events.html", {"error": "Start time cannot be in the past."})
+                    return render(
+                        request,
+                        "events/events.html",
+                        {"error": "Start time cannot be in the past."},
+                    )
                 events = events.filter(start_time__gte=start_time_ny)
             if form.cleaned_data["end_time"]:
                 # Convert the end_time to NY timezone before comparing
                 end_time_ny = form.cleaned_data["end_time"].astimezone(ny_timezone)
                 if end_time_ny <= start_time_ny:
                     # Return an error message for end_time before start_time
-                    return render(request, "events/events.html", {"error": "End time cannot be before start time."})
+                    return render(
+                        request,
+                        "events/events.html",
+                        {"error": "End time cannot be before start time."},
+                    )
                 events = events.filter(end_time__lte=end_time_ny)
     else:
         form = EventFilterForm()
@@ -48,7 +59,6 @@ def index(request):
         context["message"] = "No events that fit your schedule? How about CREATING one?"
 
     return render(request, "events/events.html", context)
-
 
 
 @login_required
