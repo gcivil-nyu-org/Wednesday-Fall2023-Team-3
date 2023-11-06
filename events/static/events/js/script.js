@@ -6,8 +6,10 @@ async function initMap() {
     });
         const responseEvent = await fetch('events/');
         const responseLocation = await fetch('locations/');
+        
         const event_data = await responseEvent.json();
         const location_objects = await responseLocation.json();
+        console.log(location_objects);
         const location_data = event_data.location_data;
         const locations = location_objects.locations;
         const locationmap = new Map();

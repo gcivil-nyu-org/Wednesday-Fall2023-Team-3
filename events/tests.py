@@ -72,3 +72,55 @@ class EventDetailPageTest(TestCase):
         self.assertContains(response, "Test Location")
         self.assertContains(response, "100")
         self.assertContains(response, "testuser")
+
+
+class MapGetDataTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.location1 = Location.objects.create(location_name="Test Location 1")
+        self.location2 = Location.objects.create(location_name="Test Location 2")
+        self.event1 = Event.objects.create(
+            event_name="Test Event",
+            start_time="2023-11-01T12:00",
+            end_time="2023-11-01T14:00",
+            capacity=100,
+            is_active=True,
+            event_location=self.location1,
+            creator=self.user,
+        )
+        self.event1 = Event.objects.create(
+            event_name="Test Event 2",
+            start_time="2023-11-01T12:00",
+            end_time="2023-11-01T14:00",
+            capacity=100,
+            is_active=False,
+            event_location=self.location2,
+            creator=self.user,
+        )
+
+    def test_get_events_view(self):
+        response = self.client.get(reverse("events:events"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("location_data", data)
+
+        # Check the content of the location_data
+        location_data = data["location_data"]
+        self.assertEqual(len(location_data), 1)
+
+    def test_get_location_view(self):
+        response = self.client.get(
+            reverse("events:locations")
+        )  # Replace "get_locations" with your actual URL name
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # Check the JSON response structure
+        self.assertIn("locations", data)
+
+        # Check the content of the locations
+        locations = data["locations"]
+        self.assertEqual(len(locations), 2)
