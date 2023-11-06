@@ -70,9 +70,20 @@ def updateEvent(request, event_id):
                 event_location_id = int(event_location_id)
                 if event_location_id <= 0:
                     errors["event_location_id"] = "Event location must be selected."
+                else:
+                    location_object = Location.objects.get(id=event_location_id)
+                    if Event.objects.filter(
+                        event_name=event_name,
+                        event_location=location_object,
+                        start_time=start_time,
+                        end_time=end_time,
+                        is_active=True,
+                    ).exists():
+                        errors[
+                            "similar_event_error"
+                        ] = "An event with these details already exists."
             except ValueError:
                 errors["event_location_id"] = "Invalid event location."
-
         if errors:
             # Return a JSON response with a 400 status code and the error messages
             return JsonResponse(errors, status=400)
@@ -145,7 +156,17 @@ def saveEvent(request):
         if errors:
             # Return a 400 Bad Request response with JSON error messages
             return JsonResponse(errors, status=400)
-
+        if Event.objects.filter(
+            event_name=event_name,
+            event_location=location_object,
+            start_time=start_time,
+            end_time=end_time,
+            is_active=True,
+        ).exists():
+            error_message = "An event with these details already exists."
+            return HttpResponseRedirect(
+                reverse("events:index") + f"?error_message={error_message}"
+            )
         # All validations passed; create the event
         event = Event(
             event_name=event_name,
