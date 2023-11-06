@@ -99,7 +99,7 @@ def eventDetail(request, event_id):
 
 
 def get_data(request):
-    location_data = Event.objects.all()
+    location_data = Event.objects.filter(is_active=True)
     serialized_data = serialize("json", location_data)
     serialized_data = json.loads(serialized_data)
     return JsonResponse({"location_data": serialized_data})

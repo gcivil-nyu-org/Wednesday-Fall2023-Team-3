@@ -4,8 +4,8 @@ async function initMap() {
       zoom: 12,
       mapId: '9a7e26117f10196d'
     });
-        const responseEvent = await fetch('get_data/');
-        const responseLocation = await fetch('get_locations/');
+        const responseEvent = await fetch('events/');
+        const responseLocation = await fetch('locations/');
         const event_data = await responseEvent.json();
         const location_objects = await responseLocation.json();
         const location_data = event_data.location_data;
@@ -17,16 +17,12 @@ async function initMap() {
         let duplicateLocationsMap = {};
         for(let i=0; i<location_data.length;i++){
             let loc = location_data[i].fields;
-            if(loc.is_active==true){
-                if(!duplicateLocationsMap[loc.event_location]){
+            if(!duplicateLocationsMap[loc.event_location]){
                     duplicateLocationsMap[loc.event_location] = [];
                 }
                 duplicateLocationsMap[loc.event_location].push({name:loc.event_name,id:event_data.location_data[i].pk});
-            }
         }
         for(let i =0; i<location_data.length;i++){
-            
-            if(location_data[i].fields.is_active == true){
                 let lat = -1, lng = -1;
                 if(locationmap.get(location_data[i].fields.event_location)!=null){
                     lat = locationmap.get(location_data[i].fields.event_location)[0];
@@ -63,7 +59,6 @@ async function initMap() {
               marker.addListener("click", () => {
                 infoWindow.open(map, marker);
               }); 
-            }
     }
     
   }
