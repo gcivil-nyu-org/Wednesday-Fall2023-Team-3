@@ -26,12 +26,16 @@ class EventIndexViewFilterNegativeTest(TestCase):
 
     def test_event_index_view_with_past_start_time_filter(self):
         # Attempt to filter events with a start time that is in the past
-        past_start_date_str = (timezone.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M")
+        past_start_date_str = (timezone.now() - timedelta(days=1)).strftime(
+            "%Y-%m-%dT%H:%M"
+        )
         url = reverse("events:index")
         response = self.client.get(url, {"start_time": past_start_date_str})
         self.assertNotIn(self.past_event, response.context.get("events", []))
         # Assuming your error message is passed to the template under the context variable 'error'
-        self.assertEqual(response.context.get("error"), "Start time cannot be in the past.")
+        self.assertEqual(
+            response.context.get("error"), "Start time cannot be in the past."
+        )
 
 
 class UpdateEventViewTest(TestCase):
