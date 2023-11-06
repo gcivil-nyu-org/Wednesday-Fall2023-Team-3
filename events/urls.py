@@ -12,4 +12,24 @@ urlpatterns = [
     path("<int:event_id>/", views.eventDetail, name="event-detail"),
     path("events/", views.get_data, name="events"),
     path("locations/", views.get_locations, name="locations"),
+    path(
+        "<int:event_id>/toggle-join/,",
+        views.toggleJoinRequest,
+        name="toggle-join-request",
+    ),
+    path(
+        "<int:event_id>/approve/<int:user_id>/",
+        views.creatorApproveRequest,
+        name="approve-request",
+    ),
+    path(
+        "<int:event_id>/reject/<int:user_id>/",
+        views.creatorRejectRequest,
+        name="reject-request",
+    ),
+    path(
+        "<int:event_id>/remove/<int:user_id>/",
+        views.creatorRemoveApprovedRequest,
+        name="remove-approved-request",
+    ),
 ]
