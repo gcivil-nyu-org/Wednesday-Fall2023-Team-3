@@ -16,6 +16,22 @@ Event List
         margin: 0;
     }
 
+    .event-search-input {
+        border-radius: 5px;
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        margin-right: 20px;
+    }
+
+    .search-container {
+        padding-left: 2rem;
+        width: 100%;
+        text-align: center;
+        margin-bottom:20px;
+        display: flex;
+        align-items: center;
+        /* flex-direction: column; */
+    }
+
     li.event-item {
         list-style: none;
         background-color: #f6f6f6;
@@ -45,6 +61,10 @@ Event List
 
 <div class="sticky-note-container-big mt-5">
     <h1>Events</h1>
+    <form id="search-form" class="search-container">
+        <input type="text" name="search" class="event-search-input" id="event-search" placeholder="   Search by event name">
+        <button type="submit" class="event-search btn btn-primary">Search</button>
+    </form>
     <ul>
         {% for event in events %}
         <li class="event-item">
@@ -71,4 +91,22 @@ Event List
         {% endfor %}
     </ul>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script type="text/javascript">
+const searchForm = document.getElementById('search-form');
+
+// Event listener for form submission
+searchForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const searchQuery = document.getElementById('event-search').value;
+    const params = new URLSearchParams();
+    params.set('search', searchQuery);
+
+    // Reload the page with query parameters
+    window.location.href = `?${params.toString()}`;
+});
+</script>
 {% endblock %}
