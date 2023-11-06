@@ -4,6 +4,8 @@ branch-defaults:
     group_suffix: null
   develop:
     environment: cheerup-env
+  join-a-event:
+    environment: cheerup-env
   test-deployment:
     environment: cheerup-env
 global:
