@@ -4,8 +4,8 @@ from .models import Event, Location
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import datetime
-from django.contrib.auth import authenticate
 import pytz
+import json
 
 
 class UpdateEventViewTest(TestCase):
@@ -38,8 +38,6 @@ class UpdateEventViewTest(TestCase):
         self.assertContains(response, "Test Event")  # Replace with expected content
 
     def test_update_event_view_post(self):
-        isloggedin = self.client.login(username="testuser", password="testpassword")
-        print(isloggedin)
         new_location = Location.objects.create(location_name="New Location")
         new_york_tz = pytz.timezone("America/New_York")
         current_time_ny = datetime.now(new_york_tz)
@@ -55,11 +53,10 @@ class UpdateEventViewTest(TestCase):
             "event_location_id": new_location.id,
         }
         url = reverse("events:update-event", args=(self.event.id,))
-        response = self.client.post(url, updated_data)
-
-        self.assertEqual(response.status_code, 200)  # Should redirect
+        self.client.login(username="testuser", password="testpassword")
+        self.client.post(url, updated_data)
         self.assertEqual(
-            Event.objects.get(pk=self.event.id).event_name, "Test Event"
+            Event.objects.get(pk=self.event.id).event_name, "Updated Event"
         )  # Verify data was updated
 
 
@@ -105,6 +102,7 @@ class EventValidationTests(TestCase):
         self.location = Location.objects.create(location_name="Location 1")
 
     def test_update_event_with_valid_data(self):
+        self.client.login(username="testuser", password="testpassword")
         new_york_tz = pytz.timezone("America/New_York")
         current_time_ny = datetime.now(new_york_tz)
         start_time = current_time_ny + timezone.timedelta(hours=1)
@@ -121,7 +119,7 @@ class EventValidationTests(TestCase):
         )
         start_time = datetime.now(new_york_tz) + timezone.timedelta(hours=4)
         end_time = start_time + timezone.timedelta(hours=3)
-
+        self.client.login(username="testuser", password="testpassword")
         response = self.client.post(
             reverse("events:update-event", args=[event.id]),
             {
@@ -137,12 +135,11 @@ class EventValidationTests(TestCase):
 
         # Check if the event was updated in the database
         updated_event = Event.objects.get(pk=event.id)
-        self.assertEqual(updated_event.event_name, "Event 1")
+        self.assertEqual(updated_event.event_name, "Updated Event")
 
     def test_update_event_with_invalid_data(self):
         user = User.objects.create_user("testuser2", password="testpassword")
-        user = authenticate(username="testuser", password="testpassword")
-        self.client.login(request=None, user=user)
+        self.client.login(username="testuser", password="testpassword")
         # Create an instance of Event with valid data and set the creator
         new_york_tz = pytz.timezone("America/New_York")
         current_time_ny = datetime.now(new_york_tz)
@@ -172,46 +169,36 @@ class EventValidationTests(TestCase):
                 "creator": 1,
             },
         )
-
-        self.assertEqual(response.status_code, 302)  # Should stay on the same page
+        self.assertEqual(response['Content-Type'], 'application/json')
+        self.assertEqual(response.status_code, 400)  # Should stay on the same page
+        content = json.loads(response.content)
+        self.assertEqual(content["event_name"], "Event name cannot be empty.")  # Replace with expected content
+        self.assertEqual(content["event_location_id"], "Event location is required.")  # Replace with expected content
+        self.assertEqual(content["start_time"], "Start time is required.")  # Replace with expected content
+        self.assertEqual(content["end_time"], "End time is required.")  # Replace with expected content
+        self.assertEqual(content["capacity"], "Capacity must be a valid number.")  # Replace with expected conten
 
     def test_save_event_with_valid_data(self):
-        all_users = User.objects.all()
-
-        # Iterate through the users and print their details
-        for user in all_users:
-            print(f"User ID: {user.id}")
-            print(f"Username: {user.username}")
-            login_successful = self.client.login(request=None, user=user)
-        print(login_successful)
-        # new_york_tz = pytz.timezone("America/New_York")
-        # current_time_ny = datetime.now(new_york_tz)
-        # start_time = current_time_ny + timezone.timedelta(hours=1)
-        # end_time = current_time_ny + timezone.timedelta(hours=2)
-        # start_time = start_time.strftime("%Y-%m-%dT%H:%M")
-        # end_time = end_time.strftime("%Y-%m-%dT%H:%M")
-        # user = authenticate(username="testuser", password="testpassword")
-        # response = self.client.post(
-        #     reverse("events:save-event"),
-        #     {
-        #         "event_location_id": self.location.id,
-        #         "event_name": "New Event",
-        #         "start_time": start_time,
-        #         "end_time": end_time,
-        #         "capacity": 50,
-        #     },
-        # )
-        # redirected_url = response.url
-
-        # Use client to make another GET request to the redirected URL
-        # redirected_response = self.client.get(redirected_url)
-        # print(response.content)
-        # print(redirected_response.content)
-        # self.assertEqual(response.status_code, 200)  # Redirects to events:index
-
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        start_time = current_time_ny + timezone.timedelta(hours=1)
+        end_time = current_time_ny + timezone.timedelta(hours=2)
+        start_time = start_time.strftime("%Y-%m-%dT%H:%M")
+        end_time = end_time.strftime("%Y-%m-%dT%H:%M")
+        self.client.login(username="testuser", password="testpassword")
+        self.client.post(
+            reverse("events:save-event"),
+            {
+                "event_location_id": self.location.id,
+                "event_name": "New Event",
+                "start_time": start_time,
+                "end_time": end_time,
+                "capacity": 50,
+            },
+        )
         # Check if a new event was created in the database
-        # new_event = Event.objects.get(event_name='New Event')
-        # self.assertEqual(new_event.capacity, 50)
+        new_event = Event.objects.get(event_name='New Event')
+        self.assertEqual(new_event.capacity, 50)
 
     def test_save_event_with_invalid_data(self):
         self.client.login(username="testuser", password="testpassword")
@@ -227,4 +214,11 @@ class EventValidationTests(TestCase):
                 "creator": 1,
             },
         )
-        self.assertEqual(response.status_code, 302)  # Should stay on the same page
+        self.assertEqual(response['Content-Type'], 'application/json')
+        self.assertEqual(response.status_code, 400)  # Should stay on the same page
+        content = json.loads(response.content)
+        self.assertEqual(content["event_name"], "Event name cannot be empty.")  # Replace with expected content
+        self.assertEqual(content["event_location_id"], "Event location is required.")  # Replace with expected content
+        self.assertEqual(content["start_time"], "Start time is required.")  # Replace with expected content
+        self.assertEqual(content["end_time"], "End time is required.")  # Replace with expected content
+        self.assertEqual(content["capacity"], "Capacity must be a valid number.")  # Replace with expected content

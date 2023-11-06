@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, JsonResponse
 from .forms import EventsForm
 from django.urls import reverse
 from .models import Event, Location
@@ -26,55 +26,62 @@ def updateEvent(request, event_id):
         start_time = request.POST.get("start_time")
         end_time = request.POST.get("end_time")
         capacity = request.POST.get("capacity")
+
+        # Create a dictionary to store validation errors
+        errors = {}
+
         if not event_name:
-            return HttpResponse("Event name cannot be empty.")
+            errors['event_name'] = "Event name cannot be empty."
 
         if not start_time:
-            return HttpResponse("Start time is required.")
-
-        start_time = timezone.make_aware(
-            timezone.datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
-        )
-        new_york_tz = pytz.timezone("America/New_York")
-        current_time_ny = datetime.now(new_york_tz)
-        if start_time < current_time_ny:
-            return HttpResponse("Start time cannot be in the past.")
+            errors['start_time'] = "Start time is required."
+        else:
+            start_time = timezone.make_aware(
+                timezone.datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
+            )
+            new_york_tz = pytz.timezone("America/New_York")
+            current_time_ny = datetime.now(new_york_tz)
+            if start_time < current_time_ny:
+                errors['start_time'] = "Start time cannot be in the past."
 
         if not end_time:
-            return HttpResponse("End time is required.")
-
-        end_time = timezone.make_aware(
-            timezone.datetime.strptime(end_time, "%Y-%m-%dT%H:%M")
-        )
-        if end_time < start_time:
-            return HttpResponse("End time cannot be earlier than start time.")
+            errors['end_time'] = "End time is required."
+        else:
+            end_time = timezone.make_aware(
+                timezone.datetime.strptime(end_time, "%Y-%m-%dT%H:%M")
+            )
+            if end_time < start_time:
+                errors['end_time'] = "End time cannot be earlier than start time."
 
         if not capacity:
-            return HttpResponse("Capacity is required.")
-        try:
-            capacity = int(capacity)
-            if capacity < 0:
-                return HttpResponse("Capacity must be a non-negative number.")
-        except ValueError:
-            return HttpResponse("Capacity must be a valid number.")
+            errors['capacity'] = "Capacity is required."
+        else:
+            try:
+                capacity = int(capacity)
+                if capacity < 0:
+                    errors['capacity'] = "Capacity must be a non-negative number."
+            except ValueError:
+                errors['capacity'] = "Capacity must be a valid number."
 
         if not event_location_id:
-            return HttpResponse("Event location is required.")
+            errors['event_location_id'] = "Event location is required."
+        else:
+            try:
+                event_location_id = int(event_location_id)
+                if event_location_id <= 0:
+                    errors['event_location_id'] = "Event location must be selected."
+            except ValueError:
+                errors['event_location_id'] = "Invalid event location."
 
-        try:
-            event_location_id = int(event_location_id)
-            if event_location_id <= 0:
-                return HttpResponse("Event location must be selected.")
-        except ValueError:
-            return HttpResponse("Invalid event location.")
-        print("POST")
+        if errors:
+            # Return a JSON response with a 400 status code and the error messages
+            return JsonResponse(errors, status=400)
         location_object = Location.objects.get(id=event_location_id)
         event.event_location = location_object
         event.event_name = event_name
         event.start_time = start_time
         event.end_time = end_time
         event.capacity = capacity
-        print("POST 2")
         event.save()
 
         return redirect("events:index")  # Redirect to the event list or a success page
@@ -92,54 +99,52 @@ def saveEvent(request):
         end_time = request.POST.get("end_time")
         capacity = request.POST.get("capacity")
         creator = request.user
-
+        # Create a dictionary to hold validation errors
+        errors = {}
         # Validate the data
         if not event_name:
-            return redirect("events:index", error_message="Event name cannot be empty.")
+            errors["event_name"] = "Event name cannot be empty."
 
         if not event_location_id:
-            return redirect("events:index", error_message="Event location is required.")
-        try:
-            location_object = Location.objects.get(id=event_location_id)
-        except Location.DoesNotExist:
-            return redirect("events:index", error_message="Invalid event location.")
-
+            errors["event_location_id"] = "Event location is required."
+        else:
+            try:
+                location_object = Location.objects.get(id=event_location_id)
+            except Location.DoesNotExist:
+                errors["event_location_id"] = "Invalid event location."
         if not start_time:
-            return redirect("events:index", error_message="Start time is required.")
-        start_time = timezone.make_aware(
-            timezone.datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
-        )
-        new_york_tz = pytz.timezone("America/New_York")
-        current_time_ny = datetime.now(new_york_tz)
-        if start_time < current_time_ny:
-            return redirect(
-                "events:index", error_message="Start time cannot be in the past."
+            errors["start_time"] = "Start time is required."
+        else:
+            start_time = timezone.make_aware(
+                timezone.datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
             )
+            new_york_tz = pytz.timezone("America/New_York")
+            current_time_ny = datetime.now(new_york_tz)
+            if start_time < current_time_ny:
+                errors["start_time"] = "Start time cannot be in the past."
 
         if not end_time:
-            return redirect("events:index", error_message="End time is required.")
-        end_time = timezone.make_aware(
-            timezone.datetime.strptime(end_time, "%Y-%m-%dT%H:%M")
-        )
-        if end_time < start_time:
-            return redirect(
-                "events:index",
-                error_message="End time cannot be earlier than start time.",
+            errors["end_time"] = "End time is required."
+        else:
+            end_time = timezone.make_aware(
+                timezone.datetime.strptime(end_time, "%Y-%m-%dT%H:%M")
             )
+            if end_time < start_time:
+                errors["end_time"] = "End time cannot be earlier than start time."
 
         if not capacity:
-            return redirect("events:index", error_message="Capacity is required.")
-        try:
-            capacity = int(capacity)
-            if capacity < 0:
-                return redirect(
-                    "events:index",
-                    error_message="Capacity must be a non-negative number.",
-                )
-        except ValueError:
-            return redirect(
-                "events:index", error_message="Capacity must be a valid number."
-            )
+            errors["capacity"] = "Capacity is required."
+        else:
+            try:
+                capacity = int(capacity)
+                if capacity < 0:
+                    errors["capacity"] = "Capacity must be a non-negative number."
+            except ValueError:
+                errors["capacity"] = "Capacity must be a valid number."
+
+        if errors:
+            # Return a 400 Bad Request response with JSON error messages
+            return JsonResponse(errors, status=400)
 
         # All validations passed; create the event
         event = Event(
@@ -155,7 +160,7 @@ def saveEvent(request):
         return HttpResponseRedirect(reverse("events:index"))
 
     except KeyError:
-        return redirect("events:index")
+        return JsonResponse({"error": "Invalid request data."}, status=400)
 
 
 @login_required
