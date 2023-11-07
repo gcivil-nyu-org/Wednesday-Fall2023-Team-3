@@ -22,12 +22,12 @@ def index(request):
     # Set the timezone to New York
     ny_timezone = pytz.timezone("America/New_York")
     current_time_ny = timezone.now().astimezone(ny_timezone)
-
-    # Filter events that are active and end time is greater than current time in NY
+    search_query = request.GET.get(
+        "search", ""
+    )  # Get the search query from the URL parameter
     events = Event.objects.filter(
-        end_time__gt=current_time_ny, is_active=True
+        end_time__gt=current_time_ny, is_active=True, event_name__icontains=search_query
     ).order_by("-start_time")
-
     # Process the filter form
     if request.GET:
         form = EventFilterForm(request.GET)
@@ -56,6 +56,7 @@ def index(request):
                 events = events.filter(end_time__lte=end_time_ny)
     else:
         form = EventFilterForm()
+    # Filter events that are active and end time is greater than current time in NY
 
     context = {
         "events": events,

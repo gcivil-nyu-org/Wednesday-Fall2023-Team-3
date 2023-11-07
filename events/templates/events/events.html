@@ -11,6 +11,24 @@
     <link rel="stylesheet" href="{% static 'events/css/styles.css' %}">
     {% block extra_styles %}
 <style>   
+    .sticky-note-container-big {
+        width: 100%;
+        background-color: #a6cff4;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        margin: 0;
+    }
+    .filter-form {
+        padding-left: 2rem;
+        margin-bottom: 20px;
+    }
+    .search_name {
+        border-radius: 5px;
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        margin-right: 20px;
+    }
+
     li.event-item {
         list-style: none;
         background-color: #f6f6f6;
@@ -84,8 +102,12 @@
 
                 <label for="end_time">End Time:</label>
                 <input type="datetime-local" name="end_time" id="end_time" required>
-
-                <input type="submit" value="Filter" class="btn btn-primary">
+                <div class="padding-16"></div>
+                <br>
+                <label for="search_name">Search by Event Name</label>
+                <input type="text" name="search" class="search_name" id="search_name" placeholder="   Search by event name">
+                <br>
+                <input type="submit" value="Filter" class="btn btn-secondary">
             </form>
 
             <!-- Error messages for invalid input -->
@@ -118,7 +140,7 @@
                     {% endif %}
                 </li>
                 {% empty %}
-                <li>No events that fit your schedule? How about <button onclick='window.location="{% url 'events:create-event' %}";'>CREATING</button> one?</li>
+                <li>No events that fit your schedule? How about <button class="btn btn-secondary" onclick='window.location="{% url 'events:create-event' %}";'>CREATING</button> one?</li>
                 {% endfor %}
             </ul>
         </div>
