@@ -10,3 +10,5 @@ class EventsForm(forms.Form):
 class EventFilterForm(forms.Form):
     start_time = forms.DateTimeField(required=False)
     end_time = forms.DateTimeField(required=False)
+    min_capacity = forms.IntegerField(min_value=0, required=False)
+    max_capacity = forms.IntegerField(min_value=0, required=False)

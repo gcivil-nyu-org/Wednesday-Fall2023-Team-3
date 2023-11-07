@@ -9,6 +9,72 @@ import pytz
 from .constants import PENDING, APPROVED, WITHDRAWN, REJECTED, REMOVED
 
 
+from django.test import TestCase
+from django.urls import reverse
+from django.utils import timezone
+from .models import User, Event, Location
+from datetime import timedelta
+
+class EventIndexViewCapacityFilterTest(TestCase):
+    def setUp(self):
+        # Set up user and location
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.location = Location.objects.create(location_name="Test Location")
+        
+        # Create events with varying capacities
+        self.event_low_capacity = Event.objects.create(
+            event_name="Low Capacity Event",
+            start_time=timezone.now() + timedelta(days=1),
+            end_time=timezone.now() + timedelta(days=1, hours=2),
+            capacity=10,
+            event_location=self.location,
+            is_active=True,
+            creator=self.user,
+        )
+        
+        self.event_high_capacity = Event.objects.create(
+            event_name="High Capacity Event",
+            start_time=timezone.now() + timedelta(days=1),
+            end_time=timezone.now() + timedelta(days=1, hours=2),
+            capacity=60,
+            event_location=self.location,
+            is_active=True,
+            creator=self.user,
+        )
+    
+    def test_event_index_view_with_inverted_capacity_filter(self):
+        # Filter with minimum capacity higher than maximum capacity
+        min_capacity = 150
+        max_capacity = 50
+        
+        url = reverse("events:index")
+        response = self.client.get(url, {"min_capacity": min_capacity, "max_capacity": max_capacity})
+        
+        # Check if the error message is as expected
+        self.assertEqual(
+            response.context.get("error"), 
+            "Minimum capacity cannot be greater than maximum capacity."
+        )
+    def test_event_index_view_with_valid_capacity_filter(self):
+        # Filter with a valid range where min_capacity is less than max_capacity
+        min_capacity = 20
+        max_capacity = 120
+        
+        url = reverse("events:index")
+        response = self.client.get(url, {"min_capacity": min_capacity, "max_capacity": max_capacity})
+        
+        # Check that only events within the specified capacity range are in the context
+        self.assertIn(self.event_high_capacity, response.context.get("events", []))
+        self.assertNotIn(self.event_low_capacity, response.context.get("events", []))
+        
+        # Check if there is no error message
+        self.assertIsNone(response.context.get("error", None))
+        
+        # Additionally, check if the form is valid
+        self.assertTrue(response.context.get("form").is_valid())
+
 class EventIndexViewFilterNegativeTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(

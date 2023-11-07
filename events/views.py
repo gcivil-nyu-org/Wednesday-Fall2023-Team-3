@@ -17,46 +17,68 @@ from .forms import EventFilterForm
 import pytz
 
 
-# Modify the index view function
+# Existing imports and index view function...
+
 def index(request):
-    # Set the timezone to New York
+    # Set the timezone to New York and get the current time
     ny_timezone = pytz.timezone("America/New_York")
     current_time_ny = timezone.now().astimezone(ny_timezone)
 
-    # Filter events that are active and end time is greater than current time in NY
+    # Filter events that are active and whose end time is greater than the current time in NY
     events = Event.objects.filter(
         end_time__gt=current_time_ny, is_active=True
     ).order_by("-start_time")
 
-    # Process the filter form
-    if request.GET:
-        form = EventFilterForm(request.GET)
-        if form.is_valid():
-            if form.cleaned_data["start_time"]:
-                # Convert the start_time to NY timezone before comparing
-                start_time_ny = form.cleaned_data["start_time"].astimezone(ny_timezone)
-                if start_time_ny < current_time_ny:
-                    # Return an error message for start_time in the past
-                    return render(
-                        request,
-                        "events/events.html",
-                        {"error": "Start time cannot be in the past."},
-                    )
-                events = events.filter(start_time__gte=start_time_ny)
-            if form.cleaned_data["end_time"]:
-                # Convert the end_time to NY timezone before comparing
-                end_time_ny = form.cleaned_data["end_time"].astimezone(ny_timezone)
-                if end_time_ny <= start_time_ny:
-                    # Return an error message for end_time before start_time
-                    return render(
-                        request,
-                        "events/events.html",
-                        {"error": "End time cannot be before start time."},
-                    )
-                events = events.filter(end_time__lte=end_time_ny)
+    # Initialize the form with request.GET or None
+    form = EventFilterForm(request.GET or None)
+
+    if request.GET and form.is_valid():
+        start_time_ny = None
+        end_time_ny = None
+        
+        # Start Time filter
+        if form.cleaned_data["start_time"]:
+            start_time_ny = form.cleaned_data["start_time"].astimezone(ny_timezone)
+            if start_time_ny < current_time_ny:
+                # Return an error message if start time is in the past
+                return render(
+                    request,
+                    "events/events.html",
+                    {"events": events, "form": form, "error": "Start time cannot be in the past."}
+                )
+            events = events.filter(start_time__gte=start_time_ny)
+
+        # End Time filter
+        if form.cleaned_data["end_time"]:
+            end_time_ny = form.cleaned_data["end_time"].astimezone(ny_timezone)
+            if end_time_ny <= (start_time_ny or current_time_ny):
+                # Return an error message if end time is before start time
+                return render(
+                    request,
+                    "events/events.html",
+                    {"events": events, "form": form, "error": "End time cannot be before start time."}
+                )
+            events = events.filter(end_time__lte=end_time_ny)
+
+        # Capacity filter
+        min_capacity = form.cleaned_data.get("min_capacity")
+        max_capacity = form.cleaned_data.get("max_capacity")
+
+        if min_capacity is not None and max_capacity is not None:
+            if min_capacity > max_capacity:
+                # Return an error message if min capacity is greater than max capacity
+                return render(
+                    request,
+                    "events/events.html",
+                    {"events": events, "form": form, "error": "Minimum capacity cannot be greater than maximum capacity."}
+                )
+            events = events.filter(capacity__gte=min_capacity, capacity__lte=max_capacity)
+
+    # If the form was not submitted or is not valid, instantiate a new form
     else:
         form = EventFilterForm()
 
+    # Prepare the context with events and form
     context = {
         "events": events,
         "form": form,
@@ -66,6 +88,7 @@ def index(request):
     if not events:
         context["message"] = "No events that fit your schedule? How about CREATING one?"
 
+    # Render the events page with the context
     return render(request, "events/events.html", context)
 
 
