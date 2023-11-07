@@ -71,7 +71,7 @@ Create Event
                 <ul id="autocomplete-list" class="list-group mt-2"></ul>
             </div>            
 
-            <button type="submit" class="btn btn-primary" id="create-event-button">CREATE MY EVENT</button>
+            <button type="submit" class="btn btn-primary" id="create-event-button" disabled>CREATE MY EVENT</button>
         </fieldset>
     </form>
 </div>
@@ -83,13 +83,119 @@ Create Event
 
 {% block extra_scripts %}
 <script type="text/javascript">
+    const input = document.getElementById('autocomplete-input');
+    const list = document.getElementById('autocomplete-list');
+    const selectedIdInput = document.getElementById('selected-location-id');
+    const eventNameInput = document.getElementById('event_name');
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+    const capacityInput = document.getElementById('capacity');
+    const createEventButton = document.getElementById('create-event-button');
+    let startTimeInvalid = true;
+    let endTimeInvalid = true;
+    let capacityInvalid = true;
+    let isLocationNotSet = true;
+    const API_ENDPOINT = '/locations/autocomplete/?term=';
 
-const input = document.getElementById('autocomplete-input');
-        const list = document.getElementById('autocomplete-list');
-        const selectedIdInput = document.getElementById('selected-location-id');
+    // Function to validate date and time format (YYYY-MM-DDTHH:mm)
+    function isValidDateTime(dateTimeStr) {
+    const dateTimeRegex = /^\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}$/;
+    return dateTimeRegex.test(dateTimeStr);
+    }
 
-        // Replace 'YOUR_API_ENDPOINT' with the actual API endpoint you want to use.
-        const API_ENDPOINT = '/locations/autocomplete/?term=';
+    function setCreateEventButtonState() {
+        if(startTimeInvalid || endTimeInvalid || capacityInvalid || isLocationNotSet || eventNameInput.value == "") {
+            createEventButton.disabled = true;
+        } else {
+            createEventButton.disabled = false;
+        }
+    }
+
+    eventNameInput.addEventListener('change', function () {
+        setCreateEventButtonState()
+    });
+
+    startTimeInput.addEventListener('change', function () {
+        // Validation for Start Time against the present time
+        const now = new Date().toLocaleString('en-US', {
+            timeZone: 'America/New_York',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        const date2 = new Date(startTimeInput.value);
+        const startTime = date2.toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        if (!isValidDateTime(startTime) || startTime <= now) {
+            startTimeInvalid = true;
+            alert("Invalid Start Time");
+        } else {
+            startTimeInvalid = false;
+        }
+        setCreateEventButtonState()
+    });
+
+    endTimeInput.addEventListener('change', function () {
+        // Validation for End Time against Start Time
+        const now = new Date().toLocaleString('en-US', {
+            timeZone: 'America/New_York',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        const date1 = new Date(startTimeInput.value);
+        const startTime = date1.toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        const date2 = new Date(endTimeInput.value);
+        const endTime = date2.toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        if (!isValidDateTime(endTime) || new Date(endTime) <= new Date(startTime)) {
+            endTimeInvalid = true;
+            alert("Invalid End Time");
+        } else {
+            endTimeInvalid = false;
+        }
+        if (!isValidDateTime(startTime) || startTime <= now) {
+            startTimeInvalid = true
+            alert("Invalid Start Time");
+        }
+        setCreateEventButtonState()
+    });
+
+    capacityInput.addEventListener('input', function () {
+        // Validation for Capacity (non-negative)
+        if (capacityInput.value <= 0) {
+            capacityInvalid = true;
+            alert("Invalid capacity Input")
+        } else {
+            capacityInvalid = false
+        }
+        setCreateEventButtonState()
+    });
 
         input.addEventListener('input', async function () {
             const query = input.value.toLowerCase();
@@ -107,13 +213,19 @@ const input = document.getElementById('autocomplete-input');
                             input.value = item.text; // Set the id as the input field's value
                             selectedIdInput.value = item.id; // Store the ID in the hidden input
                             list.innerHTML = '';
+                            isLocationNotSet = false;
+                            setCreateEventButtonState()
                         });
                         list.appendChild(listItem);
                     });
                 } catch (error) {
                     console.error('Error fetching data from the API:', error);
                 }
+            } 
+            if(!query || query == "") {
+                isLocationNotSet = true;
             }
+            setCreateEventButtonState()
         });
 
         document.addEventListener('click', function (event) {

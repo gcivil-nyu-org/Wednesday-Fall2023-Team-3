@@ -5,4 +5,8 @@ coverage>=6.5.0
 coveralls>=3.3.1
 python-coveralls>=2.9.3
 psycopg2>=2.9.9
+<<<<<<< HEAD
+pytz>=2023.3.post1
+=======
 pytz>=2021.1
+>>>>>>> f09f1adcefdf38a25e78336f64ccc6299c049a2c
