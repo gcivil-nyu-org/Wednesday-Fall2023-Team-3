@@ -128,7 +128,7 @@
             <ul>
                 {% for event in events %}
                 <li class="event-item">
-                    <a href="{% url 'events:event-detail' event.id %}"><strong>{{ event.event_name }}</strong></a>
+                    <a id={{event.id}} href="{% url 'events:event-detail' event.id %}" class="event-name"><strong>{{ event.event_name }}</strong></a>
                     <p>Event Location: {{ event.event_location }}</p>
                     <p>Start time: {{ event.start_time }}</p>
                     <p>End Time: {{ event.end_time }}</p>
