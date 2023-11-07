@@ -10,6 +10,8 @@ urlpatterns = [
     path("delete/<int:event_id>/", views.deleteEvent, name="delete-event"),
     path("update/<int:event_id>/", views.updateEvent, name="update-event"),
     path("<int:event_id>/", views.eventDetail, name="event-detail"),
+    path("events/", views.get_data, name="events"),
+    path("locations/", views.get_locations, name="locations"),
     path(
         "<int:event_id>/toggle-join/,",
         views.toggleJoinRequest,
