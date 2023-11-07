@@ -19,7 +19,9 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 
 urlpatterns = [
-    path('', RedirectView.as_view(pattern_name='events:index', permanent=False)), #this will change later
+    path(
+        "", RedirectView.as_view(pattern_name="events:index", permanent=False)
+    ),  # this will change later
     path("admin/", admin.site.urls),
     path("events/", include("events.urls")),
     path("locations/", include("location.urls")),
