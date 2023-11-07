@@ -15,6 +15,7 @@ from django.utils import timezone
 from .forms import EventFilterForm
 from datetime import datetime
 import pytz
+from django.db.models import Q
 
 
 # Existing imports and index view function...
@@ -29,8 +30,11 @@ def index(request):
     search_query = request.GET.get(
         "search", ""
     )  # Get the search query from the URL parameter
-    events = Event.objects.filter(
-        end_time__gt=current_time_ny, is_active=True, event_name__icontains=search_query
+    locations = Location.objects.filter(location_name__icontains=search_query)
+    event_ids = [location.id for location in locations]
+    events = Event.objects.filter(Q(event_name__icontains=search_query) | Q(event_location__in=event_ids))
+    events = events.filter(
+        end_time__gt=current_time_ny, is_active=True
     ).order_by("-start_time")
 
     # Initialize the form with request.GET or None
