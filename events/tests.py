@@ -735,3 +735,71 @@ class EventValidationTests(TestCase):
         content = json.loads(response.content)
         self.assertEqual(content["start_time"], "Start time cannot be in the past.")
         self.assertEqual(content["capacity"], "Capacity is required.")
+
+class NavbarTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=40),
+            end_time=current_time_ny + timedelta(hours=45),
+            capacity=8,
+            is_active=True,
+            creator=self.user,
+        )
+        self.login_url = reverse('login')
+        self.logout_url = reverse('logout')
+    
+    def test_navbar_contains_login_when_logged_out(self):
+        # Get the response from the events index page
+        response = self.client.get(reverse('events:index'))
+        # Check that the response contains the login link
+        self.assertContains(response, 'Log in')
+        self.assertNotContains(response, 'Log out')
+    
+    def test_navbar_contains_logout_when_logged_in(self):
+        self.client.login(username='testuser', password='testpassword')
+        response = self.client.get(reverse('events:index'))
+        self.assertContains(response, 'Log out')
+        self.assertNotContains(response, 'Log in')
+
+    def test_navbar_shows_username_when_logged_in(self):
+        self.client.login(username='testuser', password='testpassword')
+        response = self.client.get(reverse('events:index'))
+        self.assertContains(response, 'Hello testuser')
+
+    def test_logout_stays_on_current_page(self):
+        self.client.login(username='testuser', password='testpassword')
+        current_page = reverse("events:event-detail", args=(self.event.id,))
+        self.client.get(current_page)
+        response = self.client.get(reverse('logout') + '?next=' + current_page, follow=True)
+        # Check if the response redirects to the same page
+        self.assertRedirects(response, current_page)
+        # Ensure the user has been logged out
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_login_redirects_to_home_not_signup(self):
+        # Simulate being on the signup page
+        self.client.get(reverse('signup'))
+        # Then simulate clicking the log in link from the signup page
+        login_response = self.client.get(reverse('login'), {'next': reverse('signup')}, follow=True)
+        # Check if the next parameter is set to redirect to 'events:index' instead of 'signup'
+        self.assertTrue(login_response.context['next'], reverse('events:index'))
+        # Perform the login with the overridden next parameter
+        login_response = self.client.post(
+            reverse('login'), 
+            {'username': 'testuser', 'password': 'testpassword', 'next': reverse('events:index')}, 
+            follow=True
+        )    
+        # Check that after login, the user is redirected to 'events:index' page and not back to the signup page
+        self.assertRedirects(login_response, reverse('events:index'))
+
+    def tearDown(self):
+        # Clean up after each test case
+        self.user.delete()
