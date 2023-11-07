@@ -15,6 +15,7 @@ from django.utils import timezone
 from .forms import EventFilterForm
 from datetime import datetime
 import pytz
+from django.db.models import Q
 
 
 # Existing imports and index view function...
@@ -29,9 +30,14 @@ def index(request):
     search_query = request.GET.get(
         "search", ""
     )  # Get the search query from the URL parameter
+    locations = Location.objects.filter(location_name__icontains=search_query)
+    event_ids = [location.id for location in locations]
     events = Event.objects.filter(
-        end_time__gt=current_time_ny, is_active=True, event_name__icontains=search_query
-    ).order_by("-start_time")
+        Q(event_name__icontains=search_query) | Q(event_location__in=event_ids)
+    )
+    events = events.filter(end_time__gt=current_time_ny, is_active=True).order_by(
+        "-start_time"
+    )
 
     # Initialize the form with request.GET or None
     form = EventFilterForm(request.GET or None)
@@ -165,9 +171,20 @@ def updateEvent(request, event_id):
                 event_location_id = int(event_location_id)
                 if event_location_id <= 0:
                     errors["event_location_id"] = "Event location must be selected."
+                else:
+                    location_object = Location.objects.get(id=event_location_id)
+                    if Event.objects.filter(
+                        event_name=event_name,
+                        event_location=location_object,
+                        start_time=start_time,
+                        end_time=end_time,
+                        is_active=True,
+                    ).exists():
+                        errors[
+                            "similar_event_error"
+                        ] = "An event with these details already exists."
             except ValueError:
                 errors["event_location_id"] = "Invalid event location."
-
         if errors:
             # Return a JSON response with a 400 status code and the error messages
             return JsonResponse(errors, status=400)
@@ -240,7 +257,17 @@ def saveEvent(request):
         if errors:
             # Return a 400 Bad Request response with JSON error messages
             return JsonResponse(errors, status=400)
-
+        if Event.objects.filter(
+            event_name=event_name,
+            event_location=location_object,
+            start_time=start_time,
+            end_time=end_time,
+            is_active=True,
+        ).exists():
+            error_message = "An event with these details already exists."
+            return HttpResponseRedirect(
+                reverse("events:index") + f"?error_message={error_message}"
+            )
         # All validations passed; create the event
         event = Event(
             event_name=event_name,
