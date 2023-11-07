@@ -94,29 +94,6 @@
                 {{ error }}
             </div>
             {% endif %}
-<<<<<<< HEAD
-        </li>
-        {% endfor %}
-    </ul>
-</div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-const urlParams = new URLSearchParams(window.location.search);
-const error_message = urlParams.get('error_message');
-
-// Display the error message if it exists
-if (error_message) {
-    alert(error_message)
-}
-// Remove the error message from the URL
-urlParams.delete('error_message');
-const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-window.history.replaceState({}, document.title, newUrl);
-</script>
-{% endblock %}
-=======
             <ul>
                 {% for event in events %}
                 <li class="event-item">
@@ -176,6 +153,18 @@ window.history.replaceState({}, document.title, newUrl);
           
           return true;
         }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const error_message = urlParams.get('error_message');
+
+    // Display the error message if it exists
+    if (error_message) {
+        alert(error_message)
+    }
+    // Remove the error message from the URL
+    urlParams.delete('error_message');
+    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+    window.history.replaceState({}, document.title, newUrl);
     </script>   
     
     {% endblock %}
@@ -185,4 +174,3 @@ window.history.replaceState({}, document.title, newUrl);
 </footer>
 </html>
 
->>>>>>> 9fdf89a250f9657b22f26f15c833fddf14b1136b
