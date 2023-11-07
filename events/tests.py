@@ -589,12 +589,8 @@ class EventValidationTests(TestCase):
         self.assertEqual(response["Content-Type"], "application/json")
         self.assertEqual(response.status_code, 400)  # Should stay on the same page
         content = json.loads(response.content)
-        self.assertEqual(
-            content["start_time"], "Start time cannot be in the past."
-        )
-        self.assertEqual(
-            content["capacity"], "Capacity is required."
-        )
+        self.assertEqual(content["start_time"], "Start time cannot be in the past.")
+        self.assertEqual(content["capacity"], "Capacity is required.")
 
     def test_save_event_with_valid_data(self):
         new_york_tz = pytz.timezone("America/New_York")
@@ -673,9 +669,5 @@ class EventValidationTests(TestCase):
         self.assertEqual(response["Content-Type"], "application/json")
         self.assertEqual(response.status_code, 400)  # Should stay on the same page
         content = json.loads(response.content)
-        self.assertEqual(
-            content["start_time"], "Start time cannot be in the past."
-        )
-        self.assertEqual(
-            content["capacity"], "Capacity is required."
-        )
+        self.assertEqual(content["start_time"], "Start time cannot be in the past.")
+        self.assertEqual(content["capacity"], "Capacity is required.")
