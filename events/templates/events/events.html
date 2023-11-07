@@ -9,7 +9,27 @@
     <link rel="stylesheet" href="{% static 'events/css/bootstrap.min.css' %}">
     <!-- Your Custom CSS -->
     <link rel="stylesheet" href="{% static 'events/css/styles.css' %}">
-    {% block extra_styles %}{% endblock %}
+    {% block extra_styles %}
+<style>   
+    li.event-item {
+        list-style: none;
+        background-color: #f6f6f6;
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .button-container {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .button-container form {
+        margin: 0;
+    }
+
+</style>
+    {% endblock %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
@@ -57,6 +77,23 @@
         <div class="container">
         <div class="sticky-note-container-big mt-5">
             <h1>Events</h1>
+            <!-- Filtering form -->
+            <form method="get" action="{% url 'events:index' %}" class="filter-form" onsubmit="return validateForm()">
+                <label for="start_time">Start Time:</label>
+                <input type="datetime-local" name="start_time" id="start_time" required>
+
+                <label for="end_time">End Time:</label>
+                <input type="datetime-local" name="end_time" id="end_time" required>
+
+                <input type="submit" value="Filter" class="btn btn-primary">
+            </form>
+
+            <!-- Error messages for invalid input -->
+            {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+            {% endif %}
             <ul>
                 {% for event in events %}
                 <li class="event-item">
@@ -80,6 +117,8 @@
                         </div>
                     {% endif %}
                 </li>
+                {% empty %}
+                <li>No events that fit your schedule? How about <button onclick='window.location="{% url 'events:create-event' %}";'>CREATING</button> one?</li>
                 {% endfor %}
             </ul>
         </div>
@@ -88,9 +127,6 @@
         {% endblock %}
     </main>
 
-    <footer>
-        <!-- You can put common footer content here -->
-    </footer>
 
     <!-- Link Bootstrap JS -->
     <script src="{% static 'events/js/script.js' %}"></script>
@@ -98,6 +134,31 @@
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDuFnfuacTqMttUXdVn24zdfGUHRi0XN5E&map_ids=9a7e26117f10196d&callback=initMap">
     </script>
     <script src="{% static 'events/js/bootstrap.bundle.min.js' %}"></script>
-    {% block extra_scripts %}{% endblock %}
+    {% block extra_scripts %}
+    <script>
+        function validateForm() {
+          var startTime = document.getElementById('start_time').value;
+          var endTime = document.getElementById('end_time').value;
+          var now = new Date().toISOString().slice(0, 16); // match the format of the datetime-local input
+          
+          if (startTime < now) {
+            alert('Start time cannot be in the past.');
+            return false;
+          }
+          
+          if (endTime <= startTime) {
+            alert('End time cannot be before start time.');
+            return false;
+          }
+          
+          return true;
+        }
+    </script>   
+    
+    {% endblock %}
 </body>
+<footer>
+    <!-- You can put common footer content here -->
+</footer>
 </html>
+

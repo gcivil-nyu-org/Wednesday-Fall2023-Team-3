@@ -6,6 +6,7 @@ python:
 
 before_install:
   - pip install 'urllib3<2.0'
+ # - sudo apt-get update
 
 # Define your build steps, for example:
 install:
