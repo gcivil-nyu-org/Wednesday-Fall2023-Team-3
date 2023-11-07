@@ -6,10 +6,14 @@ async function initMap() {
     });
         const responseEvent = await fetch('events/');
         const responseLocation = await fetch('locations/');
-        
+
+        const eventHtml = document.getElementsByClassName('event-name');
+        let eventIds = [];
+        for(let i =0; i<eventHtml.length;i++){
+          eventIds[i]= Number(eventHtml[i].getAttribute('id'));
+        }       
         const event_data = await responseEvent.json();
         const location_objects = await responseLocation.json();
-        console.log(location_objects);
         const location_data = event_data.location_data;
         const locations = location_objects.locations;
         const locationmap = new Map();
@@ -19,12 +23,15 @@ async function initMap() {
         let duplicateLocationsMap = {};
         for(let i=0; i<location_data.length;i++){
             let loc = location_data[i].fields;
+            if(eventIds.includes(event_data.location_data[i].pk)){
             if(!duplicateLocationsMap[loc.event_location]){
                     duplicateLocationsMap[loc.event_location] = [];
                 }
                 duplicateLocationsMap[loc.event_location].push({name:loc.event_name,id:event_data.location_data[i].pk});
         }
+      }
         for(let i =0; i<location_data.length;i++){
+          if(eventIds.includes(event_data.location_data[i].pk)){
                 let lat = -1, lng = -1;
                 if(locationmap.get(location_data[i].fields.event_location)!=null){
                     lat = locationmap.get(location_data[i].fields.event_location)[0];
@@ -62,6 +69,7 @@ async function initMap() {
                 infoWindow.open(map, marker);
               }); 
     }
+  }
     
   }
 
