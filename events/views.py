@@ -19,6 +19,7 @@ import pytz
 
 # Existing imports and index view function...
 
+
 def index(request):
     # Set the timezone to New York and get the current time
     ny_timezone = pytz.timezone("America/New_York")
@@ -35,7 +36,7 @@ def index(request):
     if request.GET and form.is_valid():
         start_time_ny = None
         end_time_ny = None
-        
+
         # Start Time filter
         if form.cleaned_data["start_time"]:
             start_time_ny = form.cleaned_data["start_time"].astimezone(ny_timezone)
@@ -44,7 +45,11 @@ def index(request):
                 return render(
                     request,
                     "events/events.html",
-                    {"events": events, "form": form, "error": "Start time cannot be in the past."}
+                    {
+                        "events": events,
+                        "form": form,
+                        "error": "Start time cannot be in the past.",
+                    },
                 )
             events = events.filter(start_time__gte=start_time_ny)
 
@@ -56,7 +61,11 @@ def index(request):
                 return render(
                     request,
                     "events/events.html",
-                    {"events": events, "form": form, "error": "End time cannot be before start time."}
+                    {
+                        "events": events,
+                        "form": form,
+                        "error": "End time cannot be before start time.",
+                    },
                 )
             events = events.filter(end_time__lte=end_time_ny)
 
@@ -70,9 +79,15 @@ def index(request):
                 return render(
                     request,
                     "events/events.html",
-                    {"events": events, "form": form, "error": "Minimum capacity cannot be greater than maximum capacity."}
+                    {
+                        "events": events,
+                        "form": form,
+                        "error": "Minimum capacity cannot be greater than maximum capacity.",
+                    },
                 )
-            events = events.filter(capacity__gte=min_capacity, capacity__lte=max_capacity)
+            events = events.filter(
+                capacity__gte=min_capacity, capacity__lte=max_capacity
+            )
 
     # If the form was not submitted or is not valid, instantiate a new form
     else:
