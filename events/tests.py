@@ -1,9 +1,12 @@
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.urls import reverse
-from .models import User, Event, Location
+from .models import User, Event, Location, EventJoin
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
+from datetime import datetime, timedelta
+import pytz
+from .constants import PENDING, APPROVED, WITHDRAWN, REJECTED, REMOVED
 
 
 class EventIndexViewFilterNegativeTest(TestCase):
@@ -102,8 +105,6 @@ class EventDetailPageTest(TestCase):
         self.assertContains(response, "Test Location")
         self.assertContains(response, "100")
         self.assertContains(response, "testuser")
-<<<<<<< HEAD
-=======
 
 
 class MapGetDataTest(TestCase):
@@ -370,4 +371,3 @@ class EventCreatorRemoveApprovedRequestTest(TestCase):
         self.join_request.refresh_from_db()
         self.assertNotEqual(self.join_request.status, REMOVED)
         self.assertEqual(response.status_code, 302)  # redirect
->>>>>>> 6e4539296535fcf0af7fbe934ba9ee06446431ff
