@@ -1,0 +1,96 @@
+{% extends "events/base.html" %}
+
+{% block title %}
+Log In
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+
+.login-form label, 
+.login-form {
+    font-size: 1rem;
+    margin-top: 15px;
+    margin-bottom: 2px;
+    font-family: 'Poppins', sans-serif;    
+}
+.title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+
+.login-form input[type="text"],
+.login-form input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  
+}
+
+#login-button {
+  background-color: #3498db; /* Background color */
+  border: none; /* Remove border */
+  color: #fff; /* Text color */
+  padding: 10px 20px; /* Padding around the text */
+  border-radius: 5px; /* Rounded corners */
+  font-size: 20px; /* Text size */
+  cursor: pointer; /* Cursor on hover */
+  transition: background-color 0.3s; /* Smooth color transition on hover */
+  width: 100%;
+}
+#login-button:hover {
+  background-color: #2980b9; /* Darker background color on hover */
+}
+
+/* Optional: Add more styles for focus and active states if needed */
+#login-button:focus {
+  outline: none; /* Remove the default focus outline */
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.7); /* Add a subtle shadow on focus */
+}
+
+#login-button:active {
+  background-color: #1e87d0; /* Darker background color on button press */
+}
+
+.signup-text {
+    text-align: left;
+    margin-top: 20px; 
+    font-size: 16px; 
+}
+
+.signup-link {
+    color: #3498db; 
+    text-decoration: none; 
+}
+
+.signup-link:hover {
+    text-decoration: underline; 
+}
+
+</style>
+
+
+{% endblock %}
+
+{% block content %}
+
+<div class="sticky-note-container-mid mt-5">
+    <h2 class="title">Log In</h2>
+        <form method="post" class="login-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary" id="login-button">Login</button>
+</form>
+<div class="signup-text">
+  Are you new to CheerUp? <a href="{% url 'signup' %}" class="signup-link">Sign up now</a>
+</div>
+</div>
+
+
+{% endblock %}

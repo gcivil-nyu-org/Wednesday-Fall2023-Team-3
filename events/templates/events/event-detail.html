@@ -1,0 +1,159 @@
+{% extends "events/base.html" %}
+
+{% block title %}
+{{ event }}
+{% endblock %}
+
+
+{% block extra_styles %}
+<style>
+
+.join-button {
+    width: 75%;
+    font-size: 1.5em
+}
+
+.event-detail-container {
+    width: 75%;
+    min-width: 380px;
+}
+
+.creator-action-button {
+    width: 100%;
+}
+
+.approved-join-list {
+    width: 75%;
+}
+
+.pending-join-list {
+    width: 75%;
+}
+
+.join-entry {
+    display: flex;
+    justify-content: space-between; /* This will space out the child elements */
+    align-items: center; /* This will vertically align the child elements */
+    padding: 1%;
+    gap: 10px;
+}
+
+.join-entry-text {
+    flex-grow: 1;
+}
+
+</style>
+
+
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div id="messages">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dimissable fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+<div class="container-fluid m-5">
+    <div class="row">
+        <!-- Left 2/3 of the page for event details -->
+        <div class="col-md-8 my-3">
+            <div class="event-detail-container">
+                <div class="sticky-note-container">
+                    <div class="my-3"><h1>{{ event.event_name }}</h1></div>
+                    <h4>Creator</h4>
+                    <p>{{ event.creator }}</p>
+                    <h4>Date and Time</h4>
+                    <p>from {{ event.start_time }} to {{ event.end_time }}</p>
+                    <!-- <img src="event-image.jpg" alt="Event Image" class="img-fluid rounded"> -->
+                    <h4>Location</h4>
+                    <p>{{ location }}, {{ location.address }} ({{ location.category }})</p>
+                    <h4>Capacity</h4>
+                    <p>{{ event.capacity }}</p>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eget tortor in eros euismod dignissim. Vivamus posuere, 
+                        justo sit amet vehicula eleifend, tortor purus viverra elit, ac convallis tortor urna at eros. 
+                        Sed ac enim at purus bibendum placerat. Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+                        Nullam eget tortor in eros euismod dignissim. Vivamus posuere, justo sit amet vehicula eleifend, 
+                        tortor purus viverra elit, ac convallis tortor urna at eros. 
+                        Sed ac enim at purus bibendum placerat.
+                    </p>
+                    <!-- Add more event details here -->
+                </div>
+            </div>
+        </div>
+        <!-- Right 1/3 of the page for the "Join Us" button -->
+        <div class="col-md-4 my-3">
+            {% if user.is_authenticated %}
+                {% if user != event.creator %}
+                    <!-- The user is not the creator of the event -->
+                    {% if join_status == PENDING %}
+                        <!-- Button to withdraw request -->
+                        <form action="{% url 'events:toggle-join-request' event.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-primary btn-block join-button" id="withdraw-to-join" onclick="return confirm('Are you sure you want to withdraw your request?');">Withdraw the Request</button>
+                        </form>   
+                    {% elif join_status == WITHDRAWN or join_status == None or join_status == REJECTED or join_status == REMOVED %}
+                        <!-- Button to join again or create a new EventJoin object-->
+                        <form action="{% url 'events:toggle-join-request' event.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-block join-button" id="request-to-join" onclick="return confirm('Ready to send a request to join?');">Request to Join</button>
+                        </form>
+                    {% elif join_status == APPROVED %}
+                    <!-- show that the request is approved-->
+                    <div class="btn btn-primary btn-block join-button" id="approved-fake">Approved</div>  
+                    {% endif %}
+                    <div class="approved-join-list sticky-note-container my-4">
+                        <h3>Participants</h3>
+                        <div class="join-entry">{{ event.creator }}</div>
+                        {% for join in approved_join %}
+                            <div class="join-entry">
+                                {{ join.user }}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- The user is the creator of the event -->
+                    <div class="btn btn-primary btn-block join-button" id="my-event-fake">My Event</div>
+                    <div class="pending-join-list sticky-note-container my-4">
+                        <h3>Pending Participants ({{ pending_join_count }})</h3>
+                        {% for join in pending_join %}
+                            <div class="join-entry">
+                                <div class="join-entry-text">{{ join.user }}</div>
+                                <form action="{% url 'events:approve-request' event.id join.user.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary btn-block creator-action-button" id="approve-to-join">Approve</button>
+                                </form>
+                                <form action="{% url 'events:reject-request' event.id join.user.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-primary btn-block creator-action-button" id="reject-to-join">Reject</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="approved-join-list sticky-note-container my-4">
+                        <h3>Approved Participants ({{ approved_join_count }}) </h3>
+                        {% for join in approved_join %}
+                            <div class="join-entry">
+                                <div class="join-entry-text">{{ join.user }}</div>
+                                <form action="{% url 'events:remove-approved-request' event.id join.user.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-primary btn-block creator-action-button" id="remove-approved-to-join" onclick="return confirm('Are you suer to remove this person?');">Remove</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% else %}
+                <!-- Link for non-authenticated users to log in and then join -->
+                <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="btn btn-primary btn-block join-button">Join and See Participants</a>
+            {% endif %} 
+        </div>
+    </div>
+</div>
+
+{% endblock %}

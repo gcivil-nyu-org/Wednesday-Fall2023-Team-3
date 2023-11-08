@@ -1,0 +1,8 @@
+Django>=4.2
+black>=23.10.0
+flake8>=6.1.0
+coverage>=6.5.0
+coveralls>=3.3.1
+python-coveralls>=2.9.3
+psycopg2>=2.9.9
+pytz>=2021.1

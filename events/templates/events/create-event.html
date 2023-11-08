@@ -1,0 +1,237 @@
+{% extends "events/base.html" %}
+
+{% block title %}
+Create Event
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+.create-event-form label, 
+.create-event-form textarea {
+    font-size: 2rem;
+    margin-top: 15px;
+    margin-bottom: 2px;
+    font-family: 'Caveat', cursive;
+    font-weight: 700
+}
+
+#create-event-button {
+    margin-top: 15px;
+    width: 100%;
+}
+
+
+</style>
+
+
+{% endblock %}
+
+{% block content %}
+
+<div class="sticky-note-container-mid mt-5">
+    <form action="{% url 'events:save-event' %}" method="post" class="create-event-form">
+        {% csrf_token %}
+        <fieldset>
+            <!-- <legend class="h1">Create an Event</legend> -->
+            
+            {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                {{ error_message }}
+            </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="event_name">Event Name:</label>
+                <input type="text" class="form-control" name="event_name" id="event_name" placeholder="Add Event Name" required>
+            </div>
+
+            <div class="row">
+                
+                <div class="col-md-6 form-group">
+                    <label for="start_time">Start Time:</label>
+                    <input type="datetime-local" class="form-control" name="start_time" id="start_time" required>
+                </div>
+                <div class="col-md-6 form-group">
+                    <label for="end_time">End Time:</label>
+                    <input type="datetime-local" class="form-control" name="end_time" id="end_time" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="capacity">Capacity:</label>
+                <input type="number" class="form-control" name="capacity" id="capacity" placeholder="Capacity" required>
+            </div>
+
+            
+
+            <div class="form-group">
+                <input type="hidden" id="selected-location-id" name="event_location_id"> <!-- Hidden input to store the ID -->
+                <label for="autocomplete-input">Location:</label>
+                <input type="text" class="form-control" name="location" placeholder="Location" id="autocomplete-input" required>
+                <ul id="autocomplete-list" class="list-group mt-2"></ul>
+            </div>            
+
+            <button type="submit" class="btn btn-primary" id="create-event-button" disabled>CREATE MY EVENT</button>
+        </fieldset>
+    </form>
+</div>
+
+
+{% endblock %}
+
+<!-- HTML -->
+
+{% block extra_scripts %}
+<script type="text/javascript">
+    const input = document.getElementById('autocomplete-input');
+    const list = document.getElementById('autocomplete-list');
+    const selectedIdInput = document.getElementById('selected-location-id');
+    const eventNameInput = document.getElementById('event_name');
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+    const capacityInput = document.getElementById('capacity');
+    const createEventButton = document.getElementById('create-event-button');
+    let startTimeInvalid = true;
+    let endTimeInvalid = true;
+    let capacityInvalid = true;
+    let isLocationNotSet = true;
+    const API_ENDPOINT = '/locations/autocomplete/?term=';
+
+    // Function to validate date and time format (YYYY-MM-DDTHH:mm)
+    function isValidDateTime(dateTimeStr) {
+    const dateTimeRegex = /^\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}$/;
+    return dateTimeRegex.test(dateTimeStr);
+    }
+
+    function setCreateEventButtonState() {
+        if(startTimeInvalid || endTimeInvalid || capacityInvalid || isLocationNotSet || eventNameInput.value == "") {
+            createEventButton.disabled = true;
+        } else {
+            createEventButton.disabled = false;
+        }
+    }
+
+    eventNameInput.addEventListener('change', function () {
+        setCreateEventButtonState()
+    });
+
+    startTimeInput.addEventListener('change', function () {
+        // Validation for Start Time against the present time
+        const now = new Date().toLocaleString('en-US', {
+            timeZone: 'America/New_York',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        const date2 = new Date(startTimeInput.value);
+        const startTime = date2.toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        if (!isValidDateTime(startTime) || startTime <= now) {
+            startTimeInvalid = true;
+            alert("Invalid Start Time");
+        } else {
+            startTimeInvalid = false;
+        }
+        setCreateEventButtonState()
+    });
+
+    endTimeInput.addEventListener('change', function () {
+        // Validation for End Time against Start Time
+        const now = new Date().toLocaleString('en-US', {
+            timeZone: 'America/New_York',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        const date1 = new Date(startTimeInput.value);
+        const startTime = date1.toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        const date2 = new Date(endTimeInput.value);
+        const endTime = date2.toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        if (!isValidDateTime(endTime) || new Date(endTime) <= new Date(startTime)) {
+            endTimeInvalid = true;
+            alert("Invalid End Time");
+        } else {
+            endTimeInvalid = false;
+        }
+        if (!isValidDateTime(startTime) || startTime <= now) {
+            startTimeInvalid = true
+            alert("Invalid Start Time");
+        }
+        setCreateEventButtonState()
+    });
+
+    capacityInput.addEventListener('input', function () {
+        // Validation for Capacity (non-negative)
+        if (capacityInput.value <= 0) {
+            capacityInvalid = true;
+            alert("Invalid capacity Input")
+        } else {
+            capacityInvalid = false
+        }
+        setCreateEventButtonState()
+    });
+
+        input.addEventListener('input', async function () {
+            const query = input.value.toLowerCase();
+            list.innerHTML = '';
+
+            if (query) {
+                try {
+                    const response = await fetch(API_ENDPOINT + query);
+                    const data = await response.json();
+
+                    data.forEach(function (item) {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = item.text; // Display the name
+                        listItem.addEventListener('click', function () {
+                            input.value = item.text; // Set the id as the input field's value
+                            selectedIdInput.value = item.id; // Store the ID in the hidden input
+                            list.innerHTML = '';
+                            isLocationNotSet = false;
+                            setCreateEventButtonState()
+                        });
+                        list.appendChild(listItem);
+                    });
+                } catch (error) {
+                    console.error('Error fetching data from the API:', error);
+                }
+            } 
+            if(!query || query == "") {
+                isLocationNotSet = true;
+            }
+            setCreateEventButtonState()
+        });
+
+        document.addEventListener('click', function (event) {
+            if (event.target !== input) {
+                list.innerHTML = '';
+            }
+        });
+</script>
+{% endblock %}

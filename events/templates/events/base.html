@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Default Title{% endblock %}</title>
+    <!-- Link Bootstrap CSS -->
+    <link rel="stylesheet" href="{% static 'events/css/bootstrap.min.css' %}">
+    <!-- Your Custom CSS -->
+    <link rel="stylesheet" href="{% static 'events/styles.css' %}">
+    {% block extra_styles %}{% endblock %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="banner">
+            <h1>Cheer↑</h1>
+        </div>
+        
+        
+        <nav class="navbar navbar-expand-lg navbar-light bg-light px-5">
+            <!-- Brand/logo -->
+            <a class="navbar-brand" href="{% url 'events:index' %}">Cheer↑</a>
+            
+            <!-- Toggler/collapsible Button -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Navbar links -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'events:index' %}">Find Out Events</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'events:create-event' %}">Create a Event</a>
+                    </li>
+                    <!-- <li class="nav-item">
+                        <a class="nav-link" href="#">Contact</a>
+                    </li> -->
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Hello {{ user.username }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}?next={{ request.path }}">Log out</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            {% if request.resolver_match.url_name == 'signup' %}  <!-- Check if current path is the signup page -->
+                                <a class="nav-link" href="{% url 'login' %}?next={% url 'events:index' %}">Log in</a>
+                            {% else %}
+                                <a class="nav-link" href="{% url 'login' %}?next={{ request.path }}">Log in</a>
+                            {% endif %}
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'signup' %}?next={{ request.path }}">Sign up</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}
+        <!-- Default content goes here, if any -->
+        {% endblock %}
+    </main>
+
+    <footer>
+        <!-- You can put common footer content here -->
+    </footer>
+
+    <!-- Link Bootstrap JS -->
+    <script src="{% static 'events/js/bootstrap.bundle.min.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
