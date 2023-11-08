@@ -10,6 +10,9 @@ before_install:
 # Define your build steps, for example:
 install:
   - pip install -r requirements.txt  # Install dependencies
+  - pip install awscli
+  - pip install awsebcli
+
 
 script:
   - python manage.py test
@@ -40,7 +43,6 @@ deploy:
 
 
 before_deploy:
-  - pip install awsebcli --upgrade
   - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
   - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
   - eb use cheerup-env
