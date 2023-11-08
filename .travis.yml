@@ -15,7 +15,6 @@ install:
 
 
 script:
-  - python manage.py test
   - python -m black . --check
   - python -m flake8 --ignore=E303,E501 --max-line-length=88
   - python -m coverage run manage.py test
@@ -45,6 +44,8 @@ deploy:
 before_deploy:
   - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
   - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+  - eb configure set aws-access-key-id $AWS_ACCESS_KEY_ID
+  - eb configure set aws-secret-access-key $AWS_SECRET_ACCESS_KEY
   - eb use cheerup-env
   - eb setenv DB_KEYP=$DB_KEYP
   - eb setenv DB_KEY=$DB_KEY
