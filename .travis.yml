@@ -6,6 +6,7 @@ python:
 
 before_install:
   - pip install 'urllib3<2.0'
+  - sudo apt-get install awscli
 
 # Define your build steps, for example:
 install:
@@ -41,11 +42,3 @@ deploy:
 # You can add additional steps such as deployment configuration if needed.
 
 
-before_deploy:
-  - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-  - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-  - eb configure set aws-access-key-id $AWS_ACCESS_KEY_ID
-  - eb configure set aws-secret-access-key $AWS_SECRET_ACCESS_KEY
-  - eb use cheerup-env
-  - eb setenv DB_KEYP=$DB_KEYP
-  - eb setenv DB_KEY=$DB_KEY
