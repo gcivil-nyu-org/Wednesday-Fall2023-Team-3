@@ -10,7 +10,7 @@ before_install:
 # Define your build steps, for example:
 install:
   - pip install -r requirements.txt  # Install dependencies
-  - apt  install awscli
+  - sudo apt  install awscli
   - pip install awscli
   - pip install awsebcli
 
