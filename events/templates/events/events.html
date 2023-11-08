@@ -116,10 +116,10 @@
             <!-- Filtering form -->
             <form method="get" action="{% url 'events:index' %}" class="filter-form" onsubmit="return validateForm()">
                 <label for="start_time">Start Time:</label>
-                <input type="datetime-local" name="start_time" id="start_time" required>
+                <input type="datetime-local" name="start_time" id="start_time">
 
                 <label for="end_time">End Time:</label>
-                <input type="datetime-local" name="end_time" id="end_time" required>
+                <input type="datetime-local" name="end_time" id="end_time">
                 <div class="padding-16"></div>
                 <br>
                 <label for="min_capacity">Minimum Capacity:</label>
@@ -128,7 +128,6 @@
                 <label for="max_capacity">Maximum Capacity:</label>
                 <input type="number" id="max_capacity" name="max_capacity" min="0" value="100">
                 <br>
-                <input type="submit" value="Filter" class="btn btn-primary">
                 <div class="padding-16"></div>
                 <br>
                 <label for="search_name">Search Events:</label>
@@ -185,6 +184,43 @@
     <script src="{% static 'events/js/bootstrap.bundle.min.js' %}"></script>
     {% block extra_scripts %}
     <script>
+        function getQueryParameters() {
+    var queryString = window.location.search.slice(1);
+    var params = {};
+
+    if (queryString) {
+        var keyValuePairs = queryString.split('&');
+        keyValuePairs.forEach(function(keyValuePair) {
+        var pair = keyValuePair.split('=');
+        var key = decodeURIComponent(pair[0]);
+        var value = decodeURIComponent(pair[1]);
+        params[key] = value;
+        });
+    }
+
+    return params;
+    }
+        window.addEventListener('load', function() {
+        var queryParameters = getQueryParameters();
+        
+        // Populate the form fields if the query parameters exist
+        if (queryParameters.start_time) {
+            document.getElementById('start_time').value = queryParameters.start_time;
+        }
+        if (queryParameters.end_time) {
+            document.getElementById('end_time').value = queryParameters.end_time;
+        }
+        if (queryParameters.min_capacity) {
+            document.getElementById('min_capacity').value = queryParameters.min_capacity;
+        }
+        if (queryParameters.max_capacity) {
+            document.getElementById('max_capacity').value = queryParameters.max_capacity;
+        }
+        if (queryParameters.search) {
+            document.getElementById('search_name').value = queryParameters.search;
+        }
+        });
+        
         function validateForm() {
           var startTime = document.getElementById('start_time').value;
           var endTime = document.getElementById('end_time').value;
