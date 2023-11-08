@@ -60,30 +60,48 @@
         </div>
         
         
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light px-5">
             <!-- Brand/logo -->
-            <a class="navbar-brand" href="#">Cheer↑</a>
+            <a class="navbar-brand" href="{% url 'events:index' %}">Cheer↑</a>
             
             <!-- Toggler/collapsible Button -->
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             
             <!-- Navbar links -->
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item active">
-                        <a class="nav-link" href="#">Home</a>
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'events:index' %}">Find Out Events</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Find Out Events</a>
+                        <a class="nav-link" href="{% url 'events:create-event' %}">Create a Event</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">My events</a>
-                    </li>
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a class="nav-link" href="#">Contact</a>
-                    </li>
+                    </li> -->
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Hello {{ user.username }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}?next={{ request.path }}">Log out</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            {% if request.resolver_match.url_name == 'signup' %}  <!-- Check if current path is the signup page -->
+                                <a class="nav-link" href="{% url 'login' %}?next={% url 'events:index' %}">Log in</a>
+                            {% else %}
+                                <a class="nav-link" href="{% url 'login' %}?next={{ request.path }}">Log in</a>
+                            {% endif %}
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'signup' %}?next={{ request.path }}">Sign up</a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </nav>
@@ -127,7 +145,7 @@
             <ul>
                 {% for event in events %}
                 <li class="event-item">
-                    <a href="{% url 'events:event-detail' event.id %}"><strong>{{ event.event_name }}</strong></a>
+                    <a id={{event.id}} href="{% url 'events:event-detail' event.id %}" class="event-name"><strong>{{ event.event_name }}</strong></a>
                     <p>Event Location: {{ event.event_location }}</p>
                     <p>Start time: {{ event.start_time }}</p>
                     <p>End Time: {{ event.end_time }}</p>
@@ -226,6 +244,18 @@
           
           return true;
         }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const error_message = urlParams.get('error_message');
+
+    // Display the error message if it exists
+    if (error_message) {
+        alert(error_message)
+    }
+    // Remove the error message from the URL
+    urlParams.delete('error_message');
+    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+    window.history.replaceState({}, document.title, newUrl);
     </script>   
     
     {% endblock %}

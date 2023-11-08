@@ -58,6 +58,21 @@ Log In
   background-color: #1e87d0; /* Darker background color on button press */
 }
 
+.signup-text {
+    text-align: left;
+    margin-top: 20px; 
+    font-size: 16px; 
+}
+
+.signup-link {
+    color: #3498db; 
+    text-decoration: none; 
+}
+
+.signup-link:hover {
+    text-decoration: underline; 
+}
+
 </style>
 
 
@@ -72,6 +87,9 @@ Log In
             {{ form.as_p }}
             <button type="submit" class="btn btn-primary" id="login-button">Login</button>
 </form>
+<div class="signup-text">
+  Are you new to CheerUp? <a href="{% url 'signup' %}" class="signup-link">Sign up now</a>
+</div>
 </div>
 
 
