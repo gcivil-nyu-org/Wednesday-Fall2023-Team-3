@@ -6,13 +6,10 @@ python:
 
 before_install:
   - pip install 'urllib3<2.0'
-  - sudo apt-get install awscli
 
 # Define your build steps, for example:
 install:
   - pip install -r requirements.txt  # Install dependencies
-  - pip install awscli
-  - pip install awsebcli
 
 
 script:
