@@ -37,3 +37,9 @@ deploy:
   env: "cheerup-env"
   bucket_name: "elasticbeanstalk-us-east-1-420169502545"
 # You can add additional steps such as deployment configuration if needed.
+
+
+before_deploy:
+  - eb use cheerup-env
+  - eb setenv DB_KEYP=$DB_KEYP
+  - eb setenv DB_KEY=$DB_KEY
