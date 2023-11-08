@@ -11,8 +11,8 @@ before_install:
 install:
   - pip install -r requirements.txt  # Install dependencies
 
+
 script:
-  - python manage.py test
   - python -m black . --check
   - python -m flake8 --ignore=E303,E501 --max-line-length=88
   - python -m coverage run manage.py test
@@ -39,7 +39,3 @@ deploy:
 # You can add additional steps such as deployment configuration if needed.
 
 
-before_deploy:
-  - eb use cheerup-env
-  - eb setenv DB_KEYP=$DB_KEYP
-  - eb setenv DB_KEY=$DB_KEY
