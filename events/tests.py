@@ -159,6 +159,42 @@ class UpdateEventViewTest(TestCase):
             Event.objects.get(pk=self.event.id).event_name, "Updated Event"
         )  # Verify data was updated
 
+    def test_update_event_capacity_too_low(self):
+        self.client.login(username="testuser", password="testpassword")
+
+        # Set up approved participants
+        for i in range(10):  # Assuming 10 participants have joined
+            user = User.objects.create_user(
+                username=f"user{i}", password="testpassword"
+            )
+            EventJoin.objects.create(user=user, event=self.event, status=APPROVED)
+
+        # Prepare update data with a capacity lower than the number of approved participants
+        updated_data = {
+            "event_name": "Updated Event",
+            "start_time": self.event.start_time,
+            "end_time": self.event.end_time,
+            "capacity": 5,  # Less than the 10 approved participants
+            "event_location_id": self.location.id,
+        }
+
+        # Perform the update
+        url = reverse("events:update-event", args=(self.event.id,))
+        response = self.client.post(url, updated_data, follow=True)
+        # Assert the response status code if you expect a 200 from a template render or a 302 from a redirect
+        self.assertEqual(response.status_code, 400)
+
+        # Check for error message in response
+        error_message = (
+            "Capacity cannot be less than the number of approved participants"
+        )
+        self.assertEqual(response["Content-Type"], "application/json")
+        content = json.loads(response.content)
+        self.assertEqual(
+            content["capacity"],
+            error_message,
+        )  # Replace with expected content
+
 
 class DuplicateEventTests(TestCase):
     def setUp(self):
@@ -183,12 +219,22 @@ class DuplicateEventTests(TestCase):
             is_active=True,
             creator=self.user,
         )
+        self.event2 = Event.objects.create(
+            event_name="Test Event2",
+            event_location=self.location,
+            start_time=self.start_time,
+            end_time=self.end_time,
+            capacity=100,
+            is_active=True,
+            creator=self.user,
+        )
 
     def test_update_event_with_duplicate_data(self):
         self.client.login(username="testuser", password="testpassword")
         existing_event = Event.objects.get(pk=self.event.id)
+        existing_event2 = Event.objects.get(pk=self.event2.id)
         response = self.client.post(
-            reverse("events:update-event", args=[existing_event.id]),
+            reverse("events:update-event", args=[existing_event2.id]),
             {
                 "event_location_id": self.location.id,
                 "event_name": existing_event.event_name,
