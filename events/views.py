@@ -158,9 +158,18 @@ def updateEvent(request, event_id):
             errors["capacity"] = "Capacity is required."
         else:
             try:
-                capacity = int(capacity)
-                if capacity < 0:
+                new_capacity = int(capacity)
+                if new_capacity < 0:
                     errors["capacity"] = "Capacity must be a non-negative number."
+                else:
+                    # New capacity check against approved participants
+                    approved_participants_count = EventJoin.objects.filter(
+                        event=event, status=APPROVED
+                    ).count()
+                    if new_capacity < approved_participants_count:
+                        errors[
+                            "capacity"
+                        ] = "Capacity cannot be less than the number of approved participants"
             except ValueError:
                 errors["capacity"] = "Capacity must be a valid number."
 
@@ -173,13 +182,17 @@ def updateEvent(request, event_id):
                     errors["event_location_id"] = "Event location must be selected."
                 else:
                     location_object = Location.objects.get(id=event_location_id)
-                    if Event.objects.filter(
-                        event_name=event_name,
-                        event_location=location_object,
-                        start_time=start_time,
-                        end_time=end_time,
-                        is_active=True,
-                    ).exists():
+                    if (
+                        Event.objects.filter(
+                            event_name=event_name,
+                            event_location=location_object,
+                            start_time=start_time,
+                            end_time=end_time,
+                            is_active=True,
+                        )
+                        .exclude(pk=event_id)
+                        .exists()
+                    ):
                         errors[
                             "similar_event_error"
                         ] = "An event with these details already exists."
