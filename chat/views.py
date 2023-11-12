@@ -9,7 +9,7 @@ from django.db.models import Q
 
 
 @login_required
-def chat(request, recipient_id):
+def chatting(request, recipient_id):
     recipient = get_object_or_404(User, id=recipient_id)
     messages = Message.objects.filter(
         (Q(sender=request.user) & Q(recipient=recipient))
@@ -23,7 +23,7 @@ def chat(request, recipient_id):
             Message.objects.create(
                 sender=request.user, recipient=recipient, content=message
             )
-            return redirect("chat", recipient_id=recipient_id)
+            return redirect("chats:chat-with-user", recipient_id=recipient_id)
     else:
         form = MessageForm()
 
