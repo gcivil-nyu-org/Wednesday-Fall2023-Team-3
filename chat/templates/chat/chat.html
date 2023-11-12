@@ -1,0 +1,52 @@
+<!-- chat/chat.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with {{ recipient.username }}</title>
+</head>
+<body>
+    <h2>Chat with {{ recipient.username }}</h2>
+    <div id="chat-log">
+        {% for message in messages %}
+            <p>{{ message.sender.username }}: {{ message.content }}</p>
+        {% endfor %}
+    </div>
+    <form id="chat-form" method="post" action="">
+        {% csrf_token %}
+        {{ form.message }}
+        <button type="submit">Send</button>
+    </form>
+
+    <script>
+        // WebSocket connection setup
+        const chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/chat/{{ recipient.id }}/'
+        );
+
+        // Handle incoming messages from WebSocket
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            document.querySelector('#chat-log').innerHTML += '<p>' + data.message + '</p>';
+        };
+
+        // Handle form submission
+        document.querySelector('#chat-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const messageInput = document.querySelector('#id_message');
+            const message = messageInput.value.trim();
+
+            if (message) {
+                chatSocket.send(JSON.stringify({
+                    'message': message,
+                    'sender_id': {{ request.user.id }},
+                    'recipient_id': {{ recipient.id }}
+                }));
+                messageInput.value = '';
+            }
+        });
+    </script>
+</body>
+</html>
