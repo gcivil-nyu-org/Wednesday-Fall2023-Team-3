@@ -1,5 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseRedirect, Http404, JsonResponse, HttpResponseBadRequest
+from django.http import (
+    HttpResponseRedirect,
+    Http404,
+    JsonResponse,
+    HttpResponseBadRequest,
+)
 from .forms import EventsForm, CommentForm
 from django.urls import reverse
 from .models import Event, Location, EventJoin, Comment
@@ -337,13 +342,14 @@ def eventDetail(request, event_id):
     pending_join = event.eventjoin_set.filter(status=PENDING)
     approved_join_count = approved_join.count()
     pending_join_count = pending_join.count()
-    
+
     comment_form = CommentForm()
-    comments = event.comments.filter(parent__isnull=True)
+    comments = event.comments.filter(parent__isnull=True).filter(is_active=True)
     comments_with_replies = []
     for comment in comments:
         replies = comment.replies.all()
-        comments_with_replies.append((comment, replies))
+        reply_form = CommentForm(prefix=str(comment.id))
+        comments_with_replies.append((comment, replies, reply_form))
 
     context = {
         "event": event,
@@ -360,7 +366,6 @@ def eventDetail(request, event_id):
         "REMOVED": REMOVED,
         "comment_form": comment_form,
         "comments_with_replies": comments_with_replies,
-
     }
     return render(request, "events/event-detail.html", context)
 
@@ -463,29 +468,34 @@ def get_locations(request):
     serialized_data = json.loads(serialized_data)
     return JsonResponse({"locations": serialized_data})
 
+
 # Comment related views
 @login_required
 @require_POST
 def addComment(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    if request.method == 'POST':
-        form = CommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.user = request.user
-            comment.event = event
-            parent_id = request.POST.get('parent_id')
-            if parent_id:
-                parent_comment = Comment.objects.get(id=parent_id)
-                #make sure that the parent comment is a comment not a reply
-                if parent_comment.parent is None:
-                    comment.parent = parent_comment
-                    if parent_comment.is_private:
-                        comment.is_private = True
-                else:
-                    #handle the case when it's a reply of a reply
-                    return HttpResponseBadRequest("Cantnot reply to a nested comment")
-            comment.save()
-            return redirect("events:event-detail", event_id=event.id) #redirect to event detail page
+    parent_id = request.POST.get("parent_id")
+    prefix = str(parent_id) if parent_id else None
+    form = CommentForm(request.POST, prefix=prefix)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.user = request.user
+        comment.event = event
+        if parent_id:
+            parent_comment = Comment.objects.get(id=parent_id)
+            # make sure that the parent comment is a comment not a reply
+            if parent_comment.parent is None:
+                comment.parent = parent_comment
+                if parent_comment.is_private:
+                    comment.is_private = True
+            else:
+                # handle the case when it's a reply of a reply
+                return HttpResponseBadRequest("Cantnot reply to a nested comment")
+        comment.save()
+        return redirect(
+            "events:event-detail", event_id=event.id
+        )  # redirect to event detail page
     else:
-        return redirect("events:event-detail", event_id=event.id) #redirect to event detail page
+        return redirect(
+            "events:event-detail", event_id=event.id
+        )  # redirect to event detail page

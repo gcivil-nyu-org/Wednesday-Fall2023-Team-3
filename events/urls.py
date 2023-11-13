@@ -32,5 +32,5 @@ urlpatterns = [
         views.creatorRemoveApprovedRequest,
         name="remove-approved-request",
     ),
-    path('event/<int:event_id>/add-comment/', views.addComment, name='add-comment')
+    path("event/<int:event_id>/add-comment/", views.addComment, name="add-comment"),
 ]

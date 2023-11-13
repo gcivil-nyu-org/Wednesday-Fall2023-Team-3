@@ -13,8 +13,8 @@ class EventFilterForm(forms.Form):
     min_capacity = forms.IntegerField(min_value=0, required=False)
     max_capacity = forms.IntegerField(min_value=0, required=False)
 
+
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
-        fields = ['content', 'is_private']
-    
+        fields = ["content", "is_private"]

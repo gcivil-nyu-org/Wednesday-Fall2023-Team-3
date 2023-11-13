@@ -30,16 +30,20 @@ class EventJoin(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.event.event_name} - {self.get_status_display()}"
 
+
 class Comment(models.Model):
-    event = models.ForeignKey(Event, related_name='comments', on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, related_name="comments", on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='replies', on_delete=models.CASCADE)
+    parent = models.ForeignKey(
+        "self", null=True, blank=True, related_name="replies", on_delete=models.CASCADE
+    )
     is_private = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
 
     def is_top_level(self):
         return self.parent is None
 
     def __str__(self):
-        return f"{self.author.username}'s comment: \"{self.content[:50]}...\""
+        return f'{self.user.username}\'s comment: "{self.content[:50]}..."'
