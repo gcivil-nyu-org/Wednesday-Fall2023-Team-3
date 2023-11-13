@@ -42,6 +42,24 @@
     flex-grow: 1;
 }
 
+.comment-action {
+    justify-content: space-between;
+}
+
+.gray-container {
+    background-color: #eaeaea;
+}
+
+.sticky-note-outline-container {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    /* box-shadow: 5px 5px 15px rgba(0,0,0,0.2); */
+    margin: 0;
+    border-style: dashed;
+    border-color: #a6cff4;
+
+}
 </style>
 
 
@@ -64,7 +82,7 @@
     <div class="row">
         <!-- Left 2/3 of the page for event details -->
         <div class="col-md-8 my-3">
-            <div class="event-detail-container">
+            <div class="event-detail-container mb-4">
                 <div class="sticky-note-container">
                     <div class="my-3"><h1>{{ event.event_name }}</h1></div>
                     <h4>Creator</h4>
@@ -85,6 +103,87 @@
                     </p>
                     <!-- Add more event details here -->
                 </div>
+            </div>
+            <div class="event-detail-container my-5">
+                <div class="sticky-note-container gray-container">
+                    <form action="{% url 'events:add-comment' event.id %}" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <textarea class="form-control" name="content" id="content" placeholder="Share what you think about the event" required></textarea>
+                            {% if comment_form.content.errors %}
+                                <div class="invalid-feedback">
+                                    {{ comment_form.content.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group d-flex align-items-center mt-3 comment-action">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" name="is_private" id="is_private" class="form-check-input" {% if comment_form.is_private.value %} checked {% endif %}>
+                                <label for="is_private" class="form-check-label">Make This Comment Private</label>
+                                {% if comment_form.is_private.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ comment_form.is_private.errors.as_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block comment-button" id="add-comment">Comment</button>
+                        </div>  
+                    </form>
+                </div>
+            </div>
+            <div class="event-detail-container my-5">            
+                {% for comment, replies in comments_with_replies %}
+                    <!-- Check if the comment is visible to the current user -->
+                    {% if not comment.is_private or request.user == comment.user or request.user == event.creator %}
+                        <div class="comment sticky-note-outline-container my-4">
+                            <div class="row">
+                                <div class="col-md-auto">
+                                    {% if comment.is_private %}
+                                        <h5>{{ comment.user }}: (private comment)</h5>
+                                    {% else %}
+                                        <h5>{{ comment.user }}:</h5>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-auto">
+                                    <p> at {{ comment.created_at|date:"Y-m-d H:i" }}</p>
+                                </div>
+                            </div>
+                            <p>{{ comment.content }}</p>
+                            <!-- Toggle reply form -->
+                            <button type="button" class="btn btn-outline-primary btn-block comment-button" onclick="document.getElementById('reply-form-{{ comment.id }}').style.display='block'">Reply</button>
+                            <!-- Hidden Reply form -->
+                            <div id="reply-form-{{ comment.id }}" style="display:none;">
+                                <div class="sticky-note-container gray-container mt-3">
+                                    <form action="{% url 'events:add-comment' event.id %}" method="post">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                                            <textarea class="form-control" name="content" id="content" placeholder="Reply to a Comment Here!" required></textarea>
+                                            {% if comment_form.content.errors %}
+                                                <div class="invalid-feedback">
+                                                    {{ comment_form.content.errors.as_text }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="form-group d-flex align-items-center mt-3 comment-action">
+                                            <div class="form-check form-switch">
+                                                <input type="checkbox" name="is_private" id="is_private" class="form-check-input" {% if comment_form.is_private.value %} checked {% endif %}>
+                                                <label for="is_private" class="form-check-label">Make This Comment Private</label>
+                                                {% if comment_form.is_private.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {{ comment_form.is_private.errors.as_text }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <button type="submit" class="btn btn-primary btn-block comment-button" id="add-comment">Comment</button>
+                                        </div>  
+                                    </form>
+                                </div>
+                            </div>
+                            <!-- Display replies -->
+                        </div>
+                    {% endif %}
+                {% endfor %}     
             </div>
         </div>
         <!-- Right 1/3 of the page for the "Join Us" button -->
@@ -113,7 +212,7 @@
                         <div class="join-entry">{{ event.creator }}</div>
                         {% for join in approved_join %}
                             <div class="join-entry">
-                                {{ join.user }}
+                                {{ join.user }}</div>
                         {% endfor %}
                     </div>
                 {% else %}
@@ -154,6 +253,10 @@
             {% endif %} 
         </div>
     </div>
+
+    
+    
+    
 </div>
 
 {% endblock %}

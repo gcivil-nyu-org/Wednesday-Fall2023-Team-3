@@ -1,5 +1,5 @@
 from django import forms
-from .models import Event
+from .models import Event, Comment
 
 
 class EventsForm(forms.Form):
@@ -12,3 +12,9 @@ class EventFilterForm(forms.Form):
     end_time = forms.DateTimeField(required=False)
     min_capacity = forms.IntegerField(min_value=0, required=False)
     max_capacity = forms.IntegerField(min_value=0, required=False)
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['content', 'is_private']
+    
