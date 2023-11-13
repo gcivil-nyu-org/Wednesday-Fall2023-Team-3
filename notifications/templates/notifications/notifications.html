@@ -1,0 +1,12 @@
+<!-- notifications/notifications.html -->
+{% extends 'events/base.html' %}
+
+{% block content %}
+    <h2>Notifications</h2>
+    {% for notification in notifications %}
+        <div>
+            <p>{{ notification.message }}</p>
+            <small>{{ notification.timestamp }}</small>
+        </div>
+    {% endfor %}
+{% endblock %}
