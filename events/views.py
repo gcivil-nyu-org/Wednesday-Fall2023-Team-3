@@ -198,6 +198,9 @@ def updateEvent(request, event_id):
                         ] = "An event with these details already exists."
             except ValueError:
                 errors["event_location_id"] = "Invalid event location."
+
+        description = request.POST.get("description", "")
+
         if errors:
             # Return a JSON response with a 400 status code and the error messages
             return JsonResponse(errors, status=400)
@@ -207,6 +210,7 @@ def updateEvent(request, event_id):
         event.start_time = start_time
         event.end_time = end_time
         event.capacity = capacity
+        event.description = description
         event.save()
 
         return redirect("events:index")  # Redirect to the event list or a success page
@@ -270,6 +274,9 @@ def saveEvent(request):
         if errors:
             # Return a 400 Bad Request response with JSON error messages
             return JsonResponse(errors, status=400)
+
+        description = request.POST.get("description", "")
+
         if Event.objects.filter(
             event_name=event_name,
             event_location=location_object,
@@ -289,6 +296,7 @@ def saveEvent(request):
             end_time=end_time,
             capacity=capacity,
             creator=creator,
+            description=description,
         )
         event.save()
 
