@@ -51,18 +51,19 @@
 }
 
 .sticky-note-outline-container {
-    background-color:rgba(240,240,240,0.45);
+    background-color:rgba(255,255,255,0.3);
     padding: 20px;
-    border-radius: 10px;
+    border-radius: 25px;
     /* box-shadow: 5px 5px 15px rgba(0,0,0,0.2); */
     margin: 0;
     border-style: dashed;
-    border-color: #a6cff4;
+    border-color: #afcff3;
 
 }
 
 .replies{
     border: 1px solid #b8b8b8;
+    background-color: rgba(175,207,243,0.3);
 }
 
 .reply {
@@ -168,7 +169,7 @@
                             </div>
                             <p>{{ comment.content }}</p>
                             <!-- Toggle reply form -->
-                            <button type="button" class="btn btn-outline-primary btn-block comment-button" onclick="showReplyForm({{ comment.id }});">Reply</button>
+                            <button type="button" class="btn btn-outline-primary btn-block comment-button" onclick="showReplyForm({{ comment.id }}, {{ comment.is_private|lower }});">Reply</button>
                             <!-- Hidden Reply form -->
                             <div id="reply-form-placeholder-{{ comment.id }}"></div>
                             
@@ -208,9 +209,7 @@
                             </div>
                             <div class="form-group d-flex align-items-center mt-3 comment-action">
                                 <div class="form-check form-switch">
-                                    <input type="checkbox" name="is_private" id="is_private-reply" class="form-check-input"
-                                        {% if comment.is_private %} checked disabled {% endif %}
-                                        {% if reply_form.is_private.value %} checked {% endif %}>
+                                    <input type="checkbox" name="is_private" id="is_private-reply" class="form-check-input">             
                                     <label for="is_private" class="form-check-label">Make This Comment Private</label>
                                 </div>
                                 <button type="submit" class="btn btn-primary btn-block comment-button" id="add-comment">Reply</button>
@@ -298,7 +297,7 @@
 
 {% block extra_scripts %}
 <script type="text/javascript">
-    function showReplyForm(commentId) {
+    function showReplyForm(commentId, isParentPrivate) {
         // Move the reply form to the placeholder of the selected comment
         var placeholder = document.getElementById("reply-form-placeholder-" + commentId);
         var form = document.getElementById("reply-form");
@@ -311,6 +310,14 @@
         // Set the parent_id value
         document.getElementById('parent_id').value = commentId;
 
+        var isPrivateCheckbox = document.getElementById('is_private-reply');
+        if (isParentPrivate) {
+            isPrivateCheckbox.checked = true;
+            isPrivateCheckbox.disabled = true;
+        } else {
+            isPrivateCheckbox.checked = false;
+            isPrivateCheckbox.disabled = false;
+        }
         // Show the form
         form.style.display = 'block';
     }

@@ -904,7 +904,6 @@ class CommentTestCase(TestCase):
         private_comment = Comment.objects.create(
             user=self.user, event=self.event, content="Private comment", is_private=True
         )
-        another_user = User.objects.create_user("anotheruser", "anotherpassword")
         self.client.login(username="anotheruser", password="anotherpassword")
         response = self.client.get(reverse("events:event-detail", args=[self.event.id]))
         self.assertNotContains(response, private_comment.content)
