@@ -415,6 +415,11 @@ class EventJoinRequestTest(TestCase):
             response.status_code, 302
         )  # or 403 if you handle it as forbidden
 
+    def test_event_join_str_representation(self):
+        event_join = EventJoin.objects.create(user=self.user, event=self.event)
+        expected_str = f"{self.user.username} - {self.event.event_name} - {event_join.get_status_display()}"
+        self.assertEqual(str(event_join), expected_str)
+
 
 class EventCreatorManageRequestTest(TestCase):
     def setUp(self):
@@ -1055,6 +1060,22 @@ class ReplyTestCase(TestCase):
         self.assertTrue(
             reply.is_private
         )  # Assuming replies inherit the privacy of the parent comment
+
+    def test_cannot_reply_to_a_reply(self):
+        self.client.login(username="testuser", password="testpassword")
+        reply = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Existing comment",
+            is_private=True,
+            parent=self.parent,
+        )
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, reply.id]),
+            {"content": "Nested reply attempt"},
+        )
+        # Check if the response is HttpResponseBadRequest
+        self.assertEqual(response.status_code, 400)
 
     def test_not_logged_in_reply_attempt(self):
         self.client.logout()  # Ensure the user is logged out
