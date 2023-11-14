@@ -344,10 +344,14 @@ def eventDetail(request, event_id):
     pending_join_count = pending_join.count()
 
     comment_form = CommentForm()
-    creator_comments_only = request.GET.get('creator_comments_only') == 'true'
+    creator_comments_only = request.GET.get("creator_comments_only") == "true"
 
     if creator_comments_only:
-        comments = event.comments.filter(parent__isnull=True).filter(is_active=True).filter(user=event.creator)
+        comments = (
+            event.comments.filter(parent__isnull=True)
+            .filter(is_active=True)
+            .filter(user=event.creator)
+        )
     else:
         comments = event.comments.filter(parent__isnull=True).filter(is_active=True)
     comments_with_replies = []
@@ -373,7 +377,7 @@ def eventDetail(request, event_id):
         "REMOVED": REMOVED,
         "comment_form": comment_form,
         "comments_with_replies": comments_with_replies,
-        'creator_comments_only': creator_comments_only
+        "creator_comments_only": creator_comments_only,
     }
     return render(request, "events/event-detail.html", context)
 

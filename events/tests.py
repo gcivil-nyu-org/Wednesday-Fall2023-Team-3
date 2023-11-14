@@ -918,14 +918,22 @@ class CommentTestCase(TestCase):
 
     def test_event_creator_comments_only_filter(self):
         creator_comment = Comment.objects.create(
-            user=self.creator, event=self.event, content="Creator comment")
+            user=self.creator, event=self.event, content="Creator comment"
+        )
         user_comment = Comment.objects.create(
-            user=self.user, event=self.event, content="User comment")
+            user=self.user, event=self.event, content="User comment"
+        )
         self.client.login(username="testuser", password="testpassword")
-        response = self.client.get(reverse("events:event-detail", args=[self.event.id]) + '?creator_comments_only=true')
+        response = self.client.get(
+            reverse("events:event-detail", args=[self.event.id])
+            + "?creator_comments_only=true"
+        )
         self.assertContains(response, creator_comment.content)
         self.assertNotContains(response, user_comment.content)
-        response = self.client.get(reverse("events:event-detail", args=[self.event.id]) + '?creator_comments_only=false')
+        response = self.client.get(
+            reverse("events:event-detail", args=[self.event.id])
+            + "?creator_comments_only=false"
+        )
         self.assertContains(response, creator_comment.content)
         self.assertContains(response, user_comment.content)
 
