@@ -374,14 +374,14 @@ def toggleJoinRequest(request, event_id):
             # Create a notification when a request is withdrawn
             Notification.objects.create(
                 user=event.creator,
-                message=f"{request.user.username} withdrew their request to join the event '{event.title}'.",
+                message=f"{request.user.username} withdrew their request to join the event '{event.id}'.",
             )
         else:
             join.status = PENDING
             # Create a notification when a new request is submitted
             Notification.objects.create(
                 user=event.creator,
-                message=f"{request.user.username} has requested to join the event '{event.title}'.",
+                message=f"{request.user.username} has requested to join the event '{event.id}'.",
             )
         join.save()
 
@@ -415,7 +415,7 @@ def creatorApproveRequest(request, event_id, user_id):
                 # Create a notification when a request is approved
                 Notification.objects.create(
                     user=join.user,
-                    message=f"Your request to join the event '{event.title}' has been approved.",
+                    message=f"Your request to join the event '{event.id}' has been approved.",
                 )
                 messages.success(request, "Request approved")
         return redirect("events:event-detail", event_id=event.id)
@@ -436,7 +436,7 @@ def creatorRejectRequest(request, event_id, user_id):
         # Create a notification when a request is rejected
         Notification.objects.create(
             user=join.user,
-            message=f"Your request to join the event '{event.title}' has been rejected.",
+            message=f"Your request to join the event '{event.id}' has been rejected.",
         )
     return redirect("events:event-detail", event_id=event.id)
 
@@ -456,7 +456,7 @@ def creatorRemoveApprovedRequest(request, event_id, user_id):
         # Create a notification when a user is removed
         Notification.objects.create(
             user=join.user,
-            message=f"You have been removed from the event '{event.title}' :'( ",
+            message=f"You have been removed from the event '{event.id}' :'( ",
         )
     return redirect("events:event-detail", event_id=event.id)
     return render(request, "events/event-detail.html", {"event": event})
