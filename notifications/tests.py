@@ -29,11 +29,11 @@ class NotificationsTests(TestCase):
         # Check that the response is successful
         self.assertEqual(response.status_code, 200)
 
-        # Check that both notifications are present in the response context
+        # Update the assertion to compare Notification instances
+        expected_notifications = [self.notification1, self.notification2]
+
         self.assertQuerysetEqual(
-            response.context["notifications"],
-            [repr(self.notification1), repr(self.notification2)],
-            ordered=False,
+            response.context["notifications"], expected_notifications, ordered=False
         )
 
     def test_mark_notification_as_read_view(self):
