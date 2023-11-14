@@ -12,8 +12,7 @@ from django.db.models import Q
 def chatting(request, recipient_id):
     recipient = get_object_or_404(User, id=recipient_id)
     messages = Message.objects.filter(
-        (Q(sender=request.user) & Q(recipient=recipient))
-        | (Q(sender=recipient) & Q(recipient=request.user))
+        (Q(sender=request.user) & Q(recipient=recipient)) | (Q(sender=recipient) & Q(recipient=request.user))
     ).order_by("timestamp")
 
     if request.method == "POST":

@@ -127,7 +127,7 @@ class UpdateEventViewTest(TestCase):
             capacity=100,
             event_location=self.location,
             creator=self.user,
-            description="Initial Test Event Description"
+            description="Initial Test Event Description",
         )
 
     def test_update_event_view_get(self):
@@ -152,7 +152,7 @@ class UpdateEventViewTest(TestCase):
             "end_time": end_time,
             "capacity": 150,
             "event_location_id": new_location.id,
-            "description": "This is an updated description."
+            "description": "This is an updated description.",
         }
         url = reverse("events:update-event", args=(self.event.id,))
         self.client.login(username="testuser", password="testpassword")
@@ -294,7 +294,7 @@ class EventDetailPageTest(TestCase):
             capacity=100,
             is_active=True,
             creator=self.user,
-            description="This is a test description."
+            description="This is a test description.",
         )
 
     def test_event_detail_view(self):

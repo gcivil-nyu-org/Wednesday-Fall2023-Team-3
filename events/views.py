@@ -199,7 +199,7 @@ def updateEvent(request, event_id):
             except ValueError:
                 errors["event_location_id"] = "Invalid event location."
 
-        description = request.POST.get('description', '')
+        description = request.POST.get("description", "")
 
         if errors:
             # Return a JSON response with a 400 status code and the error messages
@@ -275,8 +275,8 @@ def saveEvent(request):
             # Return a 400 Bad Request response with JSON error messages
             return JsonResponse(errors, status=400)
 
-        description = request.POST.get('description', '')
-        
+        description = request.POST.get("description", "")
+
         if Event.objects.filter(
             event_name=event_name,
             event_location=location_object,
