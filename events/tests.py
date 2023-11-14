@@ -294,7 +294,7 @@ class EventDetailPageTest(TestCase):
             capacity=100,
             is_active=True,
             creator=self.user,
-            description="This is a test description."  
+            description="This is a test description."
         )
 
     def test_event_detail_view(self):
