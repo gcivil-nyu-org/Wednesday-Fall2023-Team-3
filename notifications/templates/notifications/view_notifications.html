@@ -1,0 +1,15 @@
+<!-- notifications/view_notifications.html -->
+{% extends 'events/base.html' %}
+
+{% block content %}
+    <h2>All Notifications</h2>
+    {% for notification in notifications %}
+        <div>
+            <p>{{ notification.message }}</p>
+            <small>{{ notification.timestamp }}</small>
+            {% if not notification.is_read %}
+                <a href="{% url 'notifications:mark-notification-as-read' notification.id %}">Mark as Read</a>
+            {% endif %}
+        </div>
+    {% endfor %}
+{% endblock %}
