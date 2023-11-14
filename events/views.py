@@ -348,8 +348,7 @@ def eventDetail(request, event_id):
     comments_with_replies = []
     for comment in comments:
         replies = comment.replies.all()
-        reply_form = CommentForm(prefix=str(comment.id))
-        comments_with_replies.append((comment, replies, reply_form))
+        comments_with_replies.append((comment, replies))
 
     context = {
         "event": event,
@@ -475,8 +474,7 @@ def get_locations(request):
 def addComment(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     parent_id = request.POST.get("parent_id")
-    prefix = str(parent_id) if parent_id else None
-    form = CommentForm(request.POST, prefix=prefix)
+    form = CommentForm(request.POST)
     if form.is_valid():
         comment = form.save(commit=False)
         comment.user = request.user
@@ -496,6 +494,8 @@ def addComment(request, event_id):
             "events:event-detail", event_id=event.id
         )  # redirect to event detail page
     else:
+        for error in form.errors:
+            messages.warning(request, f"{error}: :{form.errors[error]}")
         return redirect(
             "events:event-detail", event_id=event.id
         )  # redirect to event detail page
