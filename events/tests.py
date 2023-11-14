@@ -864,7 +864,9 @@ class NavbarTestCase(TestCase):
 
 class CommentTestCase(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
         self.creator = User.objects.create_user(
             username="testcreator", password="testpassword"
         )
@@ -883,16 +885,15 @@ class CommentTestCase(TestCase):
             creator=self.creator,
         )
         self.client = Client()
-        
 
     def test_create_comment(self):
         self.client.login(username="testuser", password="testpassword")
         url = reverse("events:add-comment", args=[self.event.id])
-        response = self.client.post(url, {'content': 'Test comment'})
-        # Check that the Comment was created 
+        response = self.client.post(url, {"content": "Test comment"})
+        # Check that the Comment was created
         self.assertEqual(Comment.objects.count(), 1)
-        comment = Comment.objects.latest('id')
-        self.assertEqual(comment.content, 'Test comment')
+        comment = Comment.objects.latest("id")
+        self.assertEqual(comment.content, "Test comment")
         self.assertEqual(comment.user, self.user)
         self.assertEqual(comment.event, self.event)
         self.assertRedirects(
@@ -900,21 +901,28 @@ class CommentTestCase(TestCase):
         )
 
     def test_private_comment_not_visible_to_other(self):
-        private_comment = Comment.objects.create(user=self.user, event=self.event, content="Private comment", is_private=True)
-        another_user = User.objects.create_user('anotheruser', 'anotherpassword')
-        self.client.login(username='anotheruser', password='anotherpassword')
-        response = self.client.get(reverse('events:event-detail', args=[self.event.id]))
+        private_comment = Comment.objects.create(
+            user=self.user, event=self.event, content="Private comment", is_private=True
+        )
+        another_user = User.objects.create_user("anotheruser", "anotherpassword")
+        self.client.login(username="anotheruser", password="anotherpassword")
+        response = self.client.get(reverse("events:event-detail", args=[self.event.id]))
         self.assertNotContains(response, private_comment.content)
 
     def test_private_comment_visible_to_event_creator(self):
-        private_comment = Comment.objects.create(user=self.user, event=self.event, content="Private comment", is_private=True)
-        self.client.login(username='testcreator', password='testpassword')
-        response = self.client.get(reverse('events:event-detail', args=[self.event.id]))
+        private_comment = Comment.objects.create(
+            user=self.user, event=self.event, content="Private comment", is_private=True
+        )
+        self.client.login(username="testcreator", password="testpassword")
+        response = self.client.get(reverse("events:event-detail", args=[self.event.id]))
         self.assertContains(response, private_comment.content)
+
 
 class ReplyTestCase(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
         self.creator = User.objects.create_user(
             username="testcreator", password="testpassword"
         )
@@ -932,19 +940,29 @@ class ReplyTestCase(TestCase):
             is_active=True,
             creator=self.creator,
         )
-        self.parent = Comment.objects.create(user=self.user, event=self.event, content="Parent comment", is_private=True, parent=None)
-        self.add_reply_url = reverse('events:add-comment', args=[self.event.id])
+        self.parent = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Parent comment",
+            is_private=True,
+            parent=None,
+        )
+        self.add_reply_url = reverse("events:add-comment", args=[self.event.id])
 
-    
-    #this test is not working at all
+    # this test is not working at all
     def test_create_reply(self):
         self.client.logout()
-        self.client.login(username='testuser', password='password')
-        reply = Comment.objects.create(user=self.user, event=self.event, content="Test reply", is_private=True, parent=self.parent)
+        self.client.login(username="testuser", password="password")
+        reply = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Test reply",
+            is_private=True,
+            parent=self.parent,
+        )
         # response = self.client.post(self.add_reply_url, {'content': 'Test comment', 'parent': self.parent})
         # self.assertEqual(response.status_code, 302)  # Assuming successful post redirects
         # self.assertEqual(Comment.objects.count(), 2)
         # reply = Comment.objects.get(parent=self.parent)
-        self.assertEqual(reply.content, 'Test reply')
+        self.assertEqual(reply.content, "Test reply")
         self.assertEqual(reply.parent, self.parent)
-        
