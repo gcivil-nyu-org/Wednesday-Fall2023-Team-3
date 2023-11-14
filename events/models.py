@@ -13,6 +13,7 @@ class Event(models.Model):
     end_time = models.DateTimeField()
     capacity = models.IntegerField()
     is_active = models.BooleanField(default=True)
+    description = models.TextField(blank=True, null=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
 
     def __str__(self):
