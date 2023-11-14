@@ -487,22 +487,45 @@ def get_locations(request):
 def addComment(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     parent_id = request.POST.get("parent_id")
+    if parent_id:
+        # handle the case when it's a reply of a reply
+        return HttpResponseBadRequest("Cantnot reply to a nested comment")
     form = CommentForm(request.POST)
     if form.is_valid():
         comment = form.save(commit=False)
         comment.user = request.user
         comment.event = event
-        if parent_id:
-            parent_comment = Comment.objects.get(id=parent_id)
-            # make sure that the parent comment is a comment not a reply
-            if parent_comment.parent is None:
-                comment.parent = parent_comment
-                if parent_comment.is_private:
-                    comment.is_private = True
-            else:
-                # handle the case when it's a reply of a reply
-                return HttpResponseBadRequest("Cantnot reply to a nested comment")
         comment.save()
+        return redirect(
+            "events:event-detail", event_id=event.id
+        )  # redirect to event detail page
+    else:
+        for error in form.errors:
+            messages.warning(request, f"{error}: :{form.errors[error]}")
+        return redirect(
+            "events:event-detail", event_id=event.id
+        )  # redirect to event detail page
+
+
+@login_required
+@require_POST
+def addReply(request, event_id, comment_id):
+    event = get_object_or_404(Event, id=event_id)
+    parent_comment = get_object_or_404(Comment, id=comment_id)
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        reply = form.save(commit=False)
+        reply.user = request.user
+        reply.event = event
+        # make sure that the parent comment is a comment not a reply
+        if parent_comment.parent is None:
+            reply.parent = parent_comment
+            if parent_comment.is_private:
+                reply.is_private = True
+        else:
+            # handle the case when it's a reply of a reply
+            return HttpResponseBadRequest("Cantnot reply to a nested comment")
+        reply.save()
         return redirect(
             "events:event-detail", event_id=event.id
         )  # redirect to event detail page

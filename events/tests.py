@@ -937,6 +937,42 @@ class CommentTestCase(TestCase):
         self.assertContains(response, creator_comment.content)
         self.assertContains(response, user_comment.content)
 
+    def test_comment_author_can_see_private_reply(self):
+        self.client.login(username="testuser", password="testpassword")
+        user_comment = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="User private comment",
+            is_private=True,
+        )
+        private_reply = Comment.objects.create(
+            user=self.creator,
+            event=self.event,
+            content="Private reply",
+            is_private=True,
+            parent=user_comment,
+        )
+        response = self.client.get(reverse("events:event-detail", args=[self.event.id]))
+        self.assertContains(response, private_reply.content)
+
+    def test_not_logged_in_comment_attempt(self):
+        self.client.logout()  # Ensure the user is logged out
+        self.client.post(
+            reverse("events:add-comment", args=[self.event.id]),
+            {
+                "content": "Unauthorized reply attempt",
+            },
+        )
+
+        self.assertEqual(Comment.objects.count(), 0)  # No new comment should be added
+
+    def test_comment_str_representation(self):
+        self.comment = Comment.objects.create(
+            user=self.user, event=self.event, content="This is a test comment"
+        )
+        expected_str = f'{self.user.username}\'s comment: "This is a test comment..."'
+        self.assertEqual(str(self.comment), expected_str)
+
 
 class ReplyTestCase(TestCase):
     def setUp(self):
@@ -967,22 +1003,65 @@ class ReplyTestCase(TestCase):
             is_private=True,
             parent=None,
         )
-        self.add_reply_url = reverse("events:add-comment", args=[self.event.id])
+        self.add_reply_url = reverse(
+            "events:add-reply", args=[self.event.id, self.parent.id]
+        )
 
-    # this test is not working at all
     def test_create_reply(self):
         self.client.logout()
-        self.client.login(username="testuser", password="password")
-        reply = Comment.objects.create(
-            user=self.user,
-            event=self.event,
-            content="Test reply",
-            is_private=True,
-            parent=self.parent,
+        self.client.login(username="testuser", password="testpassword")
+        reply_content = "This is a reply"
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, self.parent.id]),
+            {
+                "content": reply_content,
+            },
         )
-        # response = self.client.post(self.add_reply_url, {'content': 'Test comment', 'parent': self.parent})
-        # self.assertEqual(response.status_code, 302)  # Assuming successful post redirects
-        # self.assertEqual(Comment.objects.count(), 2)
-        # reply = Comment.objects.get(parent=self.parent)
-        self.assertEqual(reply.content, "Test reply")
+
+        self.assertEqual(
+            response.status_code, 302
+        )  # Assuming a redirect after successful posting
+        self.assertEqual(Comment.objects.count(), 2)
+        reply = Comment.objects.latest("id")
+        self.assertEqual(reply.content, reply_content)
         self.assertEqual(reply.parent, self.parent)
+
+    def test_reply_to_nonexistent_comment(self):
+        self.client.logout()
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, 99999]),
+            {
+                "content": "Reply to non-existent comment",
+            },
+        )
+        self.assertEqual(
+            response.status_code, 404
+        )  # Expected to fail with a 404 Not Found
+
+    def test_reply_to_private_comment(self):
+        self.client.logout()
+        self.client.login(username="testuser", password="testpassword")
+
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, self.parent.id]),
+            {
+                "content": "Reply to private comment",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        reply = Comment.objects.latest("id")
+        self.assertEqual(reply.parent, self.parent)
+        self.assertTrue(
+            reply.is_private
+        )  # Assuming replies inherit the privacy of the parent comment
+
+    def test_not_logged_in_reply_attempt(self):
+        self.client.logout()  # Ensure the user is logged out
+        self.client.post(
+            reverse("events:add-reply", args=[self.event.id, self.parent.id]),
+            {
+                "content": "Unauthorized reply attempt",
+            },
+        )
+        self.assertEqual(Comment.objects.count(), 1)  # No new comment should be added

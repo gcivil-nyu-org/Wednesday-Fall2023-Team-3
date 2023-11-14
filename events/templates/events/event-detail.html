@@ -173,7 +173,7 @@
                             </div>
                             <p>{{ comment.content }}</p>
                             <!-- Toggle reply form -->
-                            <button type="button" class="btn btn-outline-primary btn-block comment-button" onclick="showReplyForm({{ comment.id }}, {{ comment.is_private|lower }});">Reply</button>
+                            <button type="button" class="btn btn-outline-primary btn-block comment-button" onclick="showReplyForm({{ event.id }},{{ comment.id }},{{ comment.is_private|lower }})">Reply</button>
                             <!-- Hidden Reply form -->
                             <div id="reply-form-placeholder-{{ comment.id }}"></div>
                             
@@ -205,7 +205,7 @@
                 {% endfor %}
                 <div id="reply-form" style="display:none;">
                     <div class="sticky-note-container gray-container mt-3">
-                        <form action="{% url 'events:add-comment' event.id %}" method="post">
+                        <form action="" method="post" id="reply-form-content">
                             {% csrf_token %}
                             <div class="form-group">
                                 <input type="hidden" name="parent_id" value="{{ comment.id }}" id="parent_id">
@@ -216,7 +216,7 @@
                                     <input type="checkbox" name="is_private" id="is_private-reply" class="form-check-input">             
                                     <label for="is_private" class="form-check-label">Make This Comment Private</label>
                                 </div>
-                                <button type="submit" class="btn btn-primary btn-block comment-button" id="add-comment">Reply</button>
+                                <button type="submit" class="btn btn-primary btn-block reply-button" id="add-reply">Reply</button>
                             </div>  
                         </form>
                     </div>
@@ -309,18 +309,25 @@
         window.location = url;
     }
 
-    function showReplyForm(commentId, isParentPrivate) {
+    function showReplyForm(eventId, commentId, isParentPrivate) {
+        console.log("Event ID:", eventId, "Comment ID:", commentId);
         // Move the reply form to the placeholder of the selected comment
-        var placeholder = document.getElementById("reply-form-placeholder-" + commentId);
+        var placeholder = document.getElementById('reply-form-placeholder-' + commentId);  
         var form = document.getElementById("reply-form");
+        var formContent = document.getElementById('reply-form-content');
+
         if (!placeholder || !form) {
-        console.error("Element not found. Placeholder or form is null.");
+        console.error("Element not found. Placeholder is null.");
         return;
     }
+        if (!form) {
+            console.error("Element not found. form is null.");
+            return;
+        }
         placeholder.appendChild(form);
-
         // Set the parent_id value
         document.getElementById('parent_id').value = commentId;
+        
 
         var isPrivateCheckbox = document.getElementById('is_private-reply');
         if (isParentPrivate) {
@@ -332,6 +339,10 @@
         }
         // Show the form
         form.style.display = 'block';
+
+        formContent.action = '/events/' + 'events/' + eventId + '/comment/' + commentId + '/reply/';
+        console.log(formContent.action); 
+
     }
 </script>   
 {% endblock %}
