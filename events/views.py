@@ -1,8 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseRedirect, Http404, JsonResponse
-from .forms import EventsForm
+from django.http import (
+    HttpResponseRedirect,
+    Http404,
+    JsonResponse,
+    HttpResponseBadRequest,
+)
+from .forms import EventsForm, CommentForm
 from django.urls import reverse
-from .models import Event, Location, EventJoin
+from .models import Event, Location, EventJoin, Comment
 from django.contrib.auth.decorators import login_required
 from django.core.serializers import serialize
 import json
@@ -346,6 +351,25 @@ def eventDetail(request, event_id):
     approved_join_count = approved_join.count()
     pending_join_count = pending_join.count()
 
+    comment_form = CommentForm()
+    creator_comments_only = request.GET.get("creator_comments_only") == "true"
+
+    if creator_comments_only:
+        comments = (
+            event.comments.filter(parent__isnull=True)
+            .filter(is_active=True)
+            .filter(user=event.creator)
+        )
+    else:
+        comments = event.comments.filter(parent__isnull=True).filter(is_active=True)
+    comments_with_replies = []
+    for comment in comments:
+        if request.user == event.creator or request.user == comment.user:
+            replies = comment.replies.all()
+        else:
+            replies = comment.replies.filter(is_private=False)
+        comments_with_replies.append((comment, replies))
+
     context = {
         "event": event,
         "join_status": join_status,
@@ -359,6 +383,9 @@ def eventDetail(request, event_id):
         "WITHDRAWN": WITHDRAWN,
         "REJECTED": REJECTED,
         "REMOVED": REMOVED,
+        "comment_form": comment_form,
+        "comments_with_replies": comments_with_replies,
+        "creator_comments_only": creator_comments_only,
     }
     return render(request, "events/event-detail.html", context)
 
@@ -460,3 +487,59 @@ def get_locations(request):
     serialized_data = serialize("json", locations)
     serialized_data = json.loads(serialized_data)
     return JsonResponse({"locations": serialized_data})
+
+
+# Comment related views
+@login_required
+@require_POST
+def addComment(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    parent_id = request.POST.get("parent_id")
+    if parent_id:
+        # handle the case when it's a reply of a reply
+        return HttpResponseBadRequest("Cantnot reply to a nested comment")
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.user = request.user
+        comment.event = event
+        comment.save()
+        return redirect(
+            "events:event-detail", event_id=event.id
+        )  # redirect to event detail page
+    else:
+        for error in form.errors:
+            messages.warning(request, f"{error}: :{form.errors[error]}")
+        return redirect(
+            "events:event-detail", event_id=event.id
+        )  # redirect to event detail page
+
+
+@login_required
+@require_POST
+def addReply(request, event_id, comment_id):
+    event = get_object_or_404(Event, id=event_id)
+    parent_comment = get_object_or_404(Comment, id=comment_id)
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        reply = form.save(commit=False)
+        reply.user = request.user
+        reply.event = event
+        # make sure that the parent comment is a comment not a reply
+        if parent_comment.parent is None:
+            reply.parent = parent_comment
+            if parent_comment.is_private:
+                reply.is_private = True
+        else:
+            # handle the case when it's a reply of a reply
+            return HttpResponseBadRequest("Cantnot reply to a nested comment")
+        reply.save()
+        return redirect(
+            "events:event-detail", event_id=event.id
+        )  # redirect to event detail page
+    else:
+        for error in form.errors:
+            messages.warning(request, f"{error}: :{form.errors[error]}")
+        return redirect(
+            "events:event-detail", event_id=event.id
+        )  # redirect to event detail page

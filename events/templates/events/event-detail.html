@@ -42,6 +42,38 @@
     flex-grow: 1;
 }
 
+.comment-action {
+    justify-content: space-between;
+}
+
+.gray-container {
+    background-color: #eaeaea;
+}
+
+.sticky-note-outline-container {
+    background-color:rgba(255,255,255,0.3);
+    padding: 20px;
+    border-radius: 25px;
+    /* box-shadow: 5px 5px 15px rgba(0,0,0,0.2); */
+    margin: 0;
+    border-style: dashed;
+    border-color: #afcff3;
+
+}
+
+.replies{
+    border: 1px solid #b8b8b8;
+    background-color: rgba(175,207,243,0.3);
+}
+
+.reply {
+    border-bottom: 1px solid #b8b8b8; /* Light grey border */
+    margin-bottom: 10px; /* Optional: adds some space below the border */
+}
+
+.reply:last-child {
+    border-bottom: none;
+}
 </style>
 
 
@@ -64,7 +96,7 @@
     <div class="row">
         <!-- Left 2/3 of the page for event details -->
         <div class="col-md-8 my-3">
-            <div class="event-detail-container">
+            <div class="event-detail-container mb-4">
                 <div class="sticky-note-container">
                     <div class="my-3"><h1>{{ event.event_name }}</h1></div>
                     <h4>Creator</h4>
@@ -88,6 +120,111 @@
                     <!-- Add more event details here -->
                 </div>
             </div>
+            <div class="add-comment-form event-detail-container my-5">
+                <div class="sticky-note-container gray-container">
+                    <form action="{% url 'events:add-comment' event.id %}" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <textarea class="form-control" name="content" id="content-comment" placeholder="Share what you think about the event" required></textarea>
+                            {% if comment_form.content.errors %}
+                                <div class="invalid-feedback">
+                                    {{ comment_form.content.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group d-flex align-items-center mt-3 comment-action">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" name="is_private" id="is_private" class="form-check-input" {% if comment_form.is_private.value %} checked {% endif %}>
+                                <label for="is_private" class="form-check-label">Make This Comment Private</label>
+                                {% if comment_form.is_private.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ comment_form.is_private.errors.as_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% if user.is_authenticated %}
+                                <button type="submit" class="btn btn-primary btn-block comment-button" id="add-comment">Comment</button>
+                            {% else %}
+                                <!-- Link for non-authenticated users to log in and then comment -->
+                                <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="btn btn-primary btn-block comment-button">Comment</a>
+                            {% endif %}
+                        </div>  
+                    </form>
+                </div>
+            </div>
+            <div class="custom-control custom-switch my-5 mx-1">
+                <input type="checkbox" class="custom-control-input" id="creator-comments-only" onchange="toggleCreatorComments()" {% if creator_comments_only %} checked {% endif %}>
+                <label class="custom-control-label" for="creator-comments-only">Converstaions Started by Event Creator Only</label>
+            </div>
+            <div class="event-detail-container my-5">            
+                {% for comment, replies in comments_with_replies %}
+                    <!-- Check if the comment is visible to the current user -->
+                    {% if not comment.is_private or request.user == comment.user or request.user == event.creator %}
+                        <div class="comment sticky-note-outline-container my-4">
+                            <div class="row">
+                                <div class="col-md-auto">
+                                    {% if comment.is_private %}
+                                        <h5>{{ comment.user }}: (private comment)</h5>
+                                    {% else %}
+                                        <h5>{{ comment.user }}:</h5>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-auto">
+                                    <p> at {{ comment.created_at|date:"Y-m-d H:i" }}</p>
+                                </div>
+                            </div>
+                            <p>{{ comment.content }}</p>
+                            <!-- Toggle reply form -->
+                            <button type="button" class="btn btn-outline-primary btn-block comment-button" onclick="showReplyForm({{ event.id }},{{ comment.id }},{{ comment.is_private|lower }})">Reply</button>
+                            <!-- Hidden Reply form -->
+                            <div id="reply-form-placeholder-{{ comment.id }}"></div>
+                            
+                            {% if replies %}
+                                <div class="replies sticky-note-outline-container my-4">
+                                    {% for reply in replies %}
+                                        {% if not reply.is_private or request.user == reply.parent.user or request.user == event.creator %}
+                                            <div class="reply">
+                                                <div class="row">
+                                                    <div class="col-md-auto">
+                                                        {% if reply.is_private %}
+                                                            <h5>{{ reply.user }}: (private comment)</h5>
+                                                        {% else %}
+                                                            <h5>{{ reply.user }}:</h5>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="col-md-auto">
+                                                        <p> at {{ reply.created_at|date:"Y-m-d H:i" }}</p>
+                                                    </div>
+                                                    <p>{{ reply.content }}</p>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                <div id="reply-form" style="display:none;">
+                    <div class="sticky-note-container gray-container mt-3">
+                        <form action="" method="post" id="reply-form-content">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <input type="hidden" name="parent_id" value="{{ comment.id }}" id="parent_id">
+                                <textarea class="form-control" name="content" id="content-reply" placeholder="Wanna know more?" required></textarea>
+                            </div>
+                            <div class="form-group d-flex align-items-center mt-3 comment-action">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="is_private" id="is_private-reply" class="form-check-input">             
+                                    <label for="is_private" class="form-check-label">Make This Comment Private</label>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block reply-button" id="add-reply">Reply</button>
+                            </div>  
+                        </form>
+                    </div>
+                </div>     
+            </div>
+            
         </div>
         <!-- Right 1/3 of the page for the "Join Us" button -->
         <div class="col-md-4 my-3">
@@ -115,7 +252,7 @@
                         <div class="join-entry">{{ event.creator }}</div>
                         {% for join in approved_join %}
                             <div class="join-entry">
-                                {{ join.user }}
+                                {{ join.user }}</div>
                         {% endfor %}
                     </div>
                 {% else %}
@@ -156,6 +293,59 @@
             {% endif %} 
         </div>
     </div>
-</div>
 
+    
+    
+    
+</div>
+  
 {% endblock %}
+
+{% block extra_scripts %}
+
+<script type="text/javascript">
+    function toggleCreatorComments() {
+        var isChecked = document.getElementById('creator-comments-only').checked;
+        var url = new URL(window.location);
+        url.searchParams.set('creator_comments_only', isChecked);
+        window.location = url;
+    }
+
+    function showReplyForm(eventId, commentId, isParentPrivate) {
+        console.log("Event ID:", eventId, "Comment ID:", commentId);
+        // Move the reply form to the placeholder of the selected comment
+        var placeholder = document.getElementById('reply-form-placeholder-' + commentId);  
+        var form = document.getElementById("reply-form");
+        var formContent = document.getElementById('reply-form-content');
+
+        if (!placeholder || !form) {
+        console.error("Element not found. Placeholder is null.");
+        return;
+    }
+        if (!form) {
+            console.error("Element not found. form is null.");
+            return;
+        }
+        placeholder.appendChild(form);
+        // Set the parent_id value
+        document.getElementById('parent_id').value = commentId;
+        
+
+        var isPrivateCheckbox = document.getElementById('is_private-reply');
+        if (isParentPrivate) {
+            isPrivateCheckbox.checked = true;
+            isPrivateCheckbox.disabled = true;
+        } else {
+            isPrivateCheckbox.checked = false;
+            isPrivateCheckbox.disabled = false;
+        }
+        // Show the form
+        form.style.display = 'block';
+
+        formContent.action = '/events/' + 'events/' + eventId + '/comment/' + commentId + '/reply/';
+        console.log(formContent.action); 
+
+    }
+</script>   
+{% endblock %}
+
