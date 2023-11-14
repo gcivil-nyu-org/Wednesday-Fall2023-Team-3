@@ -42,8 +42,5 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
-    def is_top_level(self):
-        return self.parent is None
-
     def __str__(self):
         return f'{self.user.username}\'s comment: "{self.content[:50]}..."'

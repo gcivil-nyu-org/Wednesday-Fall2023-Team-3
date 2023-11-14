@@ -150,6 +150,10 @@
                     </form>
                 </div>
             </div>
+            <div class="custom-control custom-switch my-5 mx-1">
+                <input type="checkbox" class="custom-control-input" id="creator-comments-only" onchange="toggleCreatorComments()" {% if creator_comments_only %} checked {% endif %}>
+                <label class="custom-control-label" for="creator-comments-only">Converstaions Started by Event Creator Only</label>
+            </div>
             <div class="event-detail-container my-5">            
                 {% for comment, replies in comments_with_replies %}
                     <!-- Check if the comment is visible to the current user -->
@@ -176,7 +180,7 @@
                             {% if replies %}
                                 <div class="replies sticky-note-outline-container my-4">
                                     {% for reply in replies %}
-                                        {% if not reply.is_private or request.user == reply.user or request.user == event.creator %}
+                                        {% if not reply.is_private or request.user == reply.parent.user or request.user == event.creator %}
                                             <div class="reply">
                                                 <div class="row">
                                                     <div class="col-md-auto">
@@ -296,7 +300,15 @@
 {% endblock %}
 
 {% block extra_scripts %}
+
 <script type="text/javascript">
+    function toggleCreatorComments() {
+        var isChecked = document.getElementById('creator-comments-only').checked;
+        var url = new URL(window.location);
+        url.searchParams.set('creator_comments_only', isChecked);
+        window.location = url;
+    }
+
     function showReplyForm(commentId, isParentPrivate) {
         // Move the reply form to the placeholder of the selected comment
         var placeholder = document.getElementById("reply-form-placeholder-" + commentId);
