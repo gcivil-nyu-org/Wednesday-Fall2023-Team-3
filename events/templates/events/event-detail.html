@@ -161,7 +161,7 @@
                     <!-- Check if the comment is visible to the current user -->
                     {% if not comment.is_private or request.user == comment.user or request.user == event.creator %}
                         <div class="comment sticky-note-outline-container my-4">
-                            <div class="row">
+                            <div class="row align-items-center">
                                 <div class="col-md-auto">
                                     {% if comment.is_private %}
                                         <h5>{{ comment.user }}: (private comment)</h5>
@@ -174,8 +174,25 @@
                                 </div>
                             </div>
                             <p>{{ comment.content }}</p>
-                            <!-- Toggle reply form -->
-                            <button type="button" class="btn btn-outline-primary btn-block comment-button" onclick="showReplyForm({{ event.id }},{{ comment.id }},{{ comment.is_private|lower }})">Reply</button>
+                            <div class="row">
+                                <!-- Toggle reply form -->
+                                <div class="col-md-auto">
+                                    <button type="button" class="btn btn-outline-primary btn-block comment-button" onclick="showReplyForm({{ event.id }},{{ comment.id }},{{ comment.is_private|lower }})">Reply</button>
+                                </div>
+                                <div class="col-md-auto">
+                                    {% if user.is_authenticated %}
+                                        {% if user == comment.user or user == comment.event.creator %}
+                                            {% if not comment.replies.exists %}
+                                                <form action="{% url 'events:delete-comment' comment.id %}" method="post">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="delete">
+                                                    <button type="submit" class="btn btn-outline-secondary btn-block" onclick="return confirm('Are you sure to delete this comment?');">Delete</button>
+                                                </form>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
                             <!-- Hidden Reply form -->
                             <div id="reply-form-placeholder-{{ comment.id }}"></div>
                             
@@ -194,6 +211,17 @@
                                                     </div>
                                                     <div class="col-md-auto">
                                                         <p> at {{ reply.created_at|date:"Y-m-d H:i" }}</p>
+                                                    </div>
+                                                    <div class="col-md-auto">
+                                                        {% if user.is_authenticated %}
+                                                            {% if user == comment.user or user == comment.event.creator %}
+                                                                <form action="{% url 'events:delete-comment' comment.id %}" method="post">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" name="action" value="delete">
+                                                                    <button type="submit" class="btn btn-outline-secondary btn-sm btn-block" onclick="return confirm('Are you sure to delete this reply?');">Delete</button>
+                                                                </form>
+                                                            {% endif %}
+                                                        {% endif %}
                                                     </div>
                                                     <p>{{ reply.content }}</p>
                                                 </div>
@@ -342,7 +370,7 @@
         // Show the form
         form.style.display = 'block';
 
-        formContent.action = '/events/' + 'events/' + eventId + '/comment/' + commentId + '/reply/';
+        formContent.action = '/events/' + eventId + '/comment/' + commentId + '/reply/';
         console.log(formContent.action); 
 
     }
