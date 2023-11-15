@@ -184,8 +184,25 @@
                                 </div>
                             </div>
                             <p>{{ comment.content }}</p>
-                            <!-- Toggle reply form -->
-                            <button type="button" class="btn btn-outline-primary btn-block comment-button" onclick="showReplyForm({{ event.id }},{{ comment.id }},{{ comment.is_private|lower }})">Reply</button>
+                            <div class="row">
+                                <!-- Toggle reply form -->
+                                <div class="col-md-auto flex-fill">
+                                    <button type="button" class="btn btn-outline-primary btn-block comment-button" onclick="showReplyForm({{ event.id }},{{ comment.id }},{{ comment.is_private|lower }})">Reply</button>
+                                </div>
+                                <div class="col-md-auto">
+                                    {% if user.is_authenticated %}
+                                        {% if user == comment.user or user == comment.event.creator %}
+                                            {% if not comment.replies.exists %}
+                                                <form action="{% url 'events:delete-comment' comment.id %}" method="post">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="delete">
+                                                    <button type="submit" class="btn btn-outline-secondary btn-block" onclick="return confirm('Are you sure to delete this comment?');">Delete</button>
+                                                </form>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
                             <!-- Hidden Reply form -->
                             <div id="reply-form-placeholder-{{ comment.id }}"></div>
                             
@@ -202,8 +219,19 @@
                                                             <h5>{{ reply.user }}:</h5>
                                                         {% endif %}
                                                     </div>
-                                                    <div class="col-md-auto">
+                                                    <div class="col-md-auto flex-fill">
                                                         <p> at {{ reply.created_at|date:"Y-m-d H:i" }}</p>
+                                                    </div>
+                                                    <div class="col-md-auto">
+                                                        {% if user.is_authenticated %}
+                                                            {% if user == reply.user or user == comment.event.creator %}
+                                                                <form action="{% url 'events:delete-comment' reply.id %}" method="post">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" name="action" value="delete">
+                                                                    <button type="submit" class="btn btn-outline-secondary btn-sm btn-block" onclick="return confirm('Are you sure to delete this reply?');">Delete</button>
+                                                                </form>
+                                                            {% endif %}
+                                                        {% endif %}
                                                     </div>
                                                     <p>{{ reply.content }}</p>
                                                 </div>
@@ -228,7 +256,12 @@
                                     <input type="checkbox" name="is_private" id="is_private-reply" class="form-check-input">             
                                     <label for="is_private" class="form-check-label">Make This Comment Private</label>
                                 </div>
-                                <button type="submit" class="btn btn-primary btn-block reply-button" id="add-reply">Reply</button>
+                                {% if user.is_authenticated %}
+                                    <button type="submit" class="btn btn-primary btn-block reply-button" id="add-reply">Reply</button>
+                                {% else %}
+                                    <!-- Link for non-authenticated users to log in and then reply -->
+                                    <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="btn btn-primary btn-block comment-button">Comment</a>
+                                {% endif %}
                             </div>  
                         </form>
                     </div>
@@ -352,7 +385,7 @@
         // Show the form
         form.style.display = 'block';
 
-        formContent.action = '/events/' + 'events/' + eventId + '/comment/' + commentId + '/reply/';
+        formContent.action = '/events/' + eventId + '/comment/' + commentId + '/reply/';
         console.log(formContent.action); 
 
     }

@@ -1081,6 +1081,26 @@ class ReplyTestCase(TestCase):
         # Check if the response is HttpResponseBadRequest
         self.assertEqual(response.status_code, 400)
 
+    def test_cannot_reply_to_a_deleted_comment(self):
+        self.client.login(username="testuser", password="testpassword")
+        self.parent.is_active = False
+        reply = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Deleted comment",
+            is_private=True,
+            is_active=False,
+        )
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, reply.id]),
+            {"content": "Reply to a deleted comment attempt"},
+        )
+        self.assertEqual(response.status_code, 302)
+        # Check if the response is redirect
+        self.assertRedirects(
+            response, reverse("events:event-detail", args=[self.event.id])
+        )
+
     def test_not_logged_in_reply_attempt(self):
         self.client.logout()  # Ensure the user is logged out
         self.client.post(
@@ -1142,3 +1162,87 @@ class TagFilterTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Hobbies Event")
         self.assertContains(response, "No Tag Event")
+
+
+class DeleteCommentReplyTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.anotheruser = User.objects.create_user(
+            username="anotheruser", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=200),
+            end_time=current_time_ny + timedelta(hours=205),
+            capacity=5,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.comment = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Test comment",
+            is_private=True,
+        )
+        self.reply = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Test reply",
+            parent=self.comment,
+            is_private=True,
+        )
+
+    def test_delete_by_comment_user(self):
+        self.client.login(username="testuser", password="testpassword")
+        self.client.post(
+            reverse("events:delete-comment", args=[self.reply.id]), {"action": "delete"}
+        )
+        self.reply.refresh_from_db()
+        self.assertFalse(self.reply.is_active)
+
+    def test_delete_by_event_creator(self):
+        self.client.login(username="testcreator", password="testpassword")
+        self.client.post(
+            reverse("events:delete-comment", args=[self.reply.id]), {"action": "delete"}
+        )
+        self.reply.refresh_from_db()
+        self.assertFalse(self.reply.is_active)
+
+    def test_cannot_delete_by_other_user(self):
+        self.client.login(username="anotheruser", password="testpassword")
+        response = self.client.post(
+            reverse("events:delete-comment", args=[self.reply.id]), {"action": "delete"}
+        )
+        self.reply.refresh_from_db()
+        self.assertTrue(self.reply.is_active)
+        self.assertAlmostEqual(response.status_code, 302)
+
+    def test_cannot_delete_by_not_logged_in_user(self):
+        self.client.logout()
+        response = self.client.post(
+            reverse("events:delete-comment", args=[self.reply.id]), {"action": "delete"}
+        )
+        self.reply.refresh_from_db()
+        self.assertTrue(self.reply.is_active)
+        self.assertAlmostEqual(response.status_code, 302)
+
+    def test_cannot_delete_comment_with_reply(self):
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(
+            reverse("events:delete-comment", args=[self.comment.id]),
+            {"action": "delete"},
+        )
+        self.reply.refresh_from_db()
+        self.assertTrue(self.comment.is_active)
+        self.assertAlmostEqual(response.status_code, 302)
