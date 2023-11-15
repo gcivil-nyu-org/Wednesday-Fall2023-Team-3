@@ -38,5 +38,7 @@ urlpatterns = [
         views.addReply,
         name="add-reply",
     ),
-    path('delete-comment/<int:comment_id>/', views.deleteComment, name='delete-comment'),
+    path(
+        "delete-comment/<int:comment_id>/", views.deleteComment, name="delete-comment"
+    ),
 ]

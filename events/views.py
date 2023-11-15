@@ -520,10 +520,8 @@ def addReply(request, event_id, comment_id):
     event = get_object_or_404(Event, id=event_id)
     parent_comment = get_object_or_404(Comment, id=comment_id)
     form = CommentForm(request.POST)
-    if parent_comment.is_active == False:
-        messages.warning(
-            request, "You cannot reply to a deleted comment."
-        )
+    if not parent_comment.is_active:
+        messages.warning(request, "You cannot reply to a deleted comment.")
         return redirect("events:event-detail", event_id=event.id)
     if form.is_valid():
         reply = form.save(commit=False)
@@ -547,30 +545,26 @@ def addReply(request, event_id, comment_id):
         return redirect(
             "events:event-detail", event_id=event.id
         )  # redirect to event detail page
-    
+
+
 @login_required
 @require_POST
 def deleteComment(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
-    #only commenter and event creator can delete a comment/reply
+    # only commenter and event creator can delete a comment/reply
     if request.user != comment.user and request.user != comment.event.creator:
-        return redirect(
-            "events:event-detail", event_id=comment.event.id
-        )
-    
-    if request.POST.get("action") == 'delete':
-        #only comment with no replies can be deleted
+        return redirect("events:event-detail", event_id=comment.event.id)
+
+    if request.POST.get("action") == "delete":
+        # only comment with no replies can be deleted
         if not comment.replies.exists():
             comment.is_active = False
             comment.save()
-            return redirect(
-            "events:event-detail", event_id=comment.event.id
-        )
+            return redirect("events:event-detail", event_id=comment.event.id)
         else:
-            messages.warning(request, "You can't delete this comment. There're replies under this comment.")
-            return redirect(
-            "events:event-detail", event_id=comment.event.id
-        )
-    return redirect(
-            "events:event-detail", event_id=comment.event.id
-        )
+            messages.warning(
+                request,
+                "You can't delete this comment. There're replies under this comment.",
+            )
+            return redirect("events:event-detail", event_id=comment.event.id)
+    return redirect("events:event-detail", event_id=comment.event.id)
