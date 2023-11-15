@@ -106,7 +106,7 @@ def index(request):
 
         # Tag Filter
         tags = form.cleaned_data.get("tags")
-        if tags == None:
+        if tags is None:
             events = events
         else:
             events = events.filter(tags=tags)
