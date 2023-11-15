@@ -1,7 +1,7 @@
 # notifications/urls.py
 from django.urls import path
-from .views import notifications
 from . import views
+from .views import notifications
 
 app_name = "notifications"
 

@@ -1,7 +1,7 @@
-from django.test import TestCase
 from django.contrib.auth.models import User
-from .models import Notification
+from django.test import TestCase
 from django.urls import reverse
+from .models import Notification
 
 
 class NotificationsTests(TestCase):
