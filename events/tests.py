@@ -1,6 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from .models import Event, Location, EventJoin
+from .models import Event, Location, EventJoin, Comment
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
@@ -127,6 +127,7 @@ class UpdateEventViewTest(TestCase):
             capacity=100,
             event_location=self.location,
             creator=self.user,
+            description="Initial Test Event Description",
         )
 
     def test_update_event_view_get(self):
@@ -151,6 +152,7 @@ class UpdateEventViewTest(TestCase):
             "end_time": end_time,
             "capacity": 150,
             "event_location_id": new_location.id,
+            "description": "This is an updated description.",
         }
         url = reverse("events:update-event", args=(self.event.id,))
         self.client.login(username="testuser", password="testpassword")
@@ -292,6 +294,7 @@ class EventDetailPageTest(TestCase):
             capacity=100,
             is_active=True,
             creator=self.user,
+            description="This is a test description.",
         )
 
     def test_event_detail_view(self):
@@ -302,6 +305,7 @@ class EventDetailPageTest(TestCase):
         self.assertContains(response, "Test Location")
         self.assertContains(response, "100")
         self.assertContains(response, "testuser")
+        self.assertContains(response, self.event.description)
 
 
 class MapGetDataTest(TestCase):
@@ -414,6 +418,11 @@ class EventJoinRequestTest(TestCase):
         self.assertEqual(
             response.status_code, 302
         )  # or 403 if you handle it as forbidden
+
+    def test_event_join_str_representation(self):
+        event_join = EventJoin.objects.create(user=self.user, event=self.event)
+        expected_str = f"{self.user.username} - {self.event.event_name} - {event_join.get_status_display()}"
+        self.assertEqual(str(event_join), expected_str)
 
 
 class EventCreatorManageRequestTest(TestCase):
@@ -860,6 +869,227 @@ class NavbarTestCase(TestCase):
     def tearDown(self):
         # Clean up after each test case
         self.user.delete()
+
+
+class CommentTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(days=50),
+            end_time=current_time_ny + timedelta(days=52),
+            capacity=5,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.client = Client()
+
+    def test_create_comment(self):
+        self.client.login(username="testuser", password="testpassword")
+        url = reverse("events:add-comment", args=[self.event.id])
+        response = self.client.post(url, {"content": "Test comment"})
+        # Check that the Comment was created
+        self.assertEqual(Comment.objects.count(), 1)
+        comment = Comment.objects.latest("id")
+        self.assertEqual(comment.content, "Test comment")
+        self.assertEqual(comment.user, self.user)
+        self.assertEqual(comment.event, self.event)
+        self.assertRedirects(
+            response, reverse("events:event-detail", args=[self.event.id])
+        )
+
+    def test_private_comment_not_visible_to_other(self):
+        private_comment = Comment.objects.create(
+            user=self.user, event=self.event, content="Private comment", is_private=True
+        )
+        self.client.login(username="anotheruser", password="anotherpassword")
+        response = self.client.get(reverse("events:event-detail", args=[self.event.id]))
+        self.assertNotContains(response, private_comment.content)
+
+    def test_private_comment_visible_to_event_creator(self):
+        private_comment = Comment.objects.create(
+            user=self.user, event=self.event, content="Private comment", is_private=True
+        )
+        self.client.login(username="testcreator", password="testpassword")
+        response = self.client.get(reverse("events:event-detail", args=[self.event.id]))
+        self.assertContains(response, private_comment.content)
+
+    def test_event_creator_comments_only_filter(self):
+        creator_comment = Comment.objects.create(
+            user=self.creator, event=self.event, content="Creator comment"
+        )
+        user_comment = Comment.objects.create(
+            user=self.user, event=self.event, content="User comment"
+        )
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.get(
+            reverse("events:event-detail", args=[self.event.id])
+            + "?creator_comments_only=true"
+        )
+        self.assertContains(response, creator_comment.content)
+        self.assertNotContains(response, user_comment.content)
+        response = self.client.get(
+            reverse("events:event-detail", args=[self.event.id])
+            + "?creator_comments_only=false"
+        )
+        self.assertContains(response, creator_comment.content)
+        self.assertContains(response, user_comment.content)
+
+    def test_comment_author_can_see_private_reply(self):
+        self.client.login(username="testuser", password="testpassword")
+        user_comment = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="User private comment",
+            is_private=True,
+        )
+        private_reply = Comment.objects.create(
+            user=self.creator,
+            event=self.event,
+            content="Private reply",
+            is_private=True,
+            parent=user_comment,
+        )
+        response = self.client.get(reverse("events:event-detail", args=[self.event.id]))
+        self.assertContains(response, private_reply.content)
+
+    def test_not_logged_in_comment_attempt(self):
+        self.client.logout()  # Ensure the user is logged out
+        self.client.post(
+            reverse("events:add-comment", args=[self.event.id]),
+            {
+                "content": "Unauthorized reply attempt",
+            },
+        )
+
+        self.assertEqual(Comment.objects.count(), 0)  # No new comment should be added
+
+    def test_comment_str_representation(self):
+        self.comment = Comment.objects.create(
+            user=self.user, event=self.event, content="This is a test comment"
+        )
+        expected_str = f'{self.user.username}\'s comment: "This is a test comment..."'
+        self.assertEqual(str(self.comment), expected_str)
+
+
+class ReplyTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=100),
+            end_time=current_time_ny + timedelta(hours=104),
+            capacity=5,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.parent = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Parent comment",
+            is_private=True,
+            parent=None,
+        )
+        self.add_reply_url = reverse(
+            "events:add-reply", args=[self.event.id, self.parent.id]
+        )
+
+    def test_create_reply(self):
+        self.client.logout()
+        self.client.login(username="testuser", password="testpassword")
+        reply_content = "This is a reply"
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, self.parent.id]),
+            {
+                "content": reply_content,
+            },
+        )
+
+        self.assertEqual(
+            response.status_code, 302
+        )  # Assuming a redirect after successful posting
+        self.assertEqual(Comment.objects.count(), 2)
+        reply = Comment.objects.latest("id")
+        self.assertEqual(reply.content, reply_content)
+        self.assertEqual(reply.parent, self.parent)
+
+    def test_reply_to_nonexistent_comment(self):
+        self.client.logout()
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, 99999]),
+            {
+                "content": "Reply to non-existent comment",
+            },
+        )
+        self.assertEqual(
+            response.status_code, 404
+        )  # Expected to fail with a 404 Not Found
+
+    def test_reply_to_private_comment(self):
+        self.client.logout()
+        self.client.login(username="testuser", password="testpassword")
+
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, self.parent.id]),
+            {
+                "content": "Reply to private comment",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        reply = Comment.objects.latest("id")
+        self.assertEqual(reply.parent, self.parent)
+        self.assertTrue(
+            reply.is_private
+        )  # Assuming replies inherit the privacy of the parent comment
+
+    def test_cannot_reply_to_a_reply(self):
+        self.client.login(username="testuser", password="testpassword")
+        reply = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Existing comment",
+            is_private=True,
+            parent=self.parent,
+        )
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, reply.id]),
+            {"content": "Nested reply attempt"},
+        )
+        # Check if the response is HttpResponseBadRequest
+        self.assertEqual(response.status_code, 400)
+
+    def test_not_logged_in_reply_attempt(self):
+        self.client.logout()  # Ensure the user is logged out
+        self.client.post(
+            reverse("events:add-reply", args=[self.event.id, self.parent.id]),
+            {
+                "content": "Unauthorized reply attempt",
+            },
+        )
+        self.assertEqual(Comment.objects.count(), 1)  # No new comment should be added
 
 
 class TagFilterTest(TestCase):
