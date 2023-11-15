@@ -1,6 +1,7 @@
 from django.db import models
 from location.models import Location
 from django.contrib.auth.models import User
+from tags.models import Tag
 from .constants import STATUS_CHOICES, PENDING
 
 # Create your models here.
@@ -15,6 +16,7 @@ class Event(models.Model):
     is_active = models.BooleanField(default=True)
     description = models.TextField(blank=True, null=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
+    tags = models.ManyToManyField(Tag)
 
     def __str__(self):
         return self.event_name

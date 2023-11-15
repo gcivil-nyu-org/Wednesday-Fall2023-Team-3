@@ -8,6 +8,7 @@ from django.http import (
 from .forms import EventsForm, CommentForm
 from django.urls import reverse
 from .models import Event, Location, EventJoin, Comment
+from tags.models import Tag
 from django.contrib.auth.decorators import login_required
 from django.core.serializers import serialize
 import json
@@ -103,6 +104,13 @@ def index(request):
                 capacity__gte=min_capacity, capacity__lte=max_capacity
             )
 
+        # Tag Filter
+        tags = form.cleaned_data.get("tags")
+        if tags is None:
+            events = events
+        else:
+            events = events.filter(tags=tags)
+
     # If the form was not submitted or is not valid, instantiate a new form
     else:
         form = EventFilterForm()
@@ -124,7 +132,9 @@ def index(request):
 
 @login_required
 def updateEvent(request, event_id):
+    tag = Tag.objects.all()
     event = get_object_or_404(Event, pk=event_id)
+
     if request.method == "POST":
         # Update the event with data from the form
         event_location_id = request.POST.get("event_location_id")
@@ -132,6 +142,8 @@ def updateEvent(request, event_id):
         start_time = request.POST.get("start_time")
         end_time = request.POST.get("end_time")
         capacity = request.POST.get("capacity")
+        selectedtags = request.POST.getlist("selected_tags")
+        tags = Tag.objects.filter(tag_name__in=selectedtags)
 
         # Create a dictionary to store validation errors
         errors = {}
@@ -217,10 +229,10 @@ def updateEvent(request, event_id):
         event.capacity = capacity
         event.description = description
         event.save()
-
+        event.tags.set(tags)
         return redirect("events:index")  # Redirect to the event list or a success page
 
-    return render(request, "events/update-event.html", {"event": event})
+    return render(request, "events/update-event.html", {"event": event, "tags": tag})
 
 
 @login_required
@@ -233,6 +245,9 @@ def saveEvent(request):
         end_time = request.POST.get("end_time")
         capacity = request.POST.get("capacity")
         creator = request.user
+
+        selectedtags = request.POST.getlist("selected_tags")
+        tags = Tag.objects.filter(tag_name__in=selectedtags)
         # Create a dictionary to hold validation errors
         errors = {}
         # Validate the data
@@ -303,7 +318,9 @@ def saveEvent(request):
             creator=creator,
             description=description,
         )
+
         event.save()
+        event.tags.set(tags)
 
         return HttpResponseRedirect(reverse("events:index"))
 
@@ -313,13 +330,14 @@ def saveEvent(request):
 
 @login_required
 def createEvent(request):
+    tag = Tag.objects.all()
     if request.method == "POST":
         form = EventsForm(request.POST)
         if form.is_valid():
             return redirect("events:index")
     else:
         form = EventsForm()
-    return render(request, "events/create-event.html", {"form": form})
+    return render(request, "events/create-event.html", {"form": form, "tags": tag})
 
 
 @login_required
