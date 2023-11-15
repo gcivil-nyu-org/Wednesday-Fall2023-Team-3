@@ -33,6 +33,8 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
 ]
 
+ASGI_APPLICATION = "CheerUp.asgi.application"
+
 
 DATABASES = {
     "default": {
@@ -54,6 +56,7 @@ if "test" in sys.argv:
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "location.apps.LocationConfig",
     "events.apps.EventsConfig",
     "django.contrib.admin",
@@ -63,6 +66,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "accounts",
+    "channels",
+    "chat",
+    "tags",
 ]
 
 MIDDLEWARE = [
@@ -144,3 +150,22 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Where to redirect after a successful login
 LOGIN_REDIRECT_URL = "/events/"
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "ec2-3-80-98-101.compute-1.amazonaws.com:6379",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("ec2-3-80-98-101.compute-1.amazonaws.com", 6379)],
+        },
+    },
+}

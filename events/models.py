@@ -1,6 +1,7 @@
 from django.db import models
 from location.models import Location
 from django.contrib.auth.models import User
+from tags.models import Tag
 from .constants import STATUS_CHOICES, PENDING
 
 # Create your models here.
@@ -13,7 +14,9 @@ class Event(models.Model):
     end_time = models.DateTimeField()
     capacity = models.IntegerField()
     is_active = models.BooleanField(default=True)
+    description = models.TextField(blank=True, null=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
+    tags = models.ManyToManyField(Tag)
 
     def __str__(self):
         return self.event_name
@@ -29,3 +32,18 @@ class EventJoin(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.event.event_name} - {self.get_status_display()}"
+
+
+class Comment(models.Model):
+    event = models.ForeignKey(Event, related_name="comments", on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    parent = models.ForeignKey(
+        "self", null=True, blank=True, related_name="replies", on_delete=models.CASCADE
+    )
+    is_private = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f'{self.user.username}\'s comment: "{self.content[:50]}..."'

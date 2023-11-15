@@ -1,8 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseRedirect, Http404, JsonResponse
-from .forms import EventsForm
+from django.http import (
+    HttpResponseRedirect,
+    Http404,
+    JsonResponse,
+    HttpResponseBadRequest,
+)
+from .forms import EventsForm, CommentForm
 from django.urls import reverse
-from .models import Event, Location, EventJoin
+from .models import Event, Location, EventJoin, Comment
+from tags.models import Tag
 from django.contrib.auth.decorators import login_required
 from django.core.serializers import serialize
 import json
@@ -98,6 +104,13 @@ def index(request):
                 capacity__gte=min_capacity, capacity__lte=max_capacity
             )
 
+        # Tag Filter
+        tags = form.cleaned_data.get("tags")
+        if tags is None:
+            events = events
+        else:
+            events = events.filter(tags=tags)
+
     # If the form was not submitted or is not valid, instantiate a new form
     else:
         form = EventFilterForm()
@@ -119,7 +132,9 @@ def index(request):
 
 @login_required
 def updateEvent(request, event_id):
+    tag = Tag.objects.all()
     event = get_object_or_404(Event, pk=event_id)
+
     if request.method == "POST":
         # Update the event with data from the form
         event_location_id = request.POST.get("event_location_id")
@@ -127,6 +142,8 @@ def updateEvent(request, event_id):
         start_time = request.POST.get("start_time")
         end_time = request.POST.get("end_time")
         capacity = request.POST.get("capacity")
+        selectedtags = request.POST.getlist("selected_tags")
+        tags = Tag.objects.filter(tag_name__in=selectedtags)
 
         # Create a dictionary to store validation errors
         errors = {}
@@ -158,9 +175,18 @@ def updateEvent(request, event_id):
             errors["capacity"] = "Capacity is required."
         else:
             try:
-                capacity = int(capacity)
-                if capacity < 0:
+                new_capacity = int(capacity)
+                if new_capacity < 0:
                     errors["capacity"] = "Capacity must be a non-negative number."
+                else:
+                    # New capacity check against approved participants
+                    approved_participants_count = EventJoin.objects.filter(
+                        event=event, status=APPROVED
+                    ).count()
+                    if new_capacity < approved_participants_count:
+                        errors[
+                            "capacity"
+                        ] = "Capacity cannot be less than the number of approved participants"
             except ValueError:
                 errors["capacity"] = "Capacity must be a valid number."
 
@@ -173,18 +199,25 @@ def updateEvent(request, event_id):
                     errors["event_location_id"] = "Event location must be selected."
                 else:
                     location_object = Location.objects.get(id=event_location_id)
-                    if Event.objects.filter(
-                        event_name=event_name,
-                        event_location=location_object,
-                        start_time=start_time,
-                        end_time=end_time,
-                        is_active=True,
-                    ).exists():
+                    if (
+                        Event.objects.filter(
+                            event_name=event_name,
+                            event_location=location_object,
+                            start_time=start_time,
+                            end_time=end_time,
+                            is_active=True,
+                        )
+                        .exclude(pk=event_id)
+                        .exists()
+                    ):
                         errors[
                             "similar_event_error"
                         ] = "An event with these details already exists."
             except ValueError:
                 errors["event_location_id"] = "Invalid event location."
+
+        description = request.POST.get("description", "")
+
         if errors:
             # Return a JSON response with a 400 status code and the error messages
             return JsonResponse(errors, status=400)
@@ -194,11 +227,12 @@ def updateEvent(request, event_id):
         event.start_time = start_time
         event.end_time = end_time
         event.capacity = capacity
+        event.description = description
         event.save()
-
+        event.tags.set(tags)
         return redirect("events:index")  # Redirect to the event list or a success page
 
-    return render(request, "events/update-event.html", {"event": event})
+    return render(request, "events/update-event.html", {"event": event, "tags": tag})
 
 
 @login_required
@@ -211,6 +245,9 @@ def saveEvent(request):
         end_time = request.POST.get("end_time")
         capacity = request.POST.get("capacity")
         creator = request.user
+
+        selectedtags = request.POST.getlist("selected_tags")
+        tags = Tag.objects.filter(tag_name__in=selectedtags)
         # Create a dictionary to hold validation errors
         errors = {}
         # Validate the data
@@ -257,6 +294,9 @@ def saveEvent(request):
         if errors:
             # Return a 400 Bad Request response with JSON error messages
             return JsonResponse(errors, status=400)
+
+        description = request.POST.get("description", "")
+
         if Event.objects.filter(
             event_name=event_name,
             event_location=location_object,
@@ -276,8 +316,11 @@ def saveEvent(request):
             end_time=end_time,
             capacity=capacity,
             creator=creator,
+            description=description,
         )
+
         event.save()
+        event.tags.set(tags)
 
         return HttpResponseRedirect(reverse("events:index"))
 
@@ -287,13 +330,14 @@ def saveEvent(request):
 
 @login_required
 def createEvent(request):
+    tag = Tag.objects.all()
     if request.method == "POST":
         form = EventsForm(request.POST)
         if form.is_valid():
             return redirect("events:index")
     else:
         form = EventsForm()
-    return render(request, "events/create-event.html", {"form": form})
+    return render(request, "events/create-event.html", {"form": form, "tags": tag})
 
 
 @login_required
@@ -325,6 +369,25 @@ def eventDetail(request, event_id):
     approved_join_count = approved_join.count()
     pending_join_count = pending_join.count()
 
+    comment_form = CommentForm()
+    creator_comments_only = request.GET.get("creator_comments_only") == "true"
+
+    if creator_comments_only:
+        comments = (
+            event.comments.filter(parent__isnull=True)
+            .filter(is_active=True)
+            .filter(user=event.creator)
+        )
+    else:
+        comments = event.comments.filter(parent__isnull=True).filter(is_active=True)
+    comments_with_replies = []
+    for comment in comments:
+        if request.user == event.creator or request.user == comment.user:
+            replies = comment.replies.filter(is_active=True)
+        else:
+            replies = comment.replies.filter(is_active=True).filter(is_private=False)
+        comments_with_replies.append((comment, replies))
+
     context = {
         "event": event,
         "join_status": join_status,
@@ -338,6 +401,9 @@ def eventDetail(request, event_id):
         "WITHDRAWN": WITHDRAWN,
         "REJECTED": REJECTED,
         "REMOVED": REMOVED,
+        "comment_form": comment_form,
+        "comments_with_replies": comments_with_replies,
+        "creator_comments_only": creator_comments_only,
     }
     return render(request, "events/event-detail.html", context)
 
@@ -421,7 +487,6 @@ def creatorRemoveApprovedRequest(request, event_id, user_id):
         join.status = REMOVED
         join.save()
     return redirect("events:event-detail", event_id=event.id)
-    return render(request, "events/event-detail.html", {"event": event})
 
 
 # Map Code
@@ -439,3 +504,85 @@ def get_locations(request):
     serialized_data = serialize("json", locations)
     serialized_data = json.loads(serialized_data)
     return JsonResponse({"locations": serialized_data})
+
+
+# Comment related views
+@login_required
+@require_POST
+def addComment(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    parent_id = request.POST.get("parent_id")
+    if parent_id:
+        # handle the case when it's a reply of a reply
+        return HttpResponseBadRequest("Cantnot reply to a nested comment")
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.user = request.user
+        comment.event = event
+        comment.save()
+        return redirect(
+            "events:event-detail", event_id=event.id
+        )  # redirect to event detail page
+    else:
+        for error in form.errors:
+            messages.warning(request, f"{error}: :{form.errors[error]}")
+        return redirect(
+            "events:event-detail", event_id=event.id
+        )  # redirect to event detail page
+
+
+@login_required
+@require_POST
+def addReply(request, event_id, comment_id):
+    event = get_object_or_404(Event, id=event_id)
+    parent_comment = get_object_or_404(Comment, id=comment_id)
+    form = CommentForm(request.POST)
+    if not parent_comment.is_active:
+        messages.warning(request, "You cannot reply to a deleted comment.")
+        return redirect("events:event-detail", event_id=event.id)
+    if form.is_valid():
+        reply = form.save(commit=False)
+        reply.user = request.user
+        reply.event = event
+        # make sure that the parent comment is a comment not a reply
+        if parent_comment.parent is None:
+            reply.parent = parent_comment
+            if parent_comment.is_private:
+                reply.is_private = True
+        else:
+            # handle the case when it's a reply of a reply
+            return HttpResponseBadRequest("Cantnot reply to a nested comment")
+        reply.save()
+        return redirect(
+            "events:event-detail", event_id=event.id
+        )  # redirect to event detail page
+    else:
+        for error in form.errors:
+            messages.warning(request, f"{error}: :{form.errors[error]}")
+        return redirect(
+            "events:event-detail", event_id=event.id
+        )  # redirect to event detail page
+
+
+@login_required
+@require_POST
+def deleteComment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+    # only commenter and event creator can delete a comment/reply
+    if request.user != comment.user and request.user != comment.event.creator:
+        return redirect("events:event-detail", event_id=comment.event.id)
+
+    if request.POST.get("action") == "delete":
+        # only comment with no replies can be deleted
+        if not comment.replies.exists():
+            comment.is_active = False
+            comment.save()
+            return redirect("events:event-detail", event_id=comment.event.id)
+        else:
+            messages.warning(
+                request,
+                "You can't delete this comment. There're replies under this comment.",
+            )
+            return redirect("events:event-detail", event_id=comment.event.id)
+    return redirect("events:event-detail", event_id=comment.event.id)

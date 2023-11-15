@@ -1,6 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from .models import Event, Location, EventJoin
+from .models import Event, Location, EventJoin, Comment
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
@@ -8,6 +8,7 @@ from datetime import datetime
 import json
 import pytz
 from .constants import PENDING, APPROVED, WITHDRAWN, REJECTED, REMOVED
+from tags.models import Tag
 
 
 class EventIndexViewCapacityFilterTest(TestCase):
@@ -48,7 +49,6 @@ class EventIndexViewCapacityFilterTest(TestCase):
         response = self.client.get(
             url, {"min_capacity": min_capacity, "max_capacity": max_capacity}
         )
-
         # Check if the error message is as expected
         self.assertEqual(
             response.context.get("error"),
@@ -127,6 +127,7 @@ class UpdateEventViewTest(TestCase):
             capacity=100,
             event_location=self.location,
             creator=self.user,
+            description="Initial Test Event Description",
         )
 
     def test_update_event_view_get(self):
@@ -151,6 +152,7 @@ class UpdateEventViewTest(TestCase):
             "end_time": end_time,
             "capacity": 150,
             "event_location_id": new_location.id,
+            "description": "This is an updated description.",
         }
         url = reverse("events:update-event", args=(self.event.id,))
         self.client.login(username="testuser", password="testpassword")
@@ -158,6 +160,42 @@ class UpdateEventViewTest(TestCase):
         self.assertEqual(
             Event.objects.get(pk=self.event.id).event_name, "Updated Event"
         )  # Verify data was updated
+
+    def test_update_event_capacity_too_low(self):
+        self.client.login(username="testuser", password="testpassword")
+
+        # Set up approved participants
+        for i in range(10):  # Assuming 10 participants have joined
+            user = User.objects.create_user(
+                username=f"user{i}", password="testpassword"
+            )
+            EventJoin.objects.create(user=user, event=self.event, status=APPROVED)
+
+        # Prepare update data with a capacity lower than the number of approved participants
+        updated_data = {
+            "event_name": "Updated Event",
+            "start_time": self.event.start_time,
+            "end_time": self.event.end_time,
+            "capacity": 5,  # Less than the 10 approved participants
+            "event_location_id": self.location.id,
+        }
+
+        # Perform the update
+        url = reverse("events:update-event", args=(self.event.id,))
+        response = self.client.post(url, updated_data, follow=True)
+        # Assert the response status code if you expect a 200 from a template render or a 302 from a redirect
+        self.assertEqual(response.status_code, 400)
+
+        # Check for error message in response
+        error_message = (
+            "Capacity cannot be less than the number of approved participants"
+        )
+        self.assertEqual(response["Content-Type"], "application/json")
+        content = json.loads(response.content)
+        self.assertEqual(
+            content["capacity"],
+            error_message,
+        )  # Replace with expected content
 
 
 class DuplicateEventTests(TestCase):
@@ -183,12 +221,22 @@ class DuplicateEventTests(TestCase):
             is_active=True,
             creator=self.user,
         )
+        self.event2 = Event.objects.create(
+            event_name="Test Event2",
+            event_location=self.location,
+            start_time=self.start_time,
+            end_time=self.end_time,
+            capacity=100,
+            is_active=True,
+            creator=self.user,
+        )
 
     def test_update_event_with_duplicate_data(self):
         self.client.login(username="testuser", password="testpassword")
         existing_event = Event.objects.get(pk=self.event.id)
+        existing_event2 = Event.objects.get(pk=self.event2.id)
         response = self.client.post(
-            reverse("events:update-event", args=[existing_event.id]),
+            reverse("events:update-event", args=[existing_event2.id]),
             {
                 "event_location_id": self.location.id,
                 "event_name": existing_event.event_name,
@@ -246,6 +294,7 @@ class EventDetailPageTest(TestCase):
             capacity=100,
             is_active=True,
             creator=self.user,
+            description="This is a test description.",
         )
 
     def test_event_detail_view(self):
@@ -256,6 +305,7 @@ class EventDetailPageTest(TestCase):
         self.assertContains(response, "Test Location")
         self.assertContains(response, "100")
         self.assertContains(response, "testuser")
+        self.assertContains(response, self.event.description)
 
 
 class MapGetDataTest(TestCase):
@@ -368,6 +418,11 @@ class EventJoinRequestTest(TestCase):
         self.assertEqual(
             response.status_code, 302
         )  # or 403 if you handle it as forbidden
+
+    def test_event_join_str_representation(self):
+        event_join = EventJoin.objects.create(user=self.user, event=self.event)
+        expected_str = f"{self.user.username} - {self.event.event_name} - {event_join.get_status_display()}"
+        self.assertEqual(str(event_join), expected_str)
 
 
 class EventCreatorManageRequestTest(TestCase):
@@ -814,3 +869,380 @@ class NavbarTestCase(TestCase):
     def tearDown(self):
         # Clean up after each test case
         self.user.delete()
+
+
+class CommentTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(days=50),
+            end_time=current_time_ny + timedelta(days=52),
+            capacity=5,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.client = Client()
+
+    def test_create_comment(self):
+        self.client.login(username="testuser", password="testpassword")
+        url = reverse("events:add-comment", args=[self.event.id])
+        response = self.client.post(url, {"content": "Test comment"})
+        # Check that the Comment was created
+        self.assertEqual(Comment.objects.count(), 1)
+        comment = Comment.objects.latest("id")
+        self.assertEqual(comment.content, "Test comment")
+        self.assertEqual(comment.user, self.user)
+        self.assertEqual(comment.event, self.event)
+        self.assertRedirects(
+            response, reverse("events:event-detail", args=[self.event.id])
+        )
+
+    def test_private_comment_not_visible_to_other(self):
+        private_comment = Comment.objects.create(
+            user=self.user, event=self.event, content="Private comment", is_private=True
+        )
+        self.client.login(username="anotheruser", password="anotherpassword")
+        response = self.client.get(reverse("events:event-detail", args=[self.event.id]))
+        self.assertNotContains(response, private_comment.content)
+
+    def test_private_comment_visible_to_event_creator(self):
+        private_comment = Comment.objects.create(
+            user=self.user, event=self.event, content="Private comment", is_private=True
+        )
+        self.client.login(username="testcreator", password="testpassword")
+        response = self.client.get(reverse("events:event-detail", args=[self.event.id]))
+        self.assertContains(response, private_comment.content)
+
+    def test_event_creator_comments_only_filter(self):
+        creator_comment = Comment.objects.create(
+            user=self.creator, event=self.event, content="Creator comment"
+        )
+        user_comment = Comment.objects.create(
+            user=self.user, event=self.event, content="User comment"
+        )
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.get(
+            reverse("events:event-detail", args=[self.event.id])
+            + "?creator_comments_only=true"
+        )
+        self.assertContains(response, creator_comment.content)
+        self.assertNotContains(response, user_comment.content)
+        response = self.client.get(
+            reverse("events:event-detail", args=[self.event.id])
+            + "?creator_comments_only=false"
+        )
+        self.assertContains(response, creator_comment.content)
+        self.assertContains(response, user_comment.content)
+
+    def test_comment_author_can_see_private_reply(self):
+        self.client.login(username="testuser", password="testpassword")
+        user_comment = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="User private comment",
+            is_private=True,
+        )
+        private_reply = Comment.objects.create(
+            user=self.creator,
+            event=self.event,
+            content="Private reply",
+            is_private=True,
+            parent=user_comment,
+        )
+        response = self.client.get(reverse("events:event-detail", args=[self.event.id]))
+        self.assertContains(response, private_reply.content)
+
+    def test_not_logged_in_comment_attempt(self):
+        self.client.logout()  # Ensure the user is logged out
+        self.client.post(
+            reverse("events:add-comment", args=[self.event.id]),
+            {
+                "content": "Unauthorized reply attempt",
+            },
+        )
+
+        self.assertEqual(Comment.objects.count(), 0)  # No new comment should be added
+
+    def test_comment_str_representation(self):
+        self.comment = Comment.objects.create(
+            user=self.user, event=self.event, content="This is a test comment"
+        )
+        expected_str = f'{self.user.username}\'s comment: "This is a test comment..."'
+        self.assertEqual(str(self.comment), expected_str)
+
+
+class ReplyTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=100),
+            end_time=current_time_ny + timedelta(hours=104),
+            capacity=5,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.parent = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Parent comment",
+            is_private=True,
+            parent=None,
+        )
+        self.add_reply_url = reverse(
+            "events:add-reply", args=[self.event.id, self.parent.id]
+        )
+
+    def test_create_reply(self):
+        self.client.logout()
+        self.client.login(username="testuser", password="testpassword")
+        reply_content = "This is a reply"
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, self.parent.id]),
+            {
+                "content": reply_content,
+            },
+        )
+
+        self.assertEqual(
+            response.status_code, 302
+        )  # Assuming a redirect after successful posting
+        self.assertEqual(Comment.objects.count(), 2)
+        reply = Comment.objects.latest("id")
+        self.assertEqual(reply.content, reply_content)
+        self.assertEqual(reply.parent, self.parent)
+
+    def test_reply_to_nonexistent_comment(self):
+        self.client.logout()
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, 99999]),
+            {
+                "content": "Reply to non-existent comment",
+            },
+        )
+        self.assertEqual(
+            response.status_code, 404
+        )  # Expected to fail with a 404 Not Found
+
+    def test_reply_to_private_comment(self):
+        self.client.logout()
+        self.client.login(username="testuser", password="testpassword")
+
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, self.parent.id]),
+            {
+                "content": "Reply to private comment",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        reply = Comment.objects.latest("id")
+        self.assertEqual(reply.parent, self.parent)
+        self.assertTrue(
+            reply.is_private
+        )  # Assuming replies inherit the privacy of the parent comment
+
+    def test_cannot_reply_to_a_reply(self):
+        self.client.login(username="testuser", password="testpassword")
+        reply = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Existing comment",
+            is_private=True,
+            parent=self.parent,
+        )
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, reply.id]),
+            {"content": "Nested reply attempt"},
+        )
+        # Check if the response is HttpResponseBadRequest
+        self.assertEqual(response.status_code, 400)
+
+    def test_cannot_reply_to_a_deleted_comment(self):
+        self.client.login(username="testuser", password="testpassword")
+        self.parent.is_active = False
+        reply = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Deleted comment",
+            is_private=True,
+            is_active=False,
+        )
+        response = self.client.post(
+            reverse("events:add-reply", args=[self.event.id, reply.id]),
+            {"content": "Reply to a deleted comment attempt"},
+        )
+        self.assertEqual(response.status_code, 302)
+        # Check if the response is redirect
+        self.assertRedirects(
+            response, reverse("events:event-detail", args=[self.event.id])
+        )
+
+    def test_not_logged_in_reply_attempt(self):
+        self.client.logout()  # Ensure the user is logged out
+        self.client.post(
+            reverse("events:add-reply", args=[self.event.id, self.parent.id]),
+            {
+                "content": "Unauthorized reply attempt",
+            },
+        )
+        self.assertEqual(Comment.objects.count(), 1)  # No new comment should be added
+
+
+class TagFilterTest(TestCase):
+    def setUp(self):
+        # Set up user and location
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.location = Location.objects.create(location_name="Test Location")
+        Tag.objects.create(tag_name="Hobbies")
+        self.tags = Tag.objects.all()
+        # Create events with varying capacities
+        self.hobbies_event = Event.objects.create(
+            event_name="Hobbies Event",
+            start_time=timezone.now() + timedelta(days=1),
+            end_time=timezone.now() + timedelta(days=1, hours=2),
+            capacity=10,
+            event_location=self.location,
+            is_active=True,
+            creator=self.user,
+        )
+        self.hobbies_event.tags.set(self.tags)
+
+        self.no_tag_event = Event.objects.create(
+            event_name="No Tag Event",
+            start_time=timezone.now() + timedelta(days=1),
+            end_time=timezone.now() + timedelta(days=1, hours=2),
+            capacity=60,
+            event_location=self.location,
+            is_active=True,
+            creator=self.user,
+        )
+
+    def test_event_tags_positve_filter(self):
+        # Filter with a valid range where min_capacity is less than max_capacity
+        tags = 1
+
+        url = reverse("events:index")
+        response = self.client.get(url, {"tags": tags})
+        # Check that only events within the specified capacity range are in the context
+        self.assertEqual(response.status_code, 200)
+        # print(response.context)
+        self.assertContains(response, "Hobbies Event")
+        self.assertNotContains(response, "No Tag Event")
+        # Check if there is no error message
+
+    def test_event_tags_negative_filter(self):
+        url = reverse("events:index")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Hobbies Event")
+        self.assertContains(response, "No Tag Event")
+
+
+class DeleteCommentReplyTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.anotheruser = User.objects.create_user(
+            username="anotheruser", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=200),
+            end_time=current_time_ny + timedelta(hours=205),
+            capacity=5,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.comment = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Test comment",
+            is_private=True,
+        )
+        self.reply = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Test reply",
+            parent=self.comment,
+            is_private=True,
+        )
+
+    def test_delete_by_comment_user(self):
+        self.client.login(username="testuser", password="testpassword")
+        self.client.post(
+            reverse("events:delete-comment", args=[self.reply.id]), {"action": "delete"}
+        )
+        self.reply.refresh_from_db()
+        self.assertFalse(self.reply.is_active)
+
+    def test_delete_by_event_creator(self):
+        self.client.login(username="testcreator", password="testpassword")
+        self.client.post(
+            reverse("events:delete-comment", args=[self.reply.id]), {"action": "delete"}
+        )
+        self.reply.refresh_from_db()
+        self.assertFalse(self.reply.is_active)
+
+    def test_cannot_delete_by_other_user(self):
+        self.client.login(username="anotheruser", password="testpassword")
+        response = self.client.post(
+            reverse("events:delete-comment", args=[self.reply.id]), {"action": "delete"}
+        )
+        self.reply.refresh_from_db()
+        self.assertTrue(self.reply.is_active)
+        self.assertAlmostEqual(response.status_code, 302)
+
+    def test_cannot_delete_by_not_logged_in_user(self):
+        self.client.logout()
+        response = self.client.post(
+            reverse("events:delete-comment", args=[self.reply.id]), {"action": "delete"}
+        )
+        self.reply.refresh_from_db()
+        self.assertTrue(self.reply.is_active)
+        self.assertAlmostEqual(response.status_code, 302)
+
+    def test_cannot_delete_comment_with_reply(self):
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(
+            reverse("events:delete-comment", args=[self.comment.id]),
+            {"action": "delete"},
+        )
+        self.reply.refresh_from_db()
+        self.assertTrue(self.comment.is_active)
+        self.assertAlmostEqual(response.status_code, 302)
