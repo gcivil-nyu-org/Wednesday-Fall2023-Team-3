@@ -161,7 +161,7 @@
                     <!-- Check if the comment is visible to the current user -->
                     {% if not comment.is_private or request.user == comment.user or request.user == event.creator %}
                         <div class="comment sticky-note-outline-container my-4">
-                            <div class="row align-items-center">
+                            <div class="row">
                                 <div class="col-md-auto">
                                     {% if comment.is_private %}
                                         <h5>{{ comment.user }}: (private comment)</h5>
@@ -176,7 +176,7 @@
                             <p>{{ comment.content }}</p>
                             <div class="row">
                                 <!-- Toggle reply form -->
-                                <div class="col-md-auto">
+                                <div class="col-md-auto flex-fill">
                                     <button type="button" class="btn btn-outline-primary btn-block comment-button" onclick="showReplyForm({{ event.id }},{{ comment.id }},{{ comment.is_private|lower }})">Reply</button>
                                 </div>
                                 <div class="col-md-auto">
@@ -209,13 +209,13 @@
                                                             <h5>{{ reply.user }}:</h5>
                                                         {% endif %}
                                                     </div>
-                                                    <div class="col-md-auto">
+                                                    <div class="col-md-auto flex-fill">
                                                         <p> at {{ reply.created_at|date:"Y-m-d H:i" }}</p>
                                                     </div>
                                                     <div class="col-md-auto">
                                                         {% if user.is_authenticated %}
-                                                            {% if user == comment.user or user == comment.event.creator %}
-                                                                <form action="{% url 'events:delete-comment' comment.id %}" method="post">
+                                                            {% if user == reply.user or user == comment.event.creator %}
+                                                                <form action="{% url 'events:delete-comment' reply.id %}" method="post">
                                                                     {% csrf_token %}
                                                                     <input type="hidden" name="action" value="delete">
                                                                     <button type="submit" class="btn btn-outline-secondary btn-sm btn-block" onclick="return confirm('Are you sure to delete this reply?');">Delete</button>
