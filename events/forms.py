@@ -13,7 +13,10 @@ class EventFilterForm(forms.Form):
     end_time = forms.DateTimeField(required=False)
     min_capacity = forms.IntegerField(min_value=0, required=False)
     max_capacity = forms.IntegerField(min_value=0, required=False)
-    tags = forms.ModelChoiceField(queryset=Tag.objects.all(), empty_label="Select a tag", required=False)
+    tags = forms.ModelChoiceField(
+        queryset=Tag.objects.all(), empty_label="Select a tag", required=False
+    )
+
 
 class CommentForm(forms.ModelForm):
     class Meta:
