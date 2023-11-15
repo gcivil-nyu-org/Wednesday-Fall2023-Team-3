@@ -246,7 +246,12 @@
                                     <input type="checkbox" name="is_private" id="is_private-reply" class="form-check-input">             
                                     <label for="is_private" class="form-check-label">Make This Comment Private</label>
                                 </div>
-                                <button type="submit" class="btn btn-primary btn-block reply-button" id="add-reply">Reply</button>
+                                {% if user.is_authenticated %}
+                                    <button type="submit" class="btn btn-primary btn-block reply-button" id="add-reply">Reply</button>
+                                {% else %}
+                                    <!-- Link for non-authenticated users to log in and then reply -->
+                                    <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="btn btn-primary btn-block comment-button">Comment</a>
+                                {% endif %}
                             </div>  
                         </form>
                     </div>
