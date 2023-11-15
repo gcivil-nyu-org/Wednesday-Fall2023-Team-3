@@ -13,6 +13,7 @@ async function initMap() {
           eventIds[i]= Number(eventHtml[i].getAttribute('id'));
         }       
         const event_data = await responseEvent.json();
+        console.log(event_data);
         const location_objects = await responseLocation.json();
         const location_data = event_data.location_data;
         const locations = location_objects.locations;

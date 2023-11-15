@@ -41,6 +41,15 @@
 .join-entry-text {
     flex-grow: 1;
 }
+.Tags{
+    display: flex;
+}
+.Tag{
+    margin-right: 10px;
+}
+.Tag:last-child{
+    margin-right: 0;
+}
 
 </style>
 
@@ -72,6 +81,14 @@
                     <h4>Date and Time</h4>
                     <p>from {{ event.start_time }} to {{ event.end_time }}</p>
                     <!-- <img src="event-image.jpg" alt="Event Image" class="img-fluid rounded"> -->
+                    <h4>Tags</h4>
+                    <div class="Tags">
+                    {% for tag in event.tags.all %}
+                    <p class = "Tag">{{ tag }}</p>
+                    {% empty %}
+                    <p class = "Tag">None</p>
+                    {% endfor %}
+                    </div>
                     <h4>Location</h4>
                     <p>{{ location }}, {{ location.address }} ({{ location.category }})</p>
                     <h4>Capacity</h4>
