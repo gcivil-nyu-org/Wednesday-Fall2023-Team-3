@@ -8,6 +8,7 @@ from datetime import datetime
 import json
 import pytz
 from .constants import PENDING, APPROVED, WITHDRAWN, REJECTED, REMOVED
+from tags.models import Tag
 
 
 class EventIndexViewCapacityFilterTest(TestCase):
@@ -48,7 +49,6 @@ class EventIndexViewCapacityFilterTest(TestCase):
         response = self.client.get(
             url, {"min_capacity": min_capacity, "max_capacity": max_capacity}
         )
-
         # Check if the error message is as expected
         self.assertEqual(
             response.context.get("error"),
@@ -1110,6 +1110,58 @@ class ReplyTestCase(TestCase):
             },
         )
         self.assertEqual(Comment.objects.count(), 1)  # No new comment should be added
+
+
+class TagFilterTest(TestCase):
+    def setUp(self):
+        # Set up user and location
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.location = Location.objects.create(location_name="Test Location")
+        Tag.objects.create(tag_name="Hobbies")
+        self.tags = Tag.objects.all()
+        # Create events with varying capacities
+        self.hobbies_event = Event.objects.create(
+            event_name="Hobbies Event",
+            start_time=timezone.now() + timedelta(days=1),
+            end_time=timezone.now() + timedelta(days=1, hours=2),
+            capacity=10,
+            event_location=self.location,
+            is_active=True,
+            creator=self.user,
+        )
+        self.hobbies_event.tags.set(self.tags)
+
+        self.no_tag_event = Event.objects.create(
+            event_name="No Tag Event",
+            start_time=timezone.now() + timedelta(days=1),
+            end_time=timezone.now() + timedelta(days=1, hours=2),
+            capacity=60,
+            event_location=self.location,
+            is_active=True,
+            creator=self.user,
+        )
+
+    def test_event_tags_positve_filter(self):
+        # Filter with a valid range where min_capacity is less than max_capacity
+        tags = 1
+
+        url = reverse("events:index")
+        response = self.client.get(url, {"tags": tags})
+        # Check that only events within the specified capacity range are in the context
+        self.assertEqual(response.status_code, 200)
+        # print(response.context)
+        self.assertContains(response, "Hobbies Event")
+        self.assertNotContains(response, "No Tag Event")
+        # Check if there is no error message
+
+    def test_event_tags_negative_filter(self):
+        url = reverse("events:index")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Hobbies Event")
+        self.assertContains(response, "No Tag Event")
 
 
 class DeleteCommentReplyTestCase(TestCase):
