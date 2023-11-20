@@ -387,18 +387,20 @@ def eventDetail(request, event_id):
         else:
             replies = comment.replies.filter(is_active=True).filter(is_private=False)
         comments_with_replies.append((comment, replies))
-    
+
     reactions = event.reaction_set.filter(is_active=True)
     emoji_counts = {emoji: 0 for emoji, _ in EMOJI_CHOICES}
     for reaction in reactions:
         emoji_counts[reaction.emoji] += 1
     emoji_counts_list = [(emoji, count) for emoji, count in emoji_counts.items()]
-    
+
     user_reaction_emoji = None
     # attempt to see if the user has logged in
     if request.user.is_authenticated:
         try:
-            user_reaction = Reaction.objects.get(user=request.user, event=event, is_active=True)
+            user_reaction = Reaction.objects.get(
+                user=request.user, event=event, is_active=True
+            )
             user_reaction_emoji = user_reaction.emoji
         except Reaction.DoesNotExist:
             # if the user has no reaction record
@@ -606,7 +608,8 @@ def deleteComment(request, comment_id):
             return redirect("events:event-detail", event_id=comment.event.id)
     return redirect("events:event-detail", event_id=comment.event.id)
 
-#reaction related views
+
+# reaction related views
 @login_required
 @require_POST
 def toggleReaction(request, event_id, emoji):
@@ -617,11 +620,18 @@ def toggleReaction(request, event_id, emoji):
             request, "As the creator of the event, you cannot react to your own event."
         )
         return redirect("events:event-detail", event_id=event.id)
-    existing_reaction = Reaction.objects.filter(user=request.user, event=event, is_active=True).first()
+    existing_reaction = Reaction.objects.filter(
+        user=request.user, event=event, is_active=True
+    ).first()
     if existing_reaction and existing_reaction.emoji != emoji:
-        messages.warning(request, f'You have already reacted with {existing_reaction.emoji}. You can only react with one emoji per event.')
+        messages.warning(
+            request,
+            f"You have already reacted with {existing_reaction.emoji}. You can only react with one emoji per event.",
+        )
         return redirect("events:event-detail", event_id=event.id)
-    reaction, created = Reaction.objects.get_or_create(user=request.user, event=event, emoji=emoji)
+    reaction, created = Reaction.objects.get_or_create(
+        user=request.user, event=event, emoji=emoji
+    )
     if not created:
         reaction.is_active = not reaction.is_active
         reaction.save()

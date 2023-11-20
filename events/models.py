@@ -48,6 +48,7 @@ class Comment(models.Model):
     def __str__(self):
         return f'{self.user.username}\'s comment: "{self.content[:50]}..."'
 
+
 class Reaction(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)

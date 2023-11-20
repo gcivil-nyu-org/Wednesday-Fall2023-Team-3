@@ -1248,6 +1248,7 @@ class DeleteCommentReplyTestCase(TestCase):
         self.assertTrue(self.comment.is_active)
         self.assertAlmostEqual(response.status_code, 302)
 
+
 class ReactionTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -1297,19 +1298,21 @@ class ReactionTestCase(TestCase):
         self.assertFalse(
             Reaction.objects.filter(user=self.creator, event=self.event).exists()
         )
-        self.assertEqual(
-            response.status_code, 302
-        )
+        self.assertEqual(response.status_code, 302)
         self.assertRedirects(
             response, reverse("events:event-detail", args=[self.event.id])
         )
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
-        self.assertEqual(str(messages[0]), "As the creator of the event, you cannot react to your own event.")
-
+        self.assertEqual(
+            str(messages[0]),
+            "As the creator of the event, you cannot react to your own event.",
+        )
 
     def test_reaction_str_representation(self):
-        reaction = Reaction.objects.create(user=self.user, event=self.event, emoji=self.emoji)
+        reaction = Reaction.objects.create(
+            user=self.user, event=self.event, emoji=self.emoji
+        )
         expected_str = f"{self.user.username} - {self.event.event_name} - {reaction.get_emoji_display()}"
         self.assertEqual(str(reaction), expected_str)
 
@@ -1320,10 +1323,8 @@ class ReactionTestCase(TestCase):
         self.assertFalse(
             Reaction.objects.filter(user=self.creator, event=self.event).exists()
         )
-        self.assertEqual(
-            response.status_code, 302
-        )
-    
+        self.assertEqual(response.status_code, 302)
+
     def test_can_not_have_multiple_reaction_to_one_event(self):
         self.client.logout()
         self.client.login(username="testuser", password="testpassword")
@@ -1331,16 +1332,17 @@ class ReactionTestCase(TestCase):
         url = reverse("events:toggle-reaction", args=[self.event.id, HEART])
         response = self.client.post(url)
         self.assertFalse(
-            Reaction.objects.filter(user=self.creator, event=self.event, emoji=HEART).exists()
+            Reaction.objects.filter(
+                user=self.creator, event=self.event, emoji=HEART
+            ).exists()
         )
-        self.assertEqual(
-            response.status_code, 302
-        )
+        self.assertEqual(response.status_code, 302)
         self.assertRedirects(
             response, reverse("events:event-detail", args=[self.event.id])
         )
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
-        self.assertEqual(str(messages[0]), f"You have already reacted with {self.emoji}. You can only react with one emoji per event.")
-
-
+        self.assertEqual(
+            str(messages[0]),
+            f"You have already reacted with {self.emoji}. You can only react with one emoji per event.",
+        )
