@@ -83,6 +83,25 @@
 .reply:last-child {
     border-bottom: none;
 }
+
+.emoji-button {
+    display: inline-block;
+    background: none;
+    border: none;
+    font-size: 2.5em;  /* Adjust the font size as needed */
+    cursor: pointer;
+    text-decoration: none;
+    }
+
+.emoji-button:hover {
+    background-color: #e0e0e0; /* Change background color on hover */
+    border-radius: 20%;
+}
+.user-reaction-emoji {
+    border-radius: 20%;
+    background-color: rgba(175,207,243,0.25);
+}
+
 </style>
 
 
@@ -129,6 +148,34 @@
                     <p>{{ event.description }}</p>
                     <!-- Add more event details here -->
                 </div>
+            </div>
+            <!-- emoji reaction part -->
+            <div id="emoji-container">
+                {% for emoji, _ in EMOJI_CHOICES %} 
+                    <form action="{% url 'events:toggle-reaction' event.id emoji %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        {% if user.is_authenticated %}
+                            {% if user_reaction_emoji and emoji == user_reaction_emoji %}
+                                <button type="submit" class="emoji-button mx-3 user-reaction-emoji" value="{{ emoji }}" name="emoji">
+                                    {{ emoji }}
+                                </button>
+                            {% else %}
+                                <button type="submit" class="emoji-button mx-3" value="{{ emoji }}" name="emoji">
+                                    {{ emoji }}
+                                </button>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="emoji-button mx-3">{{ emoji }}</a>
+                        {% endif %}
+                        <span class="reaction-count">
+                            {% for emoji_item, count in emoji_counts_list %}
+                                {% if emoji_item == emoji %}
+                                    {{ count }}
+                                {% endif %}
+                            {% endfor %}
+                        </span>
+                    </form>
+                {% endfor %}
             </div>
             <div class="add-comment-form event-detail-container my-5">
                 <div class="sticky-note-container gray-container">

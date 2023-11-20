@@ -7,7 +7,7 @@ from django.http import (
 )
 from .forms import EventsForm, CommentForm
 from django.urls import reverse
-from .models import Event, Location, EventJoin, Comment
+from .models import Event, Location, EventJoin, Comment, Reaction
 from tags.models import Tag
 from django.contrib.auth.decorators import login_required
 from django.core.serializers import serialize
@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db import transaction
-from .constants import PENDING, APPROVED, WITHDRAWN, REJECTED, REMOVED
+from .constants import PENDING, APPROVED, WITHDRAWN, REJECTED, REMOVED, EMOJI_CHOICES
 from django.utils import timezone
 from .forms import EventFilterForm
 from datetime import datetime
@@ -388,6 +388,24 @@ def eventDetail(request, event_id):
             replies = comment.replies.filter(is_active=True).filter(is_private=False)
         comments_with_replies.append((comment, replies))
 
+    reactions = event.reaction_set.filter(is_active=True)
+    emoji_counts = {emoji: 0 for emoji, _ in EMOJI_CHOICES}
+    for reaction in reactions:
+        emoji_counts[reaction.emoji] += 1
+    emoji_counts_list = [(emoji, count) for emoji, count in emoji_counts.items()]
+
+    user_reaction_emoji = None
+    # attempt to see if the user has logged in
+    if request.user.is_authenticated:
+        try:
+            user_reaction = Reaction.objects.get(
+                user=request.user, event=event, is_active=True
+            )
+            user_reaction_emoji = user_reaction.emoji
+        except Reaction.DoesNotExist:
+            # if the user has no reaction record
+            pass
+
     context = {
         "event": event,
         "join_status": join_status,
@@ -404,6 +422,9 @@ def eventDetail(request, event_id):
         "comment_form": comment_form,
         "comments_with_replies": comments_with_replies,
         "creator_comments_only": creator_comments_only,
+        "emoji_counts_list": emoji_counts_list,
+        "EMOJI_CHOICES": EMOJI_CHOICES,
+        "user_reaction_emoji": user_reaction_emoji,
     }
     return render(request, "events/event-detail.html", context)
 
@@ -586,3 +607,32 @@ def deleteComment(request, comment_id):
             )
             return redirect("events:event-detail", event_id=comment.event.id)
     return redirect("events:event-detail", event_id=comment.event.id)
+
+
+# reaction related views
+@login_required
+@require_POST
+def toggleReaction(request, event_id, emoji):
+    event = get_object_or_404(Event, id=event_id)
+    # Prevent the creator from reacting to their own event
+    if request.user == event.creator:
+        messages.warning(
+            request, "As the creator of the event, you cannot react to your own event."
+        )
+        return redirect("events:event-detail", event_id=event.id)
+    existing_reaction = Reaction.objects.filter(
+        user=request.user, event=event, is_active=True
+    ).first()
+    if existing_reaction and existing_reaction.emoji != emoji:
+        messages.warning(
+            request,
+            f"You have already reacted with {existing_reaction.emoji}. You can only react with one emoji per event.",
+        )
+        return redirect("events:event-detail", event_id=event.id)
+    reaction, created = Reaction.objects.get_or_create(
+        user=request.user, event=event, emoji=emoji
+    )
+    if not created:
+        reaction.is_active = not reaction.is_active
+        reaction.save()
+    return redirect("events:event-detail", event_id=event.id)

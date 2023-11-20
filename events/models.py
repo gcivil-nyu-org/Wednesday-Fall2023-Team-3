@@ -2,7 +2,7 @@ from django.db import models
 from location.models import Location
 from django.contrib.auth.models import User
 from tags.models import Tag
-from .constants import STATUS_CHOICES, PENDING
+from .constants import STATUS_CHOICES, PENDING, EMOJI_CHOICES
 
 # Create your models here.
 
@@ -47,3 +47,13 @@ class Comment(models.Model):
 
     def __str__(self):
         return f'{self.user.username}\'s comment: "{self.content[:50]}..."'
+
+
+class Reaction(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    emoji = models.CharField(max_length=255, choices=EMOJI_CHOICES)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.event.event_name} - {self.get_emoji_display()}"
