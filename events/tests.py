@@ -1,14 +1,15 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from .models import Event, Location, EventJoin, Comment
+from .models import Event, Location, EventJoin, Comment, Reaction
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 from datetime import datetime
 import json
 import pytz
-from .constants import PENDING, APPROVED, WITHDRAWN, REJECTED, REMOVED
+from .constants import PENDING, APPROVED, WITHDRAWN, REJECTED, REMOVED, CHEER_UP, HEART
 from tags.models import Tag
+from django.contrib.messages import get_messages
 
 
 class EventIndexViewCapacityFilterTest(TestCase):
@@ -1246,3 +1247,100 @@ class DeleteCommentReplyTestCase(TestCase):
         self.reply.refresh_from_db()
         self.assertTrue(self.comment.is_active)
         self.assertAlmostEqual(response.status_code, 302)
+
+class ReactionTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=19),
+            end_time=current_time_ny + timedelta(hours=21),
+            capacity=10,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.emoji = CHEER_UP
+        self.client = Client()
+
+    def test_toggle_reaction(self):
+        self.client.login(username="testuser", password="testpassword")
+        url = reverse("events:toggle-reaction", args=[self.event.id, self.emoji])
+        # Initially, the user has not reacted to the event
+        response = self.client.post(url)
+        reaction = Reaction.objects.get(user=self.user, event=self.event)
+        self.assertEqual(reaction.emoji, CHEER_UP)
+        self.assertTrue(reaction.is_active)
+        # Make the POST request again to withdraw the reaction
+        response = self.client.post(url)
+        reaction.refresh_from_db()
+        self.assertFalse(reaction.is_active)
+        self.assertRedirects(
+            response, reverse("events:event-detail", args=[self.event.id])
+        )
+
+    def test_creator_cannot_react_to_own_event(self):
+        self.client.logout()
+        url = reverse("events:toggle-reaction", args=[self.event.id, self.emoji])
+        self.client.login(username="testcreator", password="testpassword")
+        response = self.client.post(url)
+        self.assertFalse(
+            Reaction.objects.filter(user=self.creator, event=self.event).exists()
+        )
+        self.assertEqual(
+            response.status_code, 302
+        )
+        self.assertRedirects(
+            response, reverse("events:event-detail", args=[self.event.id])
+        )
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), "As the creator of the event, you cannot react to your own event.")
+
+
+    def test_reaction_str_representation(self):
+        reaction = Reaction.objects.create(user=self.user, event=self.event, emoji=self.emoji)
+        expected_str = f"{self.user.username} - {self.event.event_name} - {reaction.get_emoji_display()}"
+        self.assertEqual(str(reaction), expected_str)
+
+    def test_non_logged_in_cannot_react(self):
+        self.client.logout()
+        url = reverse("events:toggle-reaction", args=[self.event.id, self.emoji])
+        response = self.client.post(url)
+        self.assertFalse(
+            Reaction.objects.filter(user=self.creator, event=self.event).exists()
+        )
+        self.assertEqual(
+            response.status_code, 302
+        )
+    
+    def test_can_not_have_multiple_reaction_to_one_event(self):
+        self.client.logout()
+        self.client.login(username="testuser", password="testpassword")
+        Reaction.objects.create(user=self.user, event=self.event, emoji=self.emoji)
+        url = reverse("events:toggle-reaction", args=[self.event.id, HEART])
+        response = self.client.post(url)
+        self.assertFalse(
+            Reaction.objects.filter(user=self.creator, event=self.event, emoji=HEART).exists()
+        )
+        self.assertEqual(
+            response.status_code, 302
+        )
+        self.assertRedirects(
+            response, reverse("events:event-detail", args=[self.event.id])
+        )
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), f"You have already reacted with {self.emoji}. You can only react with one emoji per event.")
+
+

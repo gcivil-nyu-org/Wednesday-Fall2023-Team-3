@@ -41,4 +41,9 @@ urlpatterns = [
     path(
         "delete-comment/<int:comment_id>/", views.deleteComment, name="delete-comment"
     ),
+    path(
+        "<int:event_id>/toggle-reaction/<str:emoji>/",
+        views.toggleReaction,
+        name="toggle-reaction",
+    ),
 ]
