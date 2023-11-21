@@ -76,6 +76,24 @@ class EventIndexViewCapacityFilterTest(TestCase):
         # Additionally, check if the form is valid
         self.assertTrue(response.context.get("form").is_valid())
 
+    def test_reset_filters_redirects(self):
+        min_capacity = 20
+        max_capacity = 120
+        url = reverse("events:index")
+        self.client.get(
+            url, {"min_capacity": min_capacity, "max_capacity": max_capacity}
+        )
+
+        reset_response = self.client.get(url, {"reset_filters": "1"}, follow=True)
+        self.assertRedirects(reset_response, reverse("events:index"))
+        fresh_response = self.client.get(url)
+
+        all_events = Event.objects.filter(is_active=True).order_by("-start_time")
+        self.assertEqual(
+            len(fresh_response.context.get("events", [])), all_events.count()
+        )
+        self.assertIsNone(fresh_response.context.get("error", None))
+
 
 class EventIndexViewFilterNegativeTest(TestCase):
     def setUp(self):
