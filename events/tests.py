@@ -1346,3 +1346,35 @@ class ReactionTestCase(TestCase):
             str(messages[0]),
             f"You have already reacted with {self.emoji}. You can only react with one emoji per event.",
         )
+
+    def test_creator_see_reaction_username_list(self):
+        self.client.logout()
+        url = reverse("events:event-detail", args=[self.event.id])
+        self.client.login(username="testcreator", password="testpassword")
+        Reaction.objects.create(user=self.user, event=self.event, emoji=self.emoji)
+        response = self.client.post(url)
+        self.assertContains(response, "testuser")
+
+    def test_not_logged_in_user_cannot_see_reaction_username_list(self):
+        self.client.logout()
+        url = reverse("events:event-detail", args=[self.event.id])
+        Reaction.objects.create(user=self.user, event=self.event, emoji=self.emoji)
+        response = self.client.post(url)
+        self.assertNotContains(response, "testuser")
+
+    def test_another_user_cannot_see_reaction_username_list(self):
+        self.client.logout()
+        User.objects.create_user(username="anotheruser", password="testpassword")
+        url = reverse("events:event-detail", args=[self.event.id])
+        Reaction.objects.create(user=self.user, event=self.event, emoji=self.emoji)
+        self.client.login(username="anotheruser", password="testpassword")
+        response = self.client.post(url)
+        self.assertNotContains(response, "testuser")
+
+    def test_reaction_count(self):
+        self.client.logout()
+        url = reverse("events:event-detail", args=[self.event.id])
+        self.client.login(username="testcreator", password="testpassword")
+        Reaction.objects.create(user=self.user, event=self.event, emoji=self.emoji)
+        response = self.client.post(url)
+        self.assertContains(response, "testuser")
