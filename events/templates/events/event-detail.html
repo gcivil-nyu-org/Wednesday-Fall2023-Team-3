@@ -102,6 +102,23 @@
     background-color: rgba(175,207,243,0.25);
 }
 
+.emoji-button-fake {
+    display: inline-block;
+    background: none;
+    border: none;
+    font-size: 2.5em;
+}
+
+.emoji-container {
+    width: 60%;
+    min-width: 500px;
+}
+
+ul {
+    list-style-type: none;
+}
+
+
 </style>
 
 
@@ -150,33 +167,71 @@
                 </div>
             </div>
             <!-- emoji reaction part -->
-            <div id="emoji-container">
+            <div id="emoji-container-not-creator">
                 {% for emoji, _ in EMOJI_CHOICES %} 
                     <form action="{% url 'events:toggle-reaction' event.id emoji %}" method="post" style="display:inline;">
                         {% csrf_token %}
                         {% if user.is_authenticated %}
-                            {% if user_reaction_emoji and emoji == user_reaction_emoji %}
-                                <button type="submit" class="emoji-button mx-3 user-reaction-emoji" value="{{ emoji }}" name="emoji">
-                                    {{ emoji }}
-                                </button>
-                            {% else %}
-                                <button type="submit" class="emoji-button mx-3" value="{{ emoji }}" name="emoji">
-                                    {{ emoji }}
-                                </button>
-                            {% endif %}
-                        {% else %}
-                            <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="emoji-button mx-3">{{ emoji }}</a>
-                        {% endif %}
-                        <span class="reaction-count">
-                            {% for emoji_item, count in emoji_counts_list %}
-                                {% if emoji_item == emoji %}
-                                    {{ count }}
+                            {% if request.user != event.creator %} <!--logged in but not event creator -->
+                                {% if user_reaction_emoji and emoji == user_reaction_emoji %}
+                                    <button type="submit" class="emoji-button mx-3 user-reaction-emoji" value="{{ emoji }}" name="emoji">
+                                        {{ emoji }}
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="emoji-button mx-3" value="{{ emoji }}" name="emoji">
+                                        {{ emoji }}
+                                    </button>
                                 {% endif %}
-                            {% endfor %}
-                        </span>
+                                <span class="reaction-count">
+                                    {% for emoji_item, count, _ in emoji_data_list %}
+                                        {% if emoji_item == emoji %}
+                                            {{ count }}
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                            {% endif %}         
+                        {% else %} <!-- not logged in user to be directed to log in -->
+                            <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="emoji-button mx-3">{{ emoji }}</a>
+                            <span class="reaction-count">
+                                {% for emoji_item, count, _ in emoji_data_list %}
+                                    {% if emoji_item == emoji %}
+                                        {{ count }}
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
+                            {% endif %}
                     </form>
                 {% endfor %}
-            </div>
+            </div>    
+                    {% if user.is_authenticated and request.user == event.creator%}
+                        <div class="row emoji-container" id="emoji-container-creator">
+                            {% for emoji, _ in EMOJI_CHOICES %}
+                            
+                                {% for emoji_item, count, emoji_users in emoji_data_list %}
+                                
+                                    {% if emoji_item == emoji %}
+                                    <div class="col">
+                                        <div class="row">
+                                            <button class="emoji-button mx-3 text-center" id="emoji-button-fake" data-bs-toggle="collapse" href="#{{ emoji }}-users" role="button" aria-expanded="false" aria-controls="{{ emoji }}-users">{{ emoji }}</button>
+                                        </div>
+                                        <div class="row collapse" id="{{ emoji }}-users"> 
+                                            <p class="text-center">{{ count }}</p>
+                                            {% if emoji_users %}
+                                            <ul class="sticky-note-outline-container mx-1">
+                                                {% for emoji_user in emoji_users %}
+                                                    <li>{{ emoji_user }}</li>
+                                                {% endfor %}
+                                            </ul>  
+                                            {% endif %}
+                                        </div>
+                                    </div>  
+                                    {% endif %}
+                                
+                                {% endfor %}
+                            {% endfor %}
+                        </div>   
+                    {% endif %}
+                
             <div class="add-comment-form event-detail-container my-5">
                 <div class="sticky-note-container gray-container">
                     <form action="{% url 'events:add-comment' event.id %}" method="post">
