@@ -28,6 +28,9 @@ from django.db.models import Q
 
 
 def index(request):
+    if 'reset_filters' in request.GET:
+        # If so, redirect to the same page without query parameters to show all events
+        return redirect('events:index')
     # Set the timezone to New York and get the current time
     ny_timezone = pytz.timezone("America/New_York")
     current_time_ny = timezone.now().astimezone(ny_timezone)
