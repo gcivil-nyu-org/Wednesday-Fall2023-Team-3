@@ -118,6 +118,24 @@ ul {
     list-style-type: none;
 }
 
+.share-event-container {
+    display: flex;
+    justify-content: flex-end; 
+}
+
+.share-event-btn {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.share-event-btn:hover {
+    background-color: #0056b3;
+}
+
 
 </style>
 
@@ -163,6 +181,10 @@ ul {
                     <p>{{ event.capacity }}</p>
                     <h4>Description</h4>
                     <p>{{ event.description }}</p>
+                    <!-- Container for the button that uses flexbox to align items to the right -->
+                    <div class="share-event-container">
+                        <button onclick="copyEventUrl()" class="share-event-btn">Share Event</button>
+                    </div>
                     <!-- Add more event details here -->
                 </div>
             </div>
@@ -491,6 +513,16 @@ ul {
         console.log(formContent.action); 
 
     }
+    function copyEventUrl() {
+        // Create a temporary hidden text element
+        const tempInput = document.createElement('input');
+        tempInput.value = window.location.href; 
+        document.body.appendChild(tempInput);
+        tempInput.select(); 
+        document.execCommand('copy'); 
+        document.body.removeChild(tempInput); 
+        alert("Event URL copied to clipboard!"); 
+}  
 </script>   
 {% endblock %}
 

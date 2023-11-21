@@ -308,6 +308,14 @@ class EventDetailPageTest(TestCase):
         self.assertContains(response, "testuser")
         self.assertContains(response, self.event.description)
 
+    def test_share_event_button(self):
+        response = self.client.get(
+            reverse("events:event-detail", args=(self.event.id,))
+        )
+        self.assertContains(response, "Share Event")
+        self.assertContains(response, "function copyEventUrl()")
+        self.assertContains(response, 'onclick="copyEventUrl()"')
+
 
 class MapGetDataTest(TestCase):
     def setUp(self):
