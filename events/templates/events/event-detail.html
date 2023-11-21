@@ -110,13 +110,14 @@
 }
 
 .emoji-container {
-    width: 50%;
-    min-width: 400px;
+    width: 60%;
+    min-width: 500px;
 }
 
 ul {
     list-style-type: none;
 }
+
 
 </style>
 
@@ -216,7 +217,7 @@ ul {
                                         <div class="row collapse" id="{{ emoji }}-users"> 
                                             <p class="text-center">{{ count }}</p>
                                             {% if emoji_users %}
-                                            <ul>
+                                            <ul class="sticky-note-outline-container mx-1">
                                                 {% for emoji_user in emoji_users %}
                                                     <li>{{ emoji_user }}</li>
                                                 {% endfor %}
