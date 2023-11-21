@@ -365,7 +365,10 @@ def eventDetail(request, event_id):
             # if the user has no join record
             pass
     approved_join = event.eventjoin_set.filter(status=APPROVED)
-    pending_join = event.eventjoin_set.filter(status=PENDING)
+    # prevent unauthoraized user looking at the pending list
+    pending_join = approved_join
+    if request.user == event.creator:
+        pending_join = event.eventjoin_set.filter(status=PENDING)
     approved_join_count = approved_join.count()
     pending_join_count = pending_join.count()
 
@@ -389,10 +392,14 @@ def eventDetail(request, event_id):
         comments_with_replies.append((comment, replies))
 
     reactions = event.reaction_set.filter(is_active=True)
-    emoji_counts = {emoji: 0 for emoji, _ in EMOJI_CHOICES}
+    emoji_data = {emoji: {"count": 0, "users": []} for emoji, _ in EMOJI_CHOICES}
     for reaction in reactions:
-        emoji_counts[reaction.emoji] += 1
-    emoji_counts_list = [(emoji, count) for emoji, count in emoji_counts.items()]
+        emoji_data[reaction.emoji]["count"] += 1
+        if request.user == event.creator:  # prevent unauthorized peeking at the list
+            emoji_data[reaction.emoji]["users"].append(reaction.user)
+    emoji_data_list = [
+        (emoji, data["count"], data["users"]) for emoji, data in emoji_data.items()
+    ]
 
     user_reaction_emoji = None
     # attempt to see if the user has logged in
@@ -422,7 +429,7 @@ def eventDetail(request, event_id):
         "comment_form": comment_form,
         "comments_with_replies": comments_with_replies,
         "creator_comments_only": creator_comments_only,
-        "emoji_counts_list": emoji_counts_list,
+        "emoji_data_list": emoji_data_list,
         "EMOJI_CHOICES": EMOJI_CHOICES,
         "user_reaction_emoji": user_reaction_emoji,
     }
