@@ -1404,3 +1404,153 @@ class ReactionTestCase(TestCase):
         Reaction.objects.create(user=self.user, event=self.event, emoji=self.emoji)
         response = self.client.post(url)
         self.assertContains(response, "testuser")
+
+
+class AccessDeletedEventTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=14),
+            end_time=current_time_ny + timedelta(hours=25),
+            capacity=10,
+            is_active=False,
+            creator=self.creator,
+        )
+        self.emoji = CHEER_UP
+        self.client = Client()
+
+    def test_cannot_access_deleted_event_detail(self):
+        url = reverse("events:event-detail", args=[self.event.id])
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_toggle_join_request_to_deleted_event(self):
+        url = reverse("events:toggle-join-request", args=[self.event.id])
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_approve_join_request_to_deleted_event(self):
+        EventJoin.objects.create(user=self.user, event=self.event)
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse("events:approve-request", args=[self.event.id, self.user.id])
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_reject_join_request_to_deleted_event(self):
+        EventJoin.objects.create(user=self.user, event=self.event)
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse("events:reject-request", args=[self.event.id, self.user.id])
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_remove_approved_request_of_deleted_event(self):
+        EventJoin.objects.create(user=self.user, event=self.event, status=APPROVED)
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse(
+            "events:remove-approved-request", args=[self.event.id, self.user.id]
+        )
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_comment_deleted_event(self):
+        url = reverse("events:add-comment", args=[self.event.id])
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_reply_to_comment_of_deleted_event(self):
+        comment = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Test comment",
+            is_private=True,
+        )
+        url = reverse("events:add-reply", args=[self.event.id, comment.id])
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_delete_comment_of_deleted_event(self):
+        comment = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Test comment",
+            is_private=True,
+        )
+        url = reverse("events:delete-comment", args=[comment.id])
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_react_to_deleted_event(self):
+        self.client.login(username="testuser", password="testpassword")
+        url = reverse("events:toggle-reaction", args=[self.event.id, self.emoji])
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
