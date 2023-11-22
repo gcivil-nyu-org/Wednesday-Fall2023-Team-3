@@ -21,10 +21,40 @@
     </form>
 
     <script>
-        // WebSocket connection setup
         const chatSocket = new WebSocket(
             'ws://' + window.location.host + '/ws/chat/{{ recipient.id }}/'
         );
+        function connectWebSocket() {
+        if (chatSocket.readyState !== WebSocket.OPEN) {
+            chatSocket = new WebSocket('ws://' + window.location.host + '/ws/chat/{{ recipient.id }}/');
+            
+            // Add event listeners for the new socket
+            chatSocket.onopen = function(event) {
+                console.log('Reconnected to WebSocket.');
+                // Perform actions or send messages upon successful reconnection
+            };
+
+            chatSocket.onclose = function(event) {
+                console.log('WebSocket connection closed.');
+                // Handle closure, such as attempting to reconnect
+                setTimeout(connectWebSocket, 3000); // Reconnect after 3 seconds (adjust as needed)
+            };
+
+            chatSocket.onerror = function(event) {
+                console.error('WebSocket error observed:', event);
+                // Handle any errors that might occur
+            };
+
+            chatSocket.onmessage = function(event) {
+                console.log('Received message:', event.data);
+                // Process incoming messages
+            };
+        }
+    }
+
+// Call the function to start or reconnect the WebSocket
+
+        // WebSocket connection setup
 
         // Handle incoming messages from WebSocket
         chatSocket.onmessage = function(e) {
@@ -39,6 +69,10 @@
             const message = messageInput.value.trim();
 
             if (message) {
+                if (chatSocket.readyState !== WebSocket.OPEN) {
+                    connectWebSocket();
+                    console.log('Socket is open and ready to communicate.');
+                } 
                 chatSocket.send(JSON.stringify({
                     'message': message,
                     'sender_id': {{ request.user.id }},
