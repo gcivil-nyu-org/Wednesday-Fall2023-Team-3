@@ -137,7 +137,12 @@ def index(request):
 def updateEvent(request, event_id):
     tag = Tag.objects.all()
     event = get_object_or_404(Event, pk=event_id)
-
+    if not event.is_active:
+        messages.warning(request, "The event is deleted. Try some other events!")
+        return redirect("events:index")
+    if request.user != event.creator:
+        messages.warning(request, "You're not allowed to update this event.")
+        return redirect("events:index")
     if request.method == "POST":
         # Update the event with data from the form
         event_location_id = request.POST.get("event_location_id")
@@ -346,6 +351,9 @@ def createEvent(request):
 @login_required
 def deleteEvent(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
+    if not event.is_active:
+        messages.warning(request, "The event is deleted. Try some other events!")
+        return redirect("events:index")
     if request.method == "POST":
         if request.POST.get("action") == "delete":
             # Set is_active to False instead of deleting
