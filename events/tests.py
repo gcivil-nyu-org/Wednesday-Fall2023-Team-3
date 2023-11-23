@@ -1591,3 +1591,60 @@ class AccessDeletedEventTestCase(TestCase):
             "The event is deleted. Try some other events!",
         )
         self.assertRedirects(response, reverse("events:index"))
+
+
+class DeleteEventTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=2),
+            end_time=current_time_ny + timedelta(hours=25),
+            capacity=10,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.client = Client()
+
+    def test_event_creator_can_delete_event(self):
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse("events:delete-event", args=[self.event.id])
+        response = self.client.post(url, {"action": "delete"})
+        self.event.refresh_from_db()
+        self.assertFalse(self.event.is_active)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_other_user_cannot_delete_event(self):
+        self.client.login(username="testuser", password="testpassword")
+        url = reverse("events:delete-event", args=[self.event.id])
+        response = self.client.post(url, {"action": "delete"})
+        self.event.refresh_from_db()
+        self.assertTrue(self.event.is_active)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "You're not allowed to delete this event.",
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_not_logged_in_user_cannot_delete_event(self):
+        self.client.logout()
+        url = reverse("events:delete-event", args=[self.event.id])
+        response = self.client.post(url, {"action": "delete"})
+        self.event.refresh_from_db()
+        self.assertTrue(self.event.is_active)
+        self.assertEqual(response.status_code, 302)
