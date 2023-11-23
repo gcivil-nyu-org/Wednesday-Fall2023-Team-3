@@ -354,6 +354,9 @@ def deleteEvent(request, event_id):
     if not event.is_active:
         messages.warning(request, "The event is deleted. Try some other events!")
         return redirect("events:index")
+    if request.user != event.creator:
+        messages.warning(request, "You're not allowed to delete this event.")
+        return redirect("events:index")
     if request.method == "POST":
         if request.POST.get("action") == "delete":
             # Set is_active to False instead of deleting
