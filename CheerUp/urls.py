@@ -19,9 +19,7 @@ from django.urls import include, path
 from events.views import homepage
 
 urlpatterns = [
-    path(
-        "", homepage, name="root-homepage"
-    ),  # this will change later
+    path("", homepage, name="root-homepage"),  # this will change later
     path("admin/", admin.site.urls),
     path("events/", include("events.urls")),
     path("locations/", include("location.urls")),
