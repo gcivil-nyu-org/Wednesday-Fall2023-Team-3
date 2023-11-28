@@ -143,6 +143,15 @@ ul {
 {% endblock %}
 
 {% block content %}
+{% if event.image %}
+    <img src="{{ event.image.url }}" alt="{{ event.event_name }}" class="img-fluid rounded">
+{% endif %}
+{% if event.image %}
+    <form action="{% url 'events:delete_event_image' event.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete Image</button>
+    </form>
+{% endif %}
 {% if messages %}
     <div id="messages">
         {% for message in messages %}
