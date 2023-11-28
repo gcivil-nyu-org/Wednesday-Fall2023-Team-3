@@ -46,4 +46,5 @@ urlpatterns = [
         views.toggleReaction,
         name="toggle-reaction",
     ),
+    path("homepage/", views.homepage, name="homepage"),
 ]
