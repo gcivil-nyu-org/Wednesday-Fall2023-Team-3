@@ -26,6 +26,7 @@ from .constants import (
     SMALL_CAPACITY,
     MEDIUM_CAPACITY,
     LARGE_CAPACITY,
+    TAG_ICON_PATHS,
 )
 from django.utils import timezone
 from .forms import EventFilterForm
@@ -709,7 +710,8 @@ def homepage(request):
         if "filter_capacity" in request.GET:
             capacity_label = request.GET.get("filter_capacity", "")
             return filter_event_capacity_label(capacity_label)
-    context = {"tags": tags}
+    tags_icons = zip(tags, TAG_ICON_PATHS)
+    context = {"tags_icons": tags_icons}
     return render(request, "events/homepage.html", context)
 
 

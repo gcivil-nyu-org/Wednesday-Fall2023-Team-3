@@ -31,3 +31,12 @@ EMOJI_CHOICES = (
 SMALL_CAPACITY = 5
 MEDIUM_CAPACITY = 20
 LARGE_CAPACITY = 50
+
+TAG_ICON_PATHS = [
+    "static/events/images/boombox.svg",
+    "static/events/images/cup-hot.svg",
+    "static/events/images/person-arms-up.svg",
+    "static/events/images/moon.svg",
+    "static/events/images/easel.svg",
+    "static/events/images/book.svg",
+]

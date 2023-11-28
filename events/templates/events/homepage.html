@@ -15,6 +15,15 @@ Cheer↑
     /* border: 1px solid #b8b8b8; */
 }
 
+.label-container {
+    width: 90%;
+    margin: 5% 5% 3% 5%;
+    /* background-color: rgba(175,207,243,0.3); */
+    padding: 3%;
+    border-radius: 25px;
+    /* border: 1px solid #b8b8b8; */
+}
+
 .label-button {
     /* border-style: solid;
     border-color: #afcff3; */
@@ -22,19 +31,10 @@ Cheer↑
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #afcff3;
-    margin: 0 auto
-}
-
-.label-small {
+    border: 1px solid #b8b8b8;
+    margin: 0 auto;
     width: 135px;
     height: 135px;
-    background-color: rgba(175,207,243,0.3);
-}
-
-.label-big {
-    width: 150px;
-    height: 150px;
 }
 
 .label-container {
@@ -57,11 +57,26 @@ Cheer↑
 
 .label-button:hover {
     background-color: rgba(175,207,243,0.3);
+    border: 1px solid #afcff3;
 }
 
-.label-small:hover {
-    background-color: rgba(255,255,255,0.3);
-    border: 1px solid #b8b8b8;
+#small-label {
+    width: 50px;
+    height: 50px;
+}
+
+#medium-label {
+    width: 75px;
+    height: 75px;
+}
+
+#large-label {
+    width: 100px;
+    height: 100px;
+}
+
+.round-corner {
+    border-radius: 25%;
 }
 </style>
 {% endblock %}
@@ -75,58 +90,78 @@ Cheer↑
     </p>
 </div>
 <div class="label-container">
-    <div class="row">
-        <div class="col">
-            <div class="btn rounded-circle label-button my-2 label-big" id="tag-label-button" data-bs-toggle="collapse" href="#tag_label" role="button" aria-expanded="false" aria-controls="tag_label">   
-                <img src="static/events/images/bookmark.svg" alt="Bootstrap" width="32" height="32">  
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <p class="nav-link fw-bold fs-5 m-3 disabled">PICK ONE!</p>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active fw-bold fs-5 m-3" id="tag-tab" data-bs-toggle="tab" data-bs-target="#tag_label">TAG</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link fw-bold fs-5 m-3" id="time-tab" data-bs-toggle="tab" data-bs-target="#time_label">TIME</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link fw-bold fs-5 m-3" id="capacity-tab" data-bs-toggle="tab" data-bs-target="#capacity_label">CAPACITY</a>
+        </li>
+    </ul>
+    <div class="tab-content my-3">
+        <div class="tab-pane fade show active" id="tag_label">
+            <div class="row">
+                {% for tag, icon_path in tags_icons %}
+                    <div class="col">
+                        <a href="{% url 'root-homepage' %}?filter_tag={{ tag.id }}" class="btn rounded-circle label-button my-2"><img src="{{ icon_path }}" alt="Bootstrap" width="32" height="32"></a>
+                        <p class="text-center">{{ tag.tag_name }}</p>
+                    </div>
+                {% endfor %}
             </div>
-            <div class="text-center fw-bold my-2 ">TAG</div>
-        </div>
-        <div class="col">
-            <div class="btn rounded-circle label-button my-2 label-big" id="time-label-button" data-bs-toggle="collapse" href="#time_label" role="button" aria-expanded="false" aria-controls="time_label">
-                <img src="static/events/images/calendar.svg" alt="Bootstrap" width="32" height="32">  
-            </div>
-            <div class="text-center fw-bold my-2 ">TIME</div>
-        </div>
-        <div class="col">
-            <div class="btn rounded-circle label-button my-2 label-big" id="capcaity-label-button" data-bs-toggle="collapse" href="#capacity_label" role="button" aria-expanded="false" aria-controls="capacity_label">
-                <img src="static/events/images/people.svg" alt="Bootstrap" width="32" height="32">  
-            </div>
-            <div class="text-center fw-bold my-2">CAPACITY</div>
         </div>  
-    </div>
-    <div class="row collapse" id="tag_label">
-        {% for tag in tags %}
-        <div class="col">
-            <a href="{% url 'root-homepage' %}?filter_tag={{ tag.id }}" class="btn rounded-circle label-button my-2 label-small">{{ tag.tag_name }}</a>
+        <div class="tab-pane fade time-label-container" id="time_label">
+            <div class="row">
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_time=today" class="btn round-corner label-button my-2"><img src="static/events/images/calendar-event.svg" alt="Bootstrap" width="32" height="32"></a>
+                    <p class="text-center">Today</p>
+                </div>
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_time=this_week" class="btn round-corner label-button my-2"><img src="static/events/images/calendar-range.svg" alt="Bootstrap" width="32" height="32"></a>
+                    <p class="text-center">This Week</p>
+                </div>
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_time=this_month" class="btn round-corner label-button my-2"><img src="static/events/images/calendar3.svg" alt="Bootstrap" width="32" height="32"></a>
+                    <p class="text-center">This Month</p>
+                </div>
+            </div> 
         </div>
-    {% endfor %}
+        <div class="tab-pane fade capacity-label-container" id="capacity_label">
+            <div class="row">
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_capacity=s" class="btn rounded-circle label-button my-2 fw-bold" id="small-label">S</a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_capacity=m" class="btn rounded-circle label-button my-2 fw-bold" id="medium-label">M</a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_capacity=l" class="btn rounded-circle label-button my-2 fw-bold" id="large-label">L</a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_capacity=xl" class="btn rounded-circle label-button my-2 fw-bold">XL</a>
+                </div>
+            </div> 
+            <div class="row">
+                <div class="col">
+                    <p class="text-center">1-5</p>
+                </div>
+                <div class="col">
+                    <p class="text-center">6-20</p>
+                </div>
+                <div class="col">
+                    <p class="text-center">21-50</p>
+                </div>
+                <div class="col">
+                    <p class="text-center">51-5000</p>
+                </div>
+            </div> 
+        </div>
     </div>  
-    <div class="row collapse time-label-container" id="time_label">
-        <div class="col">
-            <a href="{% url 'root-homepage' %}?filter_time=today" class="btn rounded-circle label-button my-2 label-small">Today</a>
-        </div>
-        <div class="col">
-            <a href="{% url 'root-homepage' %}?filter_time=this_week" class="btn rounded-circle label-button my-2 label-small">This Week</a>
-        </div>
-        <div class="col">
-            <a href="{% url 'root-homepage' %}?filter_time=this_month" class="btn rounded-circle label-button my-2 label-small">This Month</a>
-        </div>
-    </div>
-    <div class="row collapse capacity-label-container" id="capacity_label">
-        <div class="col">
-            <a href="{% url 'root-homepage' %}?filter_capacity=s" class="col btn rounded-circle label-button my-2 label-small">S</a>
-        </div>
-        <div class="col">
-            <a href="{% url 'root-homepage' %}?filter_capacity=s" class="col btn rounded-circle label-button my-2 label-small">M</a>
-        </div>
-        <div class="col">
-            <a href="{% url 'root-homepage' %}?filter_capacity=s" class="col btn rounded-circle label-button my-2 label-small">L</a>
-        </div>
-        <div class="col">
-            <a href="{% url 'root-homepage' %}?filter_capacity=s" class="col btn rounded-circle label-button my-2 label-small">XL</a>
-        </div>
-    </div>
 </div>
 
 {% endblock %}
