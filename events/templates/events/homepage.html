@@ -4,21 +4,90 @@
 Cheer↑
 {% endblock %}
 
+{% block extra_styles %}
+<style>
+.label-button {
+    width: 150px;
+    height: 150px;
+    border-style: solid;
+    border-color: #afcff3;
+    background-color: rgba(255,255,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-width: 1px;
+    margin: 0 auto
+}
+
+.label-container {
+    padding: 20px;
+    /* box-shadow: 5px 5px 15px rgba(0,0,0,0.2); */
+    width: 80%;
+    margin: 0 auto;
+}
+
+.time-label-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.capacity-label-container {
+    max-width: 1000px;
+    /* min-width: 400px; */
+    margin: 0 auto;
+}
+
+.label-button:hover {
+    background-color: rgba(175,207,243,0.3);
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div>
-    {% for tag in tags %}
-        <a href="{% url 'root-homepage' %}?filter_tag={{ tag.id }}">{{ tag.tag_name }}</a>
+<div class="label-container">
+    <div class="row">
+        <div class="col">
+            <button class="btn rounded-circle label-button fw-bold fs-5 my-3" id="tag-label-button" data-bs-toggle="collapse" href="#tag_label" role="button" aria-expanded="false" aria-controls="tag_label">Tag</button>
+        </div>
+        <div class="col">
+            <button class="btn rounded-circle label-button fw-bold fs-5 my-3" id="time-label-button" data-bs-toggle="collapse" href="#time_label" role="button" aria-expanded="false" aria-controls="time_label">Time</button>
+        </div>
+        <div class="col">
+            <button class="btn rounded-circle label-button fw-bold fs-5 my-3" id="capcaity-label-button" data-bs-toggle="collapse" href="#capacity_label" role="button" aria-expanded="false" aria-controls="capacity_label">Capacity</button>
+        </div>  
+    </div>
+    <div class="row collapse" id="tag_label">
+        {% for tag in tags %}
+        <div class="col">
+            <a href="{% url 'root-homepage' %}?filter_tag={{ tag.id }}" class="btn rounded-circle label-button my-3">{{ tag.tag_name }}</a>
+        </div>
     {% endfor %}
+    </div>  
+    <div class="row collapse time-label-container" id="time_label">
+        <div class="col">
+            <a href="{% url 'root-homepage' %}?filter_time=today" class="btn rounded-circle label-button my-3">Today</a>
+        </div>
+        <div class="col">
+            <a href="{% url 'root-homepage' %}?filter_time=this_week" class="btn rounded-circle label-button my-3">This Week</a>
+        </div>
+        <div class="col">
+            <a href="{% url 'root-homepage' %}?filter_time=this_month" class="btn rounded-circle label-button my-3">This Month</a>
+        </div>
+    </div>
+    <div class="row collapse capacity-label-container" id="capacity_label">
+        <div class="col">
+            <a href="{% url 'root-homepage' %}?filter_capacity=s" class="col btn rounded-circle label-button my-3">S</a>
+        </div>
+        <div class="col">
+            <a href="{% url 'root-homepage' %}?filter_capacity=s" class="col btn rounded-circle label-button my-3">M</a>
+        </div>
+        <div class="col">
+            <a href="{% url 'root-homepage' %}?filter_capacity=s" class="col btn rounded-circle label-button my-3">L</a>
+        </div>
+        <div class="col">
+            <a href="{% url 'root-homepage' %}?filter_capacity=s" class="col btn rounded-circle label-button my-3">XL</a>
+        </div>
+    </div>
 </div>
-<div>
-    <a href="{% url 'root-homepage' %}?filter_time=today">Today</a>
-    <a href="{% url 'root-homepage' %}?filter_time=this_week">This Week</a>
-    <a href="{% url 'root-homepage' %}?filter_time=this_month">This Month</a>
-</div>
-<div>
-    <a href="{% url 'root-homepage' %}?filter_capacity=s">S</a>
-    <a href="{% url 'root-homepage' %}?filter_capacity=m">M</a>
-    <a href="{% url 'root-homepage' %}?filter_capacity=l">L</a>
-    <a href="{% url 'root-homepage' %}?filter_capacity=xl">XL</a>
-</div>
+
 {% endblock %}
