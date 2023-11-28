@@ -6,23 +6,11 @@ from django.http import Http404
 from .models import UserProfile
 from events.models import Event
 
-"""
-@login_required
-def view_profile(request):
-    try:
-        user_profile = request.user.userprofile
-    except UserProfile.DoesNotExist:
-        # Handle the case where UserProfile does not exist
-        raise Http404("UserProfile not found for this user.")
-
-    return render(request, 'profiles/view_profile.html', {'user_profile': user_profile})
-"""
-
 
 @login_required
 def view_profile(request, userprofile_id):
     user_profile = get_object_or_404(UserProfile, pk=userprofile_id)
-    events = user_profile.user.event_set.all()
+    events = user_profile.user.event_set.filter(is_active=True)
     context = {"user_profile": user_profile, "events": events}
 
     return render(request, "profiles/view_profile.html", context)
