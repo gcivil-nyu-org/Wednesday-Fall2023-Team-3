@@ -16,11 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from django.views.generic import RedirectView
+from events.views import homepage
 
 urlpatterns = [
     path(
-        "", RedirectView.as_view(pattern_name="events:index", permanent=False)
+        "", homepage, name="root-homepage"
     ),  # this will change later
     path("admin/", admin.site.urls),
     path("events/", include("events.urls")),

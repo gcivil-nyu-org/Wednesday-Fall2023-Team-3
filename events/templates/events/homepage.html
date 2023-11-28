@@ -1,0 +1,24 @@
+{% extends "events/base.html" %}
+
+{% block title %}
+Cheer↑
+{% endblock %}
+
+{% block content %}
+<div>
+    {% for tag in tags %}
+        <a href="{% url 'root-homepage' %}?filter_tag={{ tag.id }}">{{ tag.tag_name }}</a>
+    {% endfor %}
+</div>
+<div>
+    <a href="{% url 'root-homepage' %}?filter_time=today">Today</a>
+    <a href="{% url 'root-homepage' %}?filter_time=this_week">This Week</a>
+    <a href="{% url 'root-homepage' %}?filter_time=this_month">This Month</a>
+</div>
+<div>
+    <a href="{% url 'root-homepage' %}?filter_capacity=s">S</a>
+    <a href="{% url 'root-homepage' %}?filter_capacity=m">M</a>
+    <a href="{% url 'root-homepage' %}?filter_capacity=l">L</a>
+    <a href="{% url 'root-homepage' %}?filter_capacity=xl">XL</a>
+</div>
+{% endblock %}
