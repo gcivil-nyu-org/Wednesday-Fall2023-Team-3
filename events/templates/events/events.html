@@ -62,7 +62,7 @@
         
         <nav class="navbar navbar-expand-lg navbar-light bg-light px-5">
             <!-- Brand/logo -->
-            <a class="navbar-brand" href="{% url 'events:index' %}">Cheer↑</a>
+            <a class="navbar-brand" href="{% url 'root-homepage' %}">Cheer↑</a>
             
             <!-- Toggler/collapsible Button -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,6 +110,18 @@
     <main>
         {% block content %}
         <!-- Default content goes here, if any -->
+        {% if messages %}
+            <div id="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dimissable fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
         <div class="container">
         <div class="sticky-note-container-big mt-5">
             <h1>Events</h1>

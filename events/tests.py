@@ -7,7 +7,19 @@ from datetime import timedelta
 from datetime import datetime
 import json
 import pytz
-from .constants import PENDING, APPROVED, WITHDRAWN, REJECTED, REMOVED, CHEER_UP, HEART
+from .constants import (
+    PENDING,
+    APPROVED,
+    WITHDRAWN,
+    REJECTED,
+    REMOVED,
+    CHEER_UP,
+    HEART,
+    SMALL_CAPACITY,
+    MEDIUM_CAPACITY,
+    LARGE_CAPACITY,
+)
+
 from tags.models import Tag
 from django.contrib.messages import get_messages
 
@@ -179,6 +191,19 @@ class UpdateEventViewTest(TestCase):
         self.assertEqual(
             Event.objects.get(pk=self.event.id).event_name, "Updated Event"
         )  # Verify data was updated
+
+    def test_other_user_cannot_update_event(self):
+        User.objects.create_user(username="anotheruser", password="testpassword")
+        self.client.login(username="anotheruser", password="testpassword")
+        url = reverse("events:update-event", args=(self.event.id,))
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "You're not allowed to update this event.",
+        )
+        self.assertRedirects(response, reverse("events:index"))
 
     def test_update_event_capacity_too_low(self):
         self.client.login(username="testuser", password="testpassword")
@@ -651,7 +676,7 @@ class EventValidationTests(TestCase):
 
     def test_update_event_with_invalid_data(self):
         user = User.objects.create_user("testuser2", password="testpassword")
-        self.client.login(username="testuser", password="testpassword")
+        self.client.login(username="testuser2", password="testpassword")
         # Create an instance of Event with valid data and set the creator
         new_york_tz = pytz.timezone("America/New_York")
         current_time_ny = datetime.now(new_york_tz)
@@ -702,7 +727,7 @@ class EventValidationTests(TestCase):
 
     def test_update_event_with_missing_data(self):
         user = User.objects.create_user("testuser2", password="testpassword")
-        self.client.login(username="testuser", password="testpassword")
+        self.client.login(username="testuser2", password="testpassword")
         # Create an instance of Event with valid data and set the creator
         new_york_tz = pytz.timezone("America/New_York")
         current_time_ny = datetime.now(new_york_tz)
@@ -1404,3 +1429,552 @@ class ReactionTestCase(TestCase):
         Reaction.objects.create(user=self.user, event=self.event, emoji=self.emoji)
         response = self.client.post(url)
         self.assertContains(response, "testuser")
+
+
+class AccessDeletedEventTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=14),
+            end_time=current_time_ny + timedelta(hours=25),
+            capacity=10,
+            is_active=False,
+            creator=self.creator,
+        )
+        self.emoji = CHEER_UP
+        self.client = Client()
+
+    def test_cannot_update_deleted_event(self):
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse("events:update-event", args=[self.event.id])
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_delete_deleted_event(self):
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse("events:delete-event", args=[self.event.id])
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_access_deleted_event_detail(self):
+        url = reverse("events:event-detail", args=[self.event.id])
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_toggle_join_request_to_deleted_event(self):
+        url = reverse("events:toggle-join-request", args=[self.event.id])
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_approve_join_request_to_deleted_event(self):
+        EventJoin.objects.create(user=self.user, event=self.event)
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse("events:approve-request", args=[self.event.id, self.user.id])
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_reject_join_request_to_deleted_event(self):
+        EventJoin.objects.create(user=self.user, event=self.event)
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse("events:reject-request", args=[self.event.id, self.user.id])
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_remove_approved_request_of_deleted_event(self):
+        EventJoin.objects.create(user=self.user, event=self.event, status=APPROVED)
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse(
+            "events:remove-approved-request", args=[self.event.id, self.user.id]
+        )
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_comment_deleted_event(self):
+        url = reverse("events:add-comment", args=[self.event.id])
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_reply_to_comment_of_deleted_event(self):
+        comment = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Test comment",
+            is_private=True,
+        )
+        url = reverse("events:add-reply", args=[self.event.id, comment.id])
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_delete_comment_of_deleted_event(self):
+        comment = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Test comment",
+            is_private=True,
+        )
+        url = reverse("events:delete-comment", args=[comment.id])
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_cannot_react_to_deleted_event(self):
+        self.client.login(username="testuser", password="testpassword")
+        url = reverse("events:toggle-reaction", args=[self.event.id, self.emoji])
+        response = self.client.post(url)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "The event is deleted. Try some other events!",
+        )
+        self.assertRedirects(response, reverse("events:index"))
+
+
+class DeleteEventTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=2),
+            end_time=current_time_ny + timedelta(hours=25),
+            capacity=10,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.client = Client()
+
+    def test_event_creator_can_delete_event(self):
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse("events:delete-event", args=[self.event.id])
+        response = self.client.post(url, {"action": "delete"})
+        self.event.refresh_from_db()
+        self.assertFalse(self.event.is_active)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_other_user_cannot_delete_event(self):
+        self.client.login(username="testuser", password="testpassword")
+        url = reverse("events:delete-event", args=[self.event.id])
+        response = self.client.post(url, {"action": "delete"})
+        self.event.refresh_from_db()
+        self.assertTrue(self.event.is_active)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "You're not allowed to delete this event.",
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("events:index"))
+
+    def test_not_logged_in_user_cannot_delete_event(self):
+        self.client.logout()
+        url = reverse("events:delete-event", args=[self.event.id])
+        response = self.client.post(url, {"action": "delete"})
+        self.event.refresh_from_db()
+        self.assertTrue(self.event.is_active)
+        self.assertEqual(response.status_code, 302)
+
+
+class HomepageViewTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_homepage_view(self):
+        response = self.client.get(reverse("root-homepage"))
+        self.assertEqual(response.status_code, 200)
+
+
+class HomepageTimeLabelFilterTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        tag = Tag.objects.create(tag_name="Test Tag")
+        new_york_tz = pytz.timezone("America/New_York")
+        self.current_time_ny = datetime.now(new_york_tz)
+        self.event1 = Event.objects.create(
+            event_name="Test Event 1",
+            event_location=self.location,
+            start_time=self.current_time_ny + timedelta(hours=7),
+            end_time=self.current_time_ny + timedelta(hours=9),
+            capacity=20,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event1.tags.set([tag])
+        self.event2 = Event.objects.create(
+            event_name="Test Event 2",
+            event_location=self.location,
+            start_time=self.current_time_ny + timedelta(hours=7),
+            end_time=self.current_time_ny + timedelta(days=5),
+            capacity=20,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event2.tags.set([tag])
+        self.event3 = Event.objects.create(
+            event_name="Test Event 3",
+            event_location=self.location,
+            start_time=self.current_time_ny + timedelta(hours=7),
+            end_time=self.current_time_ny + timedelta(days=10),
+            capacity=20,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event3.tags.set([tag])
+        self.client = Client()
+
+    def test_filter_event_today_label(self):
+        response = self.client.get(reverse("root-homepage") + "?filter_time=today")
+        self.assertEqual(response.status_code, 302)
+        start_time = self.current_time_ny + timedelta(minutes=1)
+        end_time = start_time + timedelta(days=1)
+        self.assertRedirects(
+            response,
+            reverse("events:index")
+            + f'?start_time={start_time.strftime("%Y-%m-%dT%H:%M")}&end_time={end_time.strftime("%Y-%m-%dT%H:%M")}',
+        )
+        response = self.client.get(
+            reverse("events:index")
+            + f'?start_time={start_time.strftime("%Y-%m-%dT%H:%M")}&end_time={end_time.strftime("%Y-%m-%dT%H:%M")}'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Event 1")
+        self.assertNotContains(response, "Test Event 2")
+        self.assertNotContains(response, "Test Event 3")
+
+    def test_filter_event_this_week_label(self):
+        response = self.client.get(reverse("root-homepage") + "?filter_time=this_week")
+        self.assertEqual(response.status_code, 302)
+        start_time = self.current_time_ny + timedelta(minutes=1)
+        end_time = start_time + timedelta(days=7)
+        self.assertRedirects(
+            response,
+            reverse("events:index")
+            + f'?start_time={start_time.strftime("%Y-%m-%dT%H:%M")}&end_time={end_time.strftime("%Y-%m-%dT%H:%M")}',
+        )
+        response = self.client.get(
+            reverse("events:index")
+            + f'?start_time={start_time.strftime("%Y-%m-%dT%H:%M")}&end_time={end_time.strftime("%Y-%m-%dT%H:%M")}'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Event 1")
+        self.assertContains(response, "Test Event 2")
+        self.assertNotContains(response, "Test Event 3")
+
+    def test_filter_event_this_month_label(self):
+        response = self.client.get(reverse("root-homepage") + "?filter_time=this_month")
+        self.assertEqual(response.status_code, 302)
+        start_time = self.current_time_ny + timedelta(minutes=1)
+        end_time = start_time + timedelta(days=30)
+        self.assertRedirects(
+            response,
+            reverse("events:index")
+            + f'?start_time={start_time.strftime("%Y-%m-%dT%H:%M")}&end_time={end_time.strftime("%Y-%m-%dT%H:%M")}',
+        )
+        response = self.client.get(
+            reverse("events:index")
+            + f'?start_time={start_time.strftime("%Y-%m-%dT%H:%M")}&end_time={end_time.strftime("%Y-%m-%dT%H:%M")}'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Event 1")
+        self.assertContains(response, "Test Event 2")
+        self.assertContains(response, "Test Event 3")
+
+    def test_filter_event_invalid_time_label(self):
+        response = self.client.get(
+            reverse("root-homepage") + "?filter_time=invalid_time"
+        )
+        self.assertRedirects(response, reverse("root-homepage"))
+
+
+class HomepageTagLabelFilterTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        self.tag1 = Tag.objects.create(tag_name="Test Tag 1")
+        self.tag2 = Tag.objects.create(tag_name="Test Tag 2")
+        new_york_tz = pytz.timezone("America/New_York")
+        self.current_time_ny = datetime.now(new_york_tz)
+        self.event1 = Event.objects.create(
+            event_name="Test Event 1",
+            event_location=self.location,
+            start_time=self.current_time_ny + timedelta(hours=7),
+            end_time=self.current_time_ny + timedelta(hours=9),
+            capacity=20,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event1.tags.set([self.tag1])
+        self.event2 = Event.objects.create(
+            event_name="Test Event 2",
+            event_location=self.location,
+            start_time=self.current_time_ny + timedelta(hours=10),
+            end_time=self.current_time_ny + timedelta(hours=14),
+            capacity=50,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event2.tags.set([self.tag2])
+        self.client = Client()
+
+    def test_filter_event_tag_label(self):
+        response = self.client.get(
+            reverse("root-homepage") + f"?filter_tag={self.tag1.id}"
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(
+            response, reverse("events:index") + f"?tags={self.tag1.id}"
+        )
+        response = self.client.get(reverse("events:index") + f"?tags={self.tag1.id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Event 1")
+        self.assertNotContains(response, "Test Event 2")
+
+    def test_filter_event_invalid_tag_label(self):
+        response = self.client.get(reverse("root-homepage") + "?filter_tag=9999")
+        self.assertEqual(response.status_code, 404)
+
+
+class HomepageCapacityLabelFilterTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        self.tag = Tag.objects.create(tag_name="Test Tag")
+        new_york_tz = pytz.timezone("America/New_York")
+        self.current_time_ny = datetime.now(new_york_tz)
+        self.event1 = Event.objects.create(
+            event_name="Test Event 1",
+            event_location=self.location,
+            start_time=self.current_time_ny + timedelta(hours=7),
+            end_time=self.current_time_ny + timedelta(hours=9),
+            capacity=3,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event1.tags.set([self.tag])
+        self.event2 = Event.objects.create(
+            event_name="Test Event 2",
+            event_location=self.location,
+            start_time=self.current_time_ny + timedelta(hours=10),
+            end_time=self.current_time_ny + timedelta(hours=14),
+            capacity=15,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event2.tags.set([self.tag])
+        self.event3 = Event.objects.create(
+            event_name="Test Event 3",
+            event_location=self.location,
+            start_time=self.current_time_ny + timedelta(hours=15),
+            end_time=self.current_time_ny + timedelta(hours=17),
+            capacity=30,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event3.tags.set([self.tag])
+        self.event4 = Event.objects.create(
+            event_name="Test Event 4",
+            event_location=self.location,
+            start_time=self.current_time_ny + timedelta(hours=20),
+            end_time=self.current_time_ny + timedelta(hours=22),
+            capacity=100,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event4.tags.set([self.tag])
+        self.client = Client()
+
+    def test_filter_event_small_capacity_label(self):
+        response = self.client.get(reverse("root-homepage") + "?filter_capacity=s")
+        self.assertEqual(response.status_code, 302)
+        min_capacity = 0
+        max_capacity = SMALL_CAPACITY
+        self.assertRedirects(
+            response,
+            reverse("events:index")
+            + f"?min_capacity={min_capacity}&max_capacity={max_capacity}",
+        )
+        response = self.client.get(
+            reverse("events:index")
+            + f"?min_capacity={min_capacity}&max_capacity={max_capacity}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Event 1")
+        self.assertNotContains(response, "Test Event 2")
+        self.assertNotContains(response, "Test Event 3")
+        self.assertNotContains(response, "Test Event 4")
+
+    def test_filter_event_medium_capacity_label(self):
+        response = self.client.get(reverse("root-homepage") + "?filter_capacity=m")
+        self.assertEqual(response.status_code, 302)
+        min_capacity = SMALL_CAPACITY + 1
+        max_capacity = MEDIUM_CAPACITY
+        self.assertRedirects(
+            response,
+            reverse("events:index")
+            + f"?min_capacity={min_capacity}&max_capacity={max_capacity}",
+        )
+        response = self.client.get(
+            reverse("events:index")
+            + f"?min_capacity={min_capacity}&max_capacity={max_capacity}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Test Event 1")
+        self.assertContains(response, "Test Event 2")
+        self.assertNotContains(response, "Test Event 3")
+        self.assertNotContains(response, "Test Event 4")
+
+    def test_filter_event_large_capacity_label(self):
+        response = self.client.get(reverse("root-homepage") + "?filter_capacity=l")
+        self.assertEqual(response.status_code, 302)
+        min_capacity = MEDIUM_CAPACITY + 1
+        max_capacity = LARGE_CAPACITY
+        self.assertRedirects(
+            response,
+            reverse("events:index")
+            + f"?min_capacity={min_capacity}&max_capacity={max_capacity}",
+        )
+        response = self.client.get(
+            reverse("events:index")
+            + f"?min_capacity={min_capacity}&max_capacity={max_capacity}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Test Event 1")
+        self.assertNotContains(response, "Test Event 2")
+        self.assertContains(response, "Test Event 3")
+        self.assertNotContains(response, "Test Event 4")
+
+    def test_filter_event_extra_large_capacity_label(self):
+        response = self.client.get(reverse("root-homepage") + "?filter_capacity=xl")
+        self.assertEqual(response.status_code, 302)
+        min_capacity = LARGE_CAPACITY + 1
+        max_capacity = 5000
+        self.assertRedirects(
+            response,
+            reverse("events:index")
+            + f"?min_capacity={min_capacity}&max_capacity={max_capacity}",
+        )
+        response = self.client.get(
+            reverse("events:index")
+            + f"?min_capacity={min_capacity}&max_capacity={max_capacity}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Test Event 1")
+        self.assertNotContains(response, "Test Event 2")
+        self.assertNotContains(response, "Test Event 3")
+        self.assertContains(response, "Test Event 4")
+
+    def test_filter_event_invalid_capacity_label(self):
+        response = self.client.get(
+            reverse("root-homepage") + "?filter_capacity=invalid_capacity"
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("root-homepage"))

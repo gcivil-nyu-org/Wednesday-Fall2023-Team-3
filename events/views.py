@@ -16,10 +16,20 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db import transaction
-from .constants import PENDING, APPROVED, WITHDRAWN, REJECTED, REMOVED, EMOJI_CHOICES
+from .constants import (
+    PENDING,
+    APPROVED,
+    WITHDRAWN,
+    REJECTED,
+    REMOVED,
+    EMOJI_CHOICES,
+    SMALL_CAPACITY,
+    MEDIUM_CAPACITY,
+    LARGE_CAPACITY,
+)
 from django.utils import timezone
 from .forms import EventFilterForm
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 from django.db.models import Q
 
@@ -137,7 +147,12 @@ def index(request):
 def updateEvent(request, event_id):
     tag = Tag.objects.all()
     event = get_object_or_404(Event, pk=event_id)
-
+    if not event.is_active:
+        messages.warning(request, "The event is deleted. Try some other events!")
+        return redirect("events:index")
+    if request.user != event.creator:
+        messages.warning(request, "You're not allowed to update this event.")
+        return redirect("events:index")
     if request.method == "POST":
         # Update the event with data from the form
         event_location_id = request.POST.get("event_location_id")
@@ -346,6 +361,12 @@ def createEvent(request):
 @login_required
 def deleteEvent(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
+    if not event.is_active:
+        messages.warning(request, "The event is deleted. Try some other events!")
+        return redirect("events:index")
+    if request.user != event.creator:
+        messages.warning(request, "You're not allowed to delete this event.")
+        return redirect("events:index")
     if request.method == "POST":
         if request.POST.get("action") == "delete":
             # Set is_active to False instead of deleting
@@ -357,6 +378,9 @@ def deleteEvent(request, event_id):
 
 def eventDetail(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
+    if not event.is_active:
+        messages.warning(request, "The event is deleted. Try some other events!")
+        return redirect("events:index")
     location = event.event_location
     join_status = None
     # attempt to see if the user has logged in
@@ -443,6 +467,9 @@ def eventDetail(request, event_id):
 @require_POST
 def toggleJoinRequest(request, event_id):
     event = get_object_or_404(Event, id=event_id)
+    if not event.is_active:
+        messages.warning(request, "The event is deleted. Try some other events!")
+        return redirect("events:index")
     # Prevent the creator from joining their own event
     if request.user == event.creator:
         messages.warning(
@@ -467,6 +494,9 @@ def toggleJoinRequest(request, event_id):
 def creatorApproveRequest(request, event_id, user_id):
     with transaction.atomic():
         event = get_object_or_404(Event, id=event_id)
+        if not event.is_active:
+            messages.warning(request, "The event is deleted. Try some other events!")
+            return redirect("events:index")
         if request.user != event.creator:
             # handle the error when the user is not the creator of the event
             return redirect("events:event-detail", event_id=event.id)
@@ -494,6 +524,9 @@ def creatorApproveRequest(request, event_id, user_id):
 @require_POST
 def creatorRejectRequest(request, event_id, user_id):
     event = get_object_or_404(Event, id=event_id)
+    if not event.is_active:
+        messages.warning(request, "The event is deleted. Try some other events!")
+        return redirect("events:index")
     user = get_object_or_404(User, id=user_id)
     if request.user != event.creator:
         # handle the error when the user is not the creator of the event
@@ -509,6 +542,9 @@ def creatorRejectRequest(request, event_id, user_id):
 @require_POST
 def creatorRemoveApprovedRequest(request, event_id, user_id):
     event = get_object_or_404(Event, id=event_id)
+    if not event.is_active:
+        messages.warning(request, "The event is deleted. Try some other events!")
+        return redirect("events:index")
     user = get_object_or_404(User, id=user_id)
     if request.user != event.creator:
         # handle the error when the user is not the creator of the event
@@ -542,6 +578,9 @@ def get_locations(request):
 @require_POST
 def addComment(request, event_id):
     event = get_object_or_404(Event, id=event_id)
+    if not event.is_active:
+        messages.warning(request, "The event is deleted. Try some other events!")
+        return redirect("events:index")
     parent_id = request.POST.get("parent_id")
     if parent_id:
         # handle the case when it's a reply of a reply
@@ -567,6 +606,9 @@ def addComment(request, event_id):
 @require_POST
 def addReply(request, event_id, comment_id):
     event = get_object_or_404(Event, id=event_id)
+    if not event.is_active:
+        messages.warning(request, "The event is deleted. Try some other events!")
+        return redirect("events:index")
     parent_comment = get_object_or_404(Comment, id=comment_id)
     form = CommentForm(request.POST)
     if not parent_comment.is_active:
@@ -600,6 +642,9 @@ def addReply(request, event_id, comment_id):
 @require_POST
 def deleteComment(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
+    if not comment.event.is_active:
+        messages.warning(request, "The event is deleted. Try some other events!")
+        return redirect("events:index")
     # only commenter and event creator can delete a comment/reply
     if request.user != comment.user and request.user != comment.event.creator:
         return redirect("events:event-detail", event_id=comment.event.id)
@@ -624,6 +669,9 @@ def deleteComment(request, comment_id):
 @require_POST
 def toggleReaction(request, event_id, emoji):
     event = get_object_or_404(Event, id=event_id)
+    if not event.is_active:
+        messages.warning(request, "The event is deleted. Try some other events!")
+        return redirect("events:index")
     # Prevent the creator from reacting to their own event
     if request.user == event.creator:
         messages.warning(
@@ -646,3 +694,67 @@ def toggleReaction(request, event_id, emoji):
         reaction.is_active = not reaction.is_active
         reaction.save()
     return redirect("events:event-detail", event_id=event.id)
+
+
+# homepage related views
+def homepage(request):
+    tags = Tag.objects.all()
+    if request.method == "GET":
+        if "filter_time" in request.GET:
+            time_label = request.GET.get("filter_time", "")
+            return filter_event_time_label(time_label)
+        if "filter_tag" in request.GET:
+            tag_label = request.GET.get("filter_tag", "")
+            return filter_event_tag_label(tag_label)
+        if "filter_capacity" in request.GET:
+            capacity_label = request.GET.get("filter_capacity", "")
+            return filter_event_capacity_label(capacity_label)
+    context = {"tags": tags}
+    return render(request, "events/homepage.html", context)
+
+
+def filter_event_time_label(time_label):
+    ny_timezone = pytz.timezone("America/New_York")
+    current_time_ny = timezone.now().astimezone(ny_timezone)
+    start_time = current_time_ny + timedelta(minutes=1)
+    if time_label == "today":
+        end_time = start_time + timedelta(days=1)
+    elif time_label == "this_week":
+        end_time = start_time + timedelta(days=7)
+    elif time_label == "this_month":
+        end_time = start_time + timedelta(days=30)
+    else:
+        return redirect("root-homepage")
+    url = (
+        reverse("events:index")
+        + f'?start_time={start_time.strftime("%Y-%m-%dT%H:%M")}&end_time={end_time.strftime("%Y-%m-%dT%H:%M")}'
+    )
+    return redirect(url)
+
+
+def filter_event_tag_label(tag_label):
+    get_object_or_404(Tag, pk=tag_label)
+    url = reverse("events:index") + f"?tags={tag_label}"
+    return redirect(url)
+
+
+def filter_event_capacity_label(capacity_label):
+    if capacity_label == "s":
+        min_capacity = 0
+        max_capacity = SMALL_CAPACITY
+    elif capacity_label == "m":
+        min_capacity = SMALL_CAPACITY + 1
+        max_capacity = MEDIUM_CAPACITY
+    elif capacity_label == "l":
+        min_capacity = MEDIUM_CAPACITY + 1
+        max_capacity = LARGE_CAPACITY
+    elif capacity_label == "xl":
+        min_capacity = LARGE_CAPACITY + 1
+        max_capacity = 5000
+    else:
+        return redirect("root-homepage")
+    url = (
+        reverse("events:index")
+        + f"?min_capacity={min_capacity}&max_capacity={max_capacity}"
+    )
+    return redirect(url)

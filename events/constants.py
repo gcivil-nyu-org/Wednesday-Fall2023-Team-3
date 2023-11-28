@@ -27,3 +27,7 @@ EMOJI_CHOICES = (
     (CLAP, "Clap"),
     (HIGH_FIVE, "High five"),
 )
+
+SMALL_CAPACITY = 5
+MEDIUM_CAPACITY = 20
+LARGE_CAPACITY = 50
