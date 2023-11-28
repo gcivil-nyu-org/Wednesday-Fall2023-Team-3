@@ -1832,7 +1832,7 @@ class HomepageTagLabelFilterTestCase(TestCase):
         self.assertNotContains(response, "Test Event 2")
 
     def test_filter_event_invalid_tag_label(self):
-        response = self.client.get(reverse("root-homepage") + f"?filter_tag=9999")
+        response = self.client.get(reverse("root-homepage") + "?filter_tag=9999")
         self.assertEqual(response.status_code, 404)
 
 
