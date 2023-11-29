@@ -17,6 +17,7 @@ class Event(models.Model):
     description = models.TextField(blank=True, null=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     tags = models.ManyToManyField(Tag)
+    image = models.ImageField(upload_to="event_images/", blank=True, null=True)
 
     def __str__(self):
         return self.event_name

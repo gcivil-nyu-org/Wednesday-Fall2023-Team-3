@@ -17,6 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from events.views import homepage
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path("", homepage, name="root-homepage"),  # this will change later
@@ -27,4 +29,4 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("chat/", include("chat.urls")),
     path("profiles/", include("profiles.urls")),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
