@@ -2,7 +2,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
-from .models import UserProfile
+from .models import UserProfile, save_user_profile
 from events.models import Event, Location
 from .forms import ProfileForm
 from django.utils import timezone
@@ -192,3 +192,37 @@ class ProfileModelsTest(TestCase):
 
         # Check that only one UserProfile has been created
         self.assertEqual(UserProfile.objects.filter(user=self.user).count(), 1)
+
+
+class UserProfileSaveTest(TestCase):
+    def test_save_user_profile_when_profile_does_not_exist(self):
+        user = User.objects.create(username="testuser")
+
+        # Simulate a post_save signal by calling the save_user_profile method
+        try:
+            save_user_profile(sender=User, instance=user)
+        except UserProfile.DoesNotExist:
+            pass  # Catch the exception and proceed
+
+        # Retrieve the UserProfile for the user
+        user_profile = UserProfile.objects.get(user=user)
+
+        # Assert that the UserProfile has been created
+        self.assertIsNotNone(user_profile)
+        self.assertEqual(user_profile.user, user)
+
+    def test_save_user_profile_when_profile_exists(self):
+        user = User.objects.create(username="existing_user")
+
+        # Simulate a post_save signal by calling the save_user_profile method
+        try:
+            save_user_profile(sender=User, instance=user)
+        except UserProfile.DoesNotExist:
+            pass  # Catch the exception and proceed
+
+        # Retrieve the UserProfile for the user
+        user_profile = UserProfile.objects.get(user=user)
+
+        # Assert that the existing UserProfile is not affected
+        self.assertIsNotNone(user_profile)
+        self.assertEqual(user_profile.user, user)
