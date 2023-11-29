@@ -34,6 +34,8 @@ from datetime import datetime, timedelta
 import pytz
 from django.db.models import Q
 from better_profanity import profanity
+from django.core.files.storage import FileSystemStorage
+
 
 # Existing imports and index view function...
 
@@ -278,10 +280,20 @@ def updateEvent(request, event_id):
                 update_errors["event_location_id"] = "Invalid event location."
 
         description = request.POST.get("description", "")
+        image = request.FILES.get("image")
 
         if update_errors:
             # Return a JSON response with a 400 status code and the error messages
             return JsonResponse(update_errors, status=400)
+        
+        else:
+            # If an image was uploaded and an image already exists, replace it
+            if image:
+                if event.image:
+                    event.image.delete()  # Delete the old image
+                fs = FileSystemStorage()
+                filename = fs.save(image.name, image)
+                event.image = fs.url(filename)
 
         location_object = Location.objects.get(id=event_location_id)
         event.event_location = location_object
@@ -311,7 +323,7 @@ def saveEvent(request):
         end_time = request.POST.get("end_time")
         capacity = request.POST.get("capacity")
         creator = request.user
-
+        image = request.FILES.get("image")
         selectedtags = request.POST.getlist("selected_tags")
         tags = Tag.objects.filter(tag_name__in=selectedtags)
         # Create a dictionary to hold validation errors
@@ -396,6 +408,12 @@ def saveEvent(request):
         event.save()
         event.tags.set(tags)
 
+        if image:
+            fs = FileSystemStorage()
+            filename = fs.save(image.name, image)
+            event.image = filename  # Save the filename
+            event.save()
+
         return HttpResponseRedirect(reverse("events:index"))
 
     except KeyError:
@@ -430,6 +448,16 @@ def deleteEvent(request, event_id):
             event.save()
             return redirect("events:index")
     return redirect("events:index")
+
+
+def deleteEventImage(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    if request.user == event.creator:
+        event.image.delete(save=True)  # This deletes the image and saves the event
+        return redirect("events:event-detail", event_id=event.id)
+    else:
+        # Handle unauthorized attempts
+        return redirect("events:index")
 
 
 def eventDetail(request, event_id):
