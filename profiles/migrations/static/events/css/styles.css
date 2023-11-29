@@ -1,0 +1,67 @@
+body {
+    background-image: url('images/funky-lines.webp');
+    background-repeat: repeat;
+    /* background-color: #ffe777; */
+    margin: 0; /* Remove default margin */
+    padding: 0; /* Remove default padding */
+    height: 100%; /* Ensure the body covers the entire viewport height */
+}
+
+
+.banner {
+    background-color: #ffffff;  /* Example color; adjust as needed */
+    padding: 20px 0;  /* Some padding for top and bottom */
+    text-align: center;  /* Center the text or content */
+    font-size: 5rem;  /* Increase font size for visibility */
+}
+
+.sticky-note-container-mid {
+    width: 35%;
+    min-width: 380px;
+    min-height: 520px;
+    background-color: #a6cff4;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+    margin: 0;
+}
+
+.sticky-note-container-big {
+    width: 65%;
+    background-color: #a6cff4;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+    margin-top: 0 !important;
+}
+
+li.event-item {
+    list-style: none;
+    background-color: #f6f6f6;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.button-container form {
+    margin: 0;
+}
+#map{
+    position: sticky !important;
+    height: 100dvh;
+    width: 50%;
+    align-items: flex-start;
+    top:0;
+}
+.container{
+    display: flex;
+    /* height: 100%; */
+    padding: 0;
+    align-items: start;
+    
+}

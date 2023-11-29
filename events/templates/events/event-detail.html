@@ -41,7 +41,7 @@
 .join-entry-text {
     flex-grow: 1;
 }
-.Tags{
+.tags{
     display: flex;
 }
 .Tag{
@@ -83,6 +83,68 @@
 .reply:last-child {
     border-bottom: none;
 }
+
+.emoji-button {
+    display: inline-block;
+    background: none;
+    border: none;
+    font-size: 2.5em;  /* Adjust the font size as needed */
+    cursor: pointer;
+    text-decoration: none;
+    }
+
+.emoji-button:hover {
+    background-color: #e0e0e0; /* Change background color on hover */
+    border-radius: 20%;
+}
+.user-reaction-emoji {
+    border-radius: 20%;
+    background-color: rgba(175,207,243,0.25);
+}
+
+.emoji-button-fake {
+    display: inline-block;
+    background: none;
+    border: none;
+    font-size: 2.5em;
+}
+
+.emoji-container {
+    width: 60%;
+    min-width: 500px;
+}
+
+ul {
+    list-style-type: none;
+}
+
+.share-event-container {
+    display: flex;
+    justify-content: flex-end; 
+}
+
+.share-event-btn {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.share-event-btn:hover {
+    background-color: #0056b3;
+}
+
+.tag-button {
+    background-color: rgba(255,255,255,0.3);
+}
+
+.tag-button:hover {
+    background-color: rgba(255,255,255,0.7);
+}
+
+
 </style>
 
 
@@ -108,28 +170,98 @@
             <div class="event-detail-container mb-4">
                 <div class="sticky-note-container">
                     <div class="my-3"><h1>{{ event.event_name }}</h1></div>
+                    {% if event.tags.all %}
+                        <div class="tags row row-cols-auto px-2">
+                            {% for tag in event.tags.all %}
+                                <a href="{% url 'events:event-detail' event_id=event.id %}?filter_tag={{ tag.id }}" class="col btn btn-sm rounded-pill tag-button mb-2 mx-1 px-2">{{ tag }}</a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                     <h4>Creator</h4>
                     <p>{{ event.creator }}</p>
                     <h4>Date and Time</h4>
                     <p>from {{ event.start_time }} to {{ event.end_time }}</p>
                     <!-- <img src="event-image.jpg" alt="Event Image" class="img-fluid rounded"> -->
-                    <h4>Tags</h4>
-                    <div class="Tags">
-                    {% for tag in event.tags.all %}
-                    <p class = "Tag">{{ tag }}</p>
-                    {% empty %}
-                    <p class = "Tag">None</p>
-                    {% endfor %}
-                    </div>
+                    
                     <h4>Location</h4>
                     <p>{{ location }}, {{ location.address }} ({{ location.category }})</p>
                     <h4>Capacity</h4>
                     <p>{{ event.capacity }}</p>
                     <h4>Description</h4>
                     <p>{{ event.description }}</p>
+                    <!-- Container for the button that uses flexbox to align items to the right -->
+                    <div class="share-event-container">
+                        <button onclick="copyEventUrl()" class="share-event-btn">Share Event</button>
+                    </div>
                     <!-- Add more event details here -->
                 </div>
             </div>
+            <!-- emoji reaction part -->
+            <div id="emoji-container-not-creator">
+                {% for emoji, _ in EMOJI_CHOICES %} 
+                    <form action="{% url 'events:toggle-reaction' event.id emoji %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        {% if user.is_authenticated %}
+                            {% if request.user != event.creator %} <!--logged in but not event creator -->
+                                {% if user_reaction_emoji and emoji == user_reaction_emoji %}
+                                    <button type="submit" class="emoji-button mx-3 user-reaction-emoji" value="{{ emoji }}" name="emoji">
+                                        {{ emoji }}
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="emoji-button mx-3" value="{{ emoji }}" name="emoji">
+                                        {{ emoji }}
+                                    </button>
+                                {% endif %}
+                                <span class="reaction-count">
+                                    {% for emoji_item, count, _ in emoji_data_list %}
+                                        {% if emoji_item == emoji %}
+                                            {{ count }}
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                            {% endif %}         
+                        {% else %} <!-- not logged in user to be directed to log in -->
+                            <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="emoji-button mx-3">{{ emoji }}</a>
+                            <span class="reaction-count">
+                                {% for emoji_item, count, _ in emoji_data_list %}
+                                    {% if emoji_item == emoji %}
+                                        {{ count }}
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
+                            {% endif %}
+                    </form>
+                {% endfor %}
+            </div>    
+                    {% if user.is_authenticated and request.user == event.creator%}
+                        <div class="row emoji-container" id="emoji-container-creator">
+                            {% for emoji, _ in EMOJI_CHOICES %}
+                            
+                                {% for emoji_item, count, emoji_users in emoji_data_list %}
+                                
+                                    {% if emoji_item == emoji %}
+                                    <div class="col">
+                                        <div class="row">
+                                            <button class="emoji-button mx-3 text-center" id="emoji-button-fake" data-bs-toggle="collapse" href="#{{ emoji }}-users" role="button" aria-expanded="false" aria-controls="{{ emoji }}-users">{{ emoji }}</button>
+                                        </div>
+                                        <div class="row collapse" id="{{ emoji }}-users"> 
+                                            <p class="text-center">{{ count }}</p>
+                                            {% if emoji_users %}
+                                            <ul class="sticky-note-outline-container mx-1">
+                                                {% for emoji_user in emoji_users %}
+                                                    <li>{{ emoji_user }}</li>
+                                                {% endfor %}
+                                            </ul>  
+                                            {% endif %}
+                                        </div>
+                                    </div>  
+                                    {% endif %}
+                                
+                                {% endfor %}
+                            {% endfor %}
+                        </div>   
+                    {% endif %}
+                
             <div class="add-comment-form event-detail-container my-5">
                 <div class="sticky-note-container gray-container">
                     <form action="{% url 'events:add-comment' event.id %}" method="post">
@@ -389,6 +521,16 @@
         console.log(formContent.action); 
 
     }
+    function copyEventUrl() {
+        // Create a temporary hidden text element
+        const tempInput = document.createElement('input');
+        tempInput.value = window.location.href; 
+        document.body.appendChild(tempInput);
+        tempInput.select(); 
+        document.execCommand('copy'); 
+        document.body.removeChild(tempInput); 
+        alert("Event URL copied to clipboard!"); 
+}  
 </script>   
 {% endblock %}
 

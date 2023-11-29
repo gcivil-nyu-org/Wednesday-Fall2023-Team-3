@@ -1,0 +1,167 @@
+{% extends "events/base.html" %}
+
+{% block title %}
+Cheer↑
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+.slogan-container {
+    width: 90%;
+    margin: 5% 5% 3% 5%;
+    background-color: rgba(175,207,243,0.3);
+    padding: 3%;
+    border-radius: 25px;
+    /* border: 1px solid #b8b8b8; */
+}
+
+.label-container {
+    width: 90%;
+    margin: 5% 5% 3% 5%;
+    /* background-color: rgba(175,207,243,0.3); */
+    padding: 3%;
+    border-radius: 25px;
+    /* border: 1px solid #b8b8b8; */
+}
+
+.label-button {
+    /* border-style: solid;
+    border-color: #afcff3; */
+    background-color: rgba(255,255,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #b8b8b8;
+    margin: 0 auto;
+    width: 135px;
+    height: 135px;
+}
+
+.label-container {
+    padding: 20px;
+    /* box-shadow: 5px 5px 15px rgba(0,0,0,0.2); */
+    width: 90%;
+    margin: 0 auto;
+}
+
+.time-label-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.capacity-label-container {
+    max-width: 1000px;
+    /* min-width: 400px; */
+    margin: 0 auto;
+}
+
+.label-button:hover {
+    background-color: rgba(175,207,243,0.3);
+    border: 1px solid #afcff3;
+}
+
+#small-label {
+    width: 50px;
+    height: 50px;
+}
+
+#medium-label {
+    width: 75px;
+    height: 75px;
+}
+
+#large-label {
+    width: 100px;
+    height: 100px;
+}
+
+.round-corner {
+    border-radius: 25%;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="slogan-container">
+    <h1 class="display-2 my-3">CheerUp </h1>
+    <p class="lead"> Where Every Day Sparks Events</p>
+    <hr class="my-4">
+    <p> Your NYU social hub. Discover meet-up spots, plan events, and connect with your neighbors in New York City. Explore parks, museums, and more. You can list your tasks, share your goals, and keep motivated through receiving cheer and support from your neighbors. Share what you want to do and we help you find: places, teammates and support!
+    </p>
+</div>
+<div class="label-container">
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <p class="nav-link fw-bold fs-5 m-3 disabled">PICK ONE!</p>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active fw-bold fs-5 m-3" id="tag-tab" data-bs-toggle="tab" data-bs-target="#tag_label">TAG</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link fw-bold fs-5 m-3" id="time-tab" data-bs-toggle="tab" data-bs-target="#time_label">TIME</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link fw-bold fs-5 m-3" id="capacity-tab" data-bs-toggle="tab" data-bs-target="#capacity_label">CAPACITY</a>
+        </li>
+    </ul>
+    <div class="tab-content my-3">
+        <div class="tab-pane fade show active" id="tag_label">
+            <div class="row">
+                {% for tag, icon_path in tags_icons %}
+                    <div class="col">
+                        <a href="{% url 'root-homepage' %}?filter_tag={{ tag.id }}" class="btn rounded-circle label-button my-2"><img src="{{ icon_path }}" alt="Bootstrap" width="32" height="32"></a>
+                        <p class="text-center">{{ tag.tag_name }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>  
+        <div class="tab-pane fade time-label-container" id="time_label">
+            <div class="row">
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_time=today" class="btn round-corner label-button my-2"><img src="static/events/images/calendar-event.svg" alt="Bootstrap" width="32" height="32"></a>
+                    <p class="text-center">Today</p>
+                </div>
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_time=this_week" class="btn round-corner label-button my-2"><img src="static/events/images/calendar-range.svg" alt="Bootstrap" width="32" height="32"></a>
+                    <p class="text-center">This Week</p>
+                </div>
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_time=this_month" class="btn round-corner label-button my-2"><img src="static/events/images/calendar3.svg" alt="Bootstrap" width="32" height="32"></a>
+                    <p class="text-center">This Month</p>
+                </div>
+            </div> 
+        </div>
+        <div class="tab-pane fade capacity-label-container" id="capacity_label">
+            <div class="row">
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_capacity=s" class="btn rounded-circle label-button my-2 fw-bold" id="small-label">S</a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_capacity=m" class="btn rounded-circle label-button my-2 fw-bold" id="medium-label">M</a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_capacity=l" class="btn rounded-circle label-button my-2 fw-bold" id="large-label">L</a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'root-homepage' %}?filter_capacity=xl" class="btn rounded-circle label-button my-2 fw-bold">XL</a>
+                </div>
+            </div> 
+            <div class="row">
+                <div class="col">
+                    <p class="text-center">1-5</p>
+                </div>
+                <div class="col">
+                    <p class="text-center">6-20</p>
+                </div>
+                <div class="col">
+                    <p class="text-center">21-50</p>
+                </div>
+                <div class="col">
+                    <p class="text-center">51-5000</p>
+                </div>
+            </div> 
+        </div>
+    </div>  
+</div>
+
+{% endblock %}

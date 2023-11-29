@@ -62,7 +62,7 @@
         
         <nav class="navbar navbar-expand-lg navbar-light bg-light px-5">
             <!-- Brand/logo -->
-            <a class="navbar-brand" href="{% url 'events:index' %}">Cheer↑</a>
+            <a class="navbar-brand" href="{% url 'root-homepage' %}">Cheer↑</a>
             
             <!-- Toggler/collapsible Button -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,11 +110,28 @@
     <main>
         {% block content %}
         <!-- Default content goes here, if any -->
+        {% if messages %}
+            <div id="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dimissable fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
         <div class="container">
         <div class="sticky-note-container-big mt-5">
-            <h1>Events</h1>
+            <div class="button-container">
+                <h1>Events</h1>    
+                <input id="eventsButton" type="button" name="events_near_me" value="Events near me" class="btn btn-secondary" onclick="toggleButton()">
+            </div>
+
             <!-- Filtering form -->
             <form method="get" action="{% url 'events:index' %}" class="filter-form" onsubmit="return validateForm()">
+                
                 <label for="start_time">Start Time:</label>
                 <input type="datetime-local" name="start_time" id="start_time">
 
@@ -138,7 +155,11 @@
                 <label for="search_name">Search Events:</label>
                 <input type="text" name="search" class="search_name" id="search_name" placeholder=" Event Name or Location...">
                 <br>
+            <div class="text-center">    
                 <input type="submit" value="Filter" class="btn btn-secondary">
+                <input type="submit" name="reset_filters" value="Reset Filters" class="btn btn-secondary">
+            </div>
+
             </form>
 
             <!-- Error messages for invalid input -->
@@ -190,6 +211,7 @@
     <script src="{% static 'events/js/bootstrap.bundle.min.js' %}"></script>
     {% block extra_scripts %}
     <script>
+        
         function getQueryParameters() {
     var queryString = window.location.search.slice(1);
     var params = {};
@@ -224,6 +246,11 @@
         }
         if (queryParameters.search) {
             document.getElementById('search_name').value = queryParameters.search;
+        }
+        if (queryParameters.events_near_me && queryParameters.events_near_me == "true") {
+            const toggleButton=document.getElementById('eventsButton');
+            toggleButton.classList.remove("btn-secondary")
+            toggleButton.classList.add("btn-primary")
         }
         });
         
@@ -262,6 +289,35 @@
     urlParams.delete('error_message');
     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
     window.history.replaceState({}, document.title, newUrl);
+    function showPosition(position) {
+        var latitude = position.coords.latitude;
+        var longitude = position.coords.longitude;
+        urlParams.set('lat', latitude);
+        urlParams.set('lon', longitude);
+    // Send latitude and longitude to the server
+    window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
+    }
+    function toggleButton() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showPosition);   
+            var button = document.getElementById("eventsButton");
+            console.log(button.classList)
+            if (button.classList.contains("btn-secondary")) {
+                urlParams.set('events_near_me', true);
+                button.classList.remove("btn-secondary");
+                button.classList.add("btn-primary");
+            } else {
+                urlParams.set('events_near_me', false);
+                button.classList.remove("btn-primary");
+                button.classList.add("btn-secondary");
+            }
+            window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
+            }
+        else{
+            alert("we are unable to fetch your location!")
+        }    
+    }
+    
     </script>   
     
     {% endblock %}
