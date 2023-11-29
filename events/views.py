@@ -50,20 +50,8 @@ def index(request):
     # user_latitude = # User's latitude
     # user_longitude = # User's longitude
 
-    # Filter nearby locations based on user's location
-    nearby_locations = Location.objects.filter(
-        latitude__range=(
-            user_latitude - 0.036,
-            user_latitude + 0.036,
-        ),  # Approx. 2 miles in latitude
-        longitude__range=(
-            user_longitude - 0.036,
-            user_longitude + 0.036,
-        ),  # Approx. 2 miles in longitude
-    )
-
     # Get the search query from the URL parameter
-    search_query = request.GET.get("search", "")
+    events_near_me = request.GET.get("events_near_me", "")
 
     # Filter events that are active and whose end time is greater than the current time in NY
     search_query = request.GET.get(
@@ -84,6 +72,24 @@ def index(request):
     if request.GET and form.is_valid():
         start_time_ny = None
         end_time_ny = None
+        if events_near_me and events_near_me == "true":
+            user_latitude = float(request.GET.get("lat", ""))
+            user_longitude = float(request.GET.get("lon", ""))
+            print(user_latitude)
+            print(user_longitude)
+            # Filter nearby locations based on user's location
+            nearby_locations = Location.objects.filter(
+                latitude__range=(
+                    user_latitude - 0.036,
+                    user_latitude + 0.036,
+                ),  # Approx. 2 miles in latitude
+                longitude__range=(
+                    user_longitude - 0.036,
+                    user_longitude + 0.036,
+                ),  # Approx. 2 miles in longitude
+            )
+            nearby_location_ids = [location.id for location in nearby_locations]
+            events = Event.objects.filter(event_location__in=nearby_location_ids)
 
         # Start Time filter
         if form.cleaned_data["start_time"]:
