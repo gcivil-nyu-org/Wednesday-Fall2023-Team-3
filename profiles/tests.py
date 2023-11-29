@@ -171,3 +171,20 @@ class ProfileModelsTest(TestCase):
             user_profile = UserProfile.objects.create(user=self.user, bio="Test Bio")
 
         self.assertEqual(str(user_profile), "testuser")
+
+    def test_save_user_profile_creates_profile(self):
+        # The UserProfile should be created automatically when the User is created
+        user_profile = UserProfile.objects.get(user=self.user)
+
+        # Check that the UserProfile has been created
+        self.assertTrue(UserProfile.objects.filter(user=self.user).exists())
+
+    def test_save_user_profile_does_not_create_duplicate_profiles(self):
+        # The UserProfile should be created automatically when the User is created
+        user_profile_instance = UserProfile.objects.get(user=self.user)
+
+        # Try to create another UserProfile, but it should not create a duplicate
+        UserProfile.objects.get_or_create(user=self.user)
+
+        # Check that only one UserProfile has been created
+        self.assertEqual(UserProfile.objects.filter(user=self.user).count(), 1)
