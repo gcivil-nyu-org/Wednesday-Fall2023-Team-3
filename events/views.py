@@ -33,7 +33,7 @@ from .forms import EventFilterForm
 from datetime import datetime, timedelta
 import pytz
 from django.db.models import Q
-
+from better_profanity import profanity
 
 # Existing imports and index view function...
 
@@ -169,6 +169,9 @@ def index(request):
     return render(request, "events/events.html", context)
 
 
+update_errors = {}
+
+
 @login_required
 def updateEvent(request, event_id):
     tag = Tag.objects.all()
@@ -190,13 +193,21 @@ def updateEvent(request, event_id):
         tags = Tag.objects.filter(tag_name__in=selectedtags)
 
         # Create a dictionary to store validation errors
-        errors = {}
+        update_errors.clear()
 
         if not event_name:
-            errors["event_name"] = "Event name cannot be empty."
+            update_errors["event_name"] = "Event name cannot be empty."
+
+        if profanity.contains_profanity(event_name):
+            update_errors["event_name"] = "Event Name contains profanity"
+            return render(
+                request,
+                "events/update-event.html",
+                {"event": event, "tags": tag, "errors": update_errors},
+            )
 
         if not start_time:
-            errors["start_time"] = "Start time is required."
+            update_errors["start_time"] = "Start time is required."
         else:
             start_time = timezone.make_aware(
                 timezone.datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
@@ -204,43 +215,49 @@ def updateEvent(request, event_id):
             new_york_tz = pytz.timezone("America/New_York")
             current_time_ny = datetime.now(new_york_tz)
             if start_time < current_time_ny:
-                errors["start_time"] = "Start time cannot be in the past."
+                update_errors["start_time"] = "Start time cannot be in the past."
 
         if not end_time:
-            errors["end_time"] = "End time is required."
+            update_errors["end_time"] = "End time is required."
         else:
             end_time = timezone.make_aware(
                 timezone.datetime.strptime(end_time, "%Y-%m-%dT%H:%M")
             )
             if end_time < start_time:
-                errors["end_time"] = "End time cannot be earlier than start time."
+                update_errors[
+                    "end_time"
+                ] = "End time cannot be earlier than start time."
 
         if not capacity:
-            errors["capacity"] = "Capacity is required."
+            update_errors["capacity"] = "Capacity is required."
         else:
             try:
                 new_capacity = int(capacity)
                 if new_capacity < 0:
-                    errors["capacity"] = "Capacity must be a non-negative number."
+                    update_errors[
+                        "capacity"
+                    ] = "Capacity must be a non-negative number."
                 else:
                     # New capacity check against approved participants
                     approved_participants_count = EventJoin.objects.filter(
                         event=event, status=APPROVED
                     ).count()
                     if new_capacity < approved_participants_count:
-                        errors[
+                        update_errors[
                             "capacity"
                         ] = "Capacity cannot be less than the number of approved participants"
             except ValueError:
-                errors["capacity"] = "Capacity must be a valid number."
+                update_errors["capacity"] = "Capacity must be a valid number."
 
         if not event_location_id:
-            errors["event_location_id"] = "Event location is required."
+            update_errors["event_location_id"] = "Event location is required."
         else:
             try:
                 event_location_id = int(event_location_id)
                 if event_location_id <= 0:
-                    errors["event_location_id"] = "Event location must be selected."
+                    update_errors[
+                        "event_location_id"
+                    ] = "Event location must be selected."
                 else:
                     location_object = Location.objects.get(id=event_location_id)
                     if (
@@ -254,17 +271,18 @@ def updateEvent(request, event_id):
                         .exclude(pk=event_id)
                         .exists()
                     ):
-                        errors[
+                        update_errors[
                             "similar_event_error"
                         ] = "An event with these details already exists."
             except ValueError:
-                errors["event_location_id"] = "Invalid event location."
+                update_errors["event_location_id"] = "Invalid event location."
 
         description = request.POST.get("description", "")
 
-        if errors:
+        if update_errors:
             # Return a JSON response with a 400 status code and the error messages
-            return JsonResponse(errors, status=400)
+            return JsonResponse(update_errors, status=400)
+
         location_object = Location.objects.get(id=event_location_id)
         event.event_location = location_object
         event.event_name = event_name
@@ -276,7 +294,11 @@ def updateEvent(request, event_id):
         event.tags.set(tags)
         return redirect("events:index")  # Redirect to the event list or a success page
 
-    return render(request, "events/update-event.html", {"event": event, "tags": tag})
+    return render(
+        request,
+        "events/update-event.html",
+        {"event": event, "tags": tag, "errors": update_errors},
+    )
 
 
 @login_required
@@ -297,6 +319,14 @@ def saveEvent(request):
         # Validate the data
         if not event_name:
             errors["event_name"] = "Event name cannot be empty."
+
+        if profanity.contains_profanity(event_name):
+            errors["event_name"] = "Event Name contains profanity"
+            return render(
+                request,
+                "events/create-event.html",
+                {"form": EventsForm(), "tags": Tag.objects.all(), "errors": errors},
+            )
 
         if not event_location_id:
             errors["event_location_id"] = "Event location is required."

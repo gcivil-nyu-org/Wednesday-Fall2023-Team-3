@@ -69,6 +69,14 @@ Update Event
             </div>
             {% endif %}
 
+            {% if errors %}
+            <div class="alert alert-danger" role="alert">
+                {% for error in errors.values %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <div class="form-group">
                 <label for="event_name">Event Name:</label>
                 <input type="text" class="form-control" name="event_name" id="event_name" placeholder="Event Name" value="{{ event.event_name }}" required>
