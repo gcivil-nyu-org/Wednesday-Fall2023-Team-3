@@ -1978,3 +1978,61 @@ class HomepageCapacityLabelFilterTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("root-homepage"))
+
+
+class EventDeatilPageTagLabelFilterTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        self.tag1 = Tag.objects.create(tag_name="Test Tag 1")
+        self.tag2 = Tag.objects.create(tag_name="Test Tag 2")
+        new_york_tz = pytz.timezone("America/New_York")
+        self.current_time_ny = datetime.now(new_york_tz)
+        self.event1 = Event.objects.create(
+            event_name="Test Event 1",
+            event_location=self.location,
+            start_time=self.current_time_ny + timedelta(hours=7),
+            end_time=self.current_time_ny + timedelta(hours=9),
+            capacity=30,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event1.tags.set([self.tag1])
+        self.event2 = Event.objects.create(
+            event_name="Test Event 2",
+            event_location=self.location,
+            start_time=self.current_time_ny + timedelta(hours=18),
+            end_time=self.current_time_ny + timedelta(hours=30),
+            capacity=50,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event2.tags.set([self.tag2])
+        self.client = Client()
+
+    def test_filter_event_tag_pill(self):
+        response = self.client.get(
+            reverse("events:event-detail", args=[self.event1.id])
+            + f"?filter_tag={self.tag1.id}"
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(
+            response, reverse("events:index") + f"?tags={self.tag1.id}"
+        )
+        response = self.client.get(reverse("events:index") + f"?tags={self.tag1.id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Event 1")
+        self.assertNotContains(response, "Test Event 2")
+
+    def test_filter_event_invalid_tag_pill(self):
+        response = self.client.get(
+            reverse("events:event-detail", args=[self.event1.id]) + "?filter_tag=9999"
+        )
+        self.assertEqual(response.status_code, 404)

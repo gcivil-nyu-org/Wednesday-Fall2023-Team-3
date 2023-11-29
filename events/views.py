@@ -378,6 +378,10 @@ def deleteEvent(request, event_id):
 
 
 def eventDetail(request, event_id):
+    if request.method == "GET":
+        if "filter_tag" in request.GET:
+            tag_label = request.GET.get("filter_tag", "")
+            return filter_event_tag_label(tag_label)
     event = get_object_or_404(Event, pk=event_id)
     if not event.is_active:
         messages.warning(request, "The event is deleted. Try some other events!")
