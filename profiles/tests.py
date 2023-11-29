@@ -74,6 +74,7 @@ class ProfileViewsTest(TestCase):
         # Check if the response status code is 302 (Redirect to login page)
         self.assertEqual(response.status_code, 302)
 
+
 class ProfileModelsTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -96,7 +97,9 @@ class ProfileModelsTest(TestCase):
 
     def test_save_user_profile_signal_handler(self):
         # Create a new user with an associated profile
-        existing_user = User.objects.create_user(username="existinguser", password="existingpassword")
+        existing_user = User.objects.create_user(
+            username="existinguser", password="existingpassword"
+        )
         existing_user_profile = existing_user.userprofile
 
         # Change the bio of the user and save
@@ -111,10 +114,14 @@ class ProfileModelsTest(TestCase):
 
     def test_create_user_profile_with_existing_profile(self):
         # Create a new user without an associated profile
-        existing_user_with_profile = User.objects.create_user(username="existinguser2", password="existingpassword")
+        existing_user_with_profile = User.objects.create_user(
+            username="existinguser2", password="existingpassword"
+        )
 
         # Use get_or_create to avoid IntegrityError due to UNIQUE constraint
-        existing_profile, created = UserProfile.objects.get_or_create(user=existing_user_with_profile, defaults={"bio": "Existing Bio"})
+        existing_profile, created = UserProfile.objects.get_or_create(
+            user=existing_user_with_profile, defaults={"bio": "Existing Bio"}
+        )
 
         # Check if the existing profile is used instead of creating a new one
         self.assertFalse(created)  # Ensure that the profile was not created
@@ -122,24 +129,34 @@ class ProfileModelsTest(TestCase):
 
     def test_create_user_profile_with_existing_profile_conflict(self):
         # Create a new user without an associated profile
-        new_user_with_existing_profile_conflict = User.objects.create_user(username="newuserconflict", password="newuserconflictpassword")
+        new_user_with_existing_profile_conflict = User.objects.create_user(
+            username="newuserconflict", password="newuserconflictpassword"
+        )
 
         # Use get_or_create to avoid IntegrityError due to UNIQUE constraint
-        existing_profile_for_new_user, created = UserProfile.objects.get_or_create(user=new_user_with_existing_profile_conflict, defaults={"bio": "Existing Bio"})
+        existing_profile_for_new_user, created = UserProfile.objects.get_or_create(
+            user=new_user_with_existing_profile_conflict,
+            defaults={"bio": "Existing Bio"},
+        )
 
         # Check if the existing profile is used instead of creating a new one
         self.assertFalse(created)  # Ensure that the profile was not created
-        self.assertEqual(new_user_with_existing_profile_conflict.userprofile, existing_profile_for_new_user)
+        self.assertEqual(
+            new_user_with_existing_profile_conflict.userprofile,
+            existing_profile_for_new_user,
+        )
 
     def test_create_user_profile_with_existing_profile_signal_handler(self):
         # Create a new user without an associated profile
-        existing_user_with_profile = User.objects.create_user(username="existinguser2", password="existingpassword")
+        existing_user_with_profile = User.objects.create_user(
+            username="existinguser2", password="existingpassword"
+        )
 
         # Use get_or_create to avoid IntegrityError due to UNIQUE constraint
-        existing_profile, created = UserProfile.objects.get_or_create(user=existing_user_with_profile, defaults={"bio": "Existing Bio"})
+        existing_profile, created = UserProfile.objects.get_or_create(
+            user=existing_user_with_profile, defaults={"bio": "Existing Bio"}
+        )
 
         # Check if the existing profile is used instead of creating a new one
         self.assertFalse(created)  # Ensure that the profile was not created
         self.assertEqual(existing_user_with_profile.userprofile, existing_profile)
-
-    
