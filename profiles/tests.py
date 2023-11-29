@@ -162,10 +162,12 @@ class ProfileModelsTest(TestCase):
         self.assertEqual(existing_user_with_profile.userprofile, existing_profile)
 
     def test_user_profile_string_representation(self):
-        # Use get_or_create to avoid IntegrityError due to UNIQUE constraint
-        user_profile, created = UserProfile.objects.get_or_create(
-            user=self.user, bio="Test Bio"
-        )
+        # Check if a profile already exists for the user
+        existing_profile = UserProfile.objects.filter(user=self.user).first()
 
-        # Check if the __str__ method returns the expected value
+        if existing_profile:
+            user_profile = existing_profile
+        else:
+            user_profile = UserProfile.objects.create(user=self.user, bio="Test Bio")
+
         self.assertEqual(str(user_profile), "testuser")
