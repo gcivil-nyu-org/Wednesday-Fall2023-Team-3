@@ -41,7 +41,7 @@
 .join-entry-text {
     flex-grow: 1;
 }
-.Tags{
+.tags{
     display: flex;
 }
 .Tag{
@@ -136,6 +136,14 @@ ul {
     background-color: #0056b3;
 }
 
+.tag-button {
+    background-color: rgba(255,255,255,0.3);
+}
+
+.tag-button:hover {
+    background-color: rgba(255,255,255,0.7);
+}
+
 
 </style>
 
@@ -171,19 +179,19 @@ ul {
             <div class="event-detail-container mb-4">
                 <div class="sticky-note-container">
                     <div class="my-3"><h1>{{ event.event_name }}</h1></div>
+                    {% if event.tags.all %}
+                        <div class="tags row row-cols-auto px-2">
+                            {% for tag in event.tags.all %}
+                                <a href="{% url 'events:event-detail' event_id=event.id %}?filter_tag={{ tag.id }}" class="col btn btn-sm rounded-pill tag-button mb-2 mx-1 px-2">{{ tag }}</a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                     <h4>Creator</h4>
                     <p>{{ event.creator }}</p>
                     <h4>Date and Time</h4>
                     <p>from {{ event.start_time }} to {{ event.end_time }}</p>
                     <!-- <img src="event-image.jpg" alt="Event Image" class="img-fluid rounded"> -->
-                    <h4>Tags</h4>
-                    <div class="Tags">
-                    {% for tag in event.tags.all %}
-                    <p class = "Tag">{{ tag }}</p>
-                    {% empty %}
-                    <p class = "Tag">None</p>
-                    {% endfor %}
-                    </div>
+                    
                     <h4>Location</h4>
                     <p>{{ location }}, {{ location.address }} ({{ location.category }})</p>
                     <h4>Capacity</h4>

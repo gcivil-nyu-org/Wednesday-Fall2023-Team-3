@@ -1,0 +1,18 @@
+<!-- profiles/templates/profiles/view_profile.html -->
+{% extends 'profiles/base.html' %}
+
+{% block content %}
+  <h2>{{ user_profile.user.username }}'s Profile</h2>
+  <p>Bio: {{ user_profile.bio }}</p>
+
+  <h3>Created Events:</h3>
+{% if events %}
+  <ul>
+    {% for event in events %}
+      <li>{{ event.event_name }} - {{ event.start_time }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No events created yet.</p>
+{% endif %}
+{% endblock %}
