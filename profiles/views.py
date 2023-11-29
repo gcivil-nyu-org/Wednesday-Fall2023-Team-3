@@ -15,7 +15,8 @@ def view_profile(request, userprofile_id):
 
     return render(request, "profiles/view_profile.html", context)
 
-'''
+
+"""
 @login_required
 def edit_profile(request):
     user_profile = request.user.userprofile
@@ -36,4 +37,4 @@ def edit_profile(request):
         "profiles/edit_profile.html",
         {"user_profile": user_profile, "form": form},
     )
-'''
+"""
