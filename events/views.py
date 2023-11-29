@@ -285,7 +285,7 @@ def updateEvent(request, event_id):
         if update_errors:
             # Return a JSON response with a 400 status code and the error messages
             return JsonResponse(update_errors, status=400)
-        
+
         else:
             # If an image was uploaded and an image already exists, replace it
             if image:
