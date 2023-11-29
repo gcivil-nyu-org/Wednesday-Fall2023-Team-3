@@ -2036,3 +2036,64 @@ class EventDeatilPageTagLabelFilterTestCase(TestCase):
             reverse("events:event-detail", args=[self.event1.id]) + "?filter_tag=9999"
         )
         self.assertEqual(response.status_code, 404)
+
+
+class ProfanityCheckTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        start_time = current_time_ny + timezone.timedelta(hours=1)
+        end_time = current_time_ny + timezone.timedelta(hours=2)
+        self.start_time = start_time.strftime("%Y-%m-%dT%H:%M")
+        self.end_time = end_time.strftime("%Y-%m-%dT%H:%M")
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=self.start_time,
+            end_time=self.end_time,
+            capacity=100,
+            is_active=True,
+            creator=self.user,
+        )
+
+    def test_update_event_with_profane_name(self):
+        self.client.login(username="testuser", password="testpassword")
+        existing_event = Event.objects.get(pk=self.event.id)
+        response = self.client.post(
+            reverse("events:update-event", args=[existing_event.id]),
+            {
+                "event_location_id": self.location.id,
+                "event_name": "Fuck you Event",
+                "start_time": self.start_time,
+                "end_time": self.end_time,
+                "capacity": 100,
+            },
+        )
+        self.assertContains(
+            response,
+            "Event Name contains profanity",
+        )  # Replace with expected content
+
+    def test_create_event_with_profane_name(self):
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(
+            reverse("events:save-event"),
+            {
+                "event_location_id": self.location.id,  # Missing event location
+                "event_name": "Test Event Fuck",  # Missing event name
+                "start_time": self.start_time,  # Missing start time
+                "end_time": self.end_time,  # Missing end time
+                "capacity": 10,
+                "creator": self.user,
+            },
+        )
+        self.assertContains(
+            response,
+            "Event Name contains profanity",
+        )

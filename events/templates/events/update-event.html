@@ -69,6 +69,14 @@ Update Event
             </div>
             {% endif %}
 
+            {% if errors %}
+            <div class="alert alert-danger" role="alert">
+                {% for error in errors.values %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <div class="form-group">
                 <label for="image">Event Image:</label>
                 <input type="file" class="form-control" name="image" id="image" accept="image/*">
