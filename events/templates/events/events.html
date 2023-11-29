@@ -124,9 +124,14 @@
         {% endif %}
         <div class="container">
         <div class="sticky-note-container-big mt-5">
-            <h1>Events</h1>
+            <div class="button-container">
+                <h1>Events</h1>    
+                <input id="eventsButton" type="button" name="events_near_me" value="Events near me" class="btn btn-secondary" onclick="toggleButton()">
+            </div>
+
             <!-- Filtering form -->
             <form method="get" action="{% url 'events:index' %}" class="filter-form" onsubmit="return validateForm()">
+                
                 <label for="start_time">Start Time:</label>
                 <input type="datetime-local" name="start_time" id="start_time">
 
@@ -206,6 +211,7 @@
     <script src="{% static 'events/js/bootstrap.bundle.min.js' %}"></script>
     {% block extra_scripts %}
     <script>
+        
         function getQueryParameters() {
     var queryString = window.location.search.slice(1);
     var params = {};
@@ -240,6 +246,11 @@
         }
         if (queryParameters.search) {
             document.getElementById('search_name').value = queryParameters.search;
+        }
+        if (queryParameters.events_near_me && queryParameters.events_near_me == "true") {
+            const toggleButton=document.getElementById('eventsButton');
+            toggleButton.classList.remove("btn-secondary")
+            toggleButton.classList.add("btn-primary")
         }
         });
         
@@ -278,6 +289,35 @@
     urlParams.delete('error_message');
     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
     window.history.replaceState({}, document.title, newUrl);
+    function showPosition(position) {
+        var latitude = position.coords.latitude;
+        var longitude = position.coords.longitude;
+        urlParams.set('lat', latitude);
+        urlParams.set('lon', longitude);
+    // Send latitude and longitude to the server
+    window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
+    }
+    function toggleButton() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showPosition);   
+            var button = document.getElementById("eventsButton");
+            console.log(button.classList)
+            if (button.classList.contains("btn-secondary")) {
+                urlParams.set('events_near_me', true);
+                button.classList.remove("btn-secondary");
+                button.classList.add("btn-primary");
+            } else {
+                urlParams.set('events_near_me', false);
+                button.classList.remove("btn-primary");
+                button.classList.add("btn-secondary");
+            }
+            window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
+            }
+        else{
+            alert("we are unable to fetch your location!")
+        }    
+    }
+    
     </script>   
     
     {% endblock %}

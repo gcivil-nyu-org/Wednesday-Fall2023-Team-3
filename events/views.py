@@ -45,15 +45,28 @@ def index(request):
     # Set the timezone to New York and get the current time
     ny_timezone = pytz.timezone("America/New_York")
     current_time_ny = timezone.now().astimezone(ny_timezone)
+    
+    # Obtain user's location (this part needs your implementation)
+    #user_latitude = # User's latitude
+    #user_longitude = # User's longitude
 
+    # Filter nearby locations based on user's location
+    nearby_locations = Location.objects.filter(
+        latitude__range=(user_latitude - 0.036, user_latitude + 0.036),  # Approx. 2 miles in latitude
+        longitude__range=(user_longitude - 0.036, user_longitude + 0.036)  # Approx. 2 miles in longitude
+    )
+
+    # Get the search query from the URL parameter
+    search_query = request.GET.get("search", "")
+    
     # Filter events that are active and whose end time is greater than the current time in NY
     search_query = request.GET.get(
         "search", ""
     )  # Get the search query from the URL parameter
     locations = Location.objects.filter(location_name__icontains=search_query)
-    event_ids = [location.id for location in locations]
+    location_ids = [location.id for location in locations]
     events = Event.objects.filter(
-        Q(event_name__icontains=search_query) | Q(event_location__in=event_ids)
+        Q(event_name__icontains=search_query) | Q(event_location__in=location_ids)
     )
     events = events.filter(end_time__gt=current_time_ny, is_active=True).order_by(
         "-start_time"
