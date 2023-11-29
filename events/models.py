@@ -1,6 +1,5 @@
 from django.db import models
 from location.models import Location
-from django.utils import timezone
 from django.contrib.auth.models import User
 from tags.models import Tag
 from .constants import STATUS_CHOICES, PENDING, EMOJI_CHOICES
