@@ -1,0 +1,81 @@
+{% extends "events/base.html" %}
+
+{% block title %}
+For YOU
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+.image-placeholder {
+  background: linear-gradient(#eed8d8, rgba(175,207,243,1));
+  height: 175px;
+  border-radius: 50%;
+}
+
+.recommended-events-container {
+  width: 90%;
+  margin: 3% 5% 3% 5%;
+  border-radius: 25px;
+}
+
+.round-corner {
+  border-radius: 10%;
+  border-style: da;
+}
+
+.background-transparent {
+  background-color: rgba(255,255,255,0.3);
+}
+</style>
+
+{% endblock %}
+
+
+
+{% block content %}
+<div class="recommended-events-container">
+  <h2 class="mt-3 mx-3">Go Again</h2>
+  <p class="lead mx-3">Based on places your events took place</p>
+  <div class="row row-cols-md-4 g-4">
+    {% for recommended_event_by_location in recommended_events_by_location %}
+      <div class="col">
+        <div class="card h-100 round-corner background-transparent mx-3">
+          <div class="card-header image-placeholder"></div>
+          <div class="card-body">
+            <a href="{% url 'events:event-detail' recommended_event_by_location.id %}" class="card-title fs-4 fw-bold">{{ recommended_event_by_location.event_name }}</a>
+            <h5 class="card-text">{{ recommended_event_by_location.start_time }}</h5>
+            <p class="card-text">{{ recommended_event_by_location.event_location }}</p>
+            <h5 class="card-text">{{ recommended_event_by_location.capacity }}</h5>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  
+  {% for tag, recommended_events_by_tag in recommended_events_by_tag_with_tag %}
+  <hr class="my-4">
+  <h2 class="mt-3 mx-3">{{ tag }}</h2>
+  <div class="row row-cols-md-4 g-4">
+    {% for recommended_event_by_tag in recommended_events_by_tag %}
+      <div class="col">
+        <div class="card h-100 round-corner mx-3 background-transparent">
+          <div class="card-header image-placeholder"></div>
+          <div class="card-body">
+            <a href="{% url 'events:event-detail' recommended_event_by_tag.id %}" class="card-title fs-4 fw-bold">{{ recommended_event_by_tag.event_name }}</a>
+            <h5 class="card-text">{{ recommended_event_by_tag.start_time }}</h5>
+            <p class="card-text">{{ recommended_event_by_tag.event_location }}</p>
+            <h5 class="card-text">{{ recommended_event_by_tag.capacity }}</h5>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+
+
+
+    
+
+
+{% endblock %}

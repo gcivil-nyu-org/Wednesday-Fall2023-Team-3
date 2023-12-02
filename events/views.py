@@ -32,7 +32,7 @@ from django.utils import timezone
 from .forms import EventFilterForm
 from datetime import datetime, timedelta
 import pytz
-from django.db.models import Q
+from django.db.models import Q, Count
 from better_profanity import profanity
 from django.core.files.storage import FileSystemStorage
 
@@ -847,3 +847,47 @@ def filter_event_capacity_label(capacity_label):
         + f"?min_capacity={min_capacity}&max_capacity={max_capacity}"
     )
     return redirect(url)
+
+
+# recommend page
+@login_required
+def recommendEvent(request):
+    ny_timezone = pytz.timezone("America/New_York")
+    current_time_ny = timezone.now().astimezone(ny_timezone)
+    event_joins = EventJoin.objects.filter(
+        Q(user=request.user) & (Q(status=APPROVED) | Q(status=PENDING))
+    )
+    event_ids = event_joins.values_list("event_id", flat=True)
+    user_events = Event.objects.filter((Q(creator=request.user) | Q(id__in=event_ids)))
+    user_event_locations = Location.objects.filter(event__in=user_events).distinct()
+    user_event_tag_data = (
+        Tag.objects.filter(event__in=user_events)
+        .distinct()
+        .values("id", "tag_name")
+        .annotate(tag_count=Count("event"))
+        .order_by("-tag_count")
+    )
+    user_events_tag_ids = user_event_tag_data.values_list("id", flat=True)
+    user_events_tag_names = user_event_tag_data.values_list("tag_name", flat=True)
+    recommended_events = Event.objects.exclude(Q(id__in=user_events))
+    recommended_events = recommended_events.filter(
+        Q(is_active=True) & Q(end_time__gt=current_time_ny)
+    )
+    recommended_events_by_location = recommended_events.filter(
+        event_location__in=user_event_locations
+    )
+
+    recommended_events_by_tag = []
+    for tag_id in user_events_tag_ids:
+        events = recommended_events.filter(tags=tag_id)
+        recommended_events_by_tag.append(events)
+
+    recommended_events_by_tag_with_tag = zip(
+        user_events_tag_names, recommended_events_by_tag
+    )
+
+    context = {
+        "recommended_events_by_location": recommended_events_by_location,
+        "recommended_events_by_tag_with_tag": recommended_events_by_tag_with_tag,
+    }
+    return render(request, "events/recommend-event.html", context)
