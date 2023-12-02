@@ -693,9 +693,7 @@ def addComment(request, event_id):
         comment = form.save(commit=False)
         if profanity.contains_profanity(comment.content):
             messages.warning(request, "The comment contains profanity")
-            return redirect(
-                "events:event-detail", event_id=event.id
-            )
+            return redirect("events:event-detail", event_id=event.id)
         comment.user = request.user
         comment.event = event
         comment.save()
@@ -726,9 +724,7 @@ def addReply(request, event_id, comment_id):
         reply = form.save(commit=False)
         if profanity.contains_profanity(reply.content):
             messages.warning(request, "The reply contains profanity")
-            return redirect(
-                "events:event-detail", event_id=event.id
-            )
+            return redirect("events:event-detail", event_id=event.id)
         reply.user = request.user
         reply.event = event
         # make sure that the parent comment is a comment not a reply

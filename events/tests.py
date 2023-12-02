@@ -2116,6 +2116,7 @@ class ProfanityCheckTest(TestCase):
             response,
             "Description contains profanity",
         )
+
     def test_create_event_with_profane_description(self):
         self.client.login(username="testuser", password="testpassword")
         response = self.client.post(
@@ -2166,6 +2167,7 @@ class CommentProfanityTestCase(TestCase):
         response = self.client.post(url, {"content": "Fuck you"})
         self.assertEqual(Comment.objects.count(), 0)
 
+
 class ReplyProfanityTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -2210,4 +2212,3 @@ class ReplyProfanityTestCase(TestCase):
             },
         )
         self.assertEqual(Comment.objects.count(), 1)
-
