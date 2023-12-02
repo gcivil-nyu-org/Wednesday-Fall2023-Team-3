@@ -863,11 +863,10 @@ def recommendEvent(request):
     user_event_tag_data = (
         Tag.objects.filter(event__in=user_events)
         .distinct()
-        .values("id", "tag_name")
+        .values("tag_name")
         .annotate(tag_count=Count("event"))
         .order_by("-tag_count")
     )
-    user_events_tag_ids = user_event_tag_data.values_list("id", flat=True)
     user_events_tag_names = user_event_tag_data.values_list("tag_name", flat=True)
     recommended_events = Event.objects.exclude(Q(id__in=user_events))
     recommended_events = recommended_events.filter(
@@ -878,13 +877,19 @@ def recommendEvent(request):
     )
 
     recommended_events_by_tag = []
-    for tag_id in user_events_tag_ids:
+    for user_events_tag in user_events_tag_names:
+        tag_id = Tag.objects.get(tag_name=user_events_tag)
         events = recommended_events.filter(tags=tag_id)
         recommended_events_by_tag.append(events)
 
     recommended_events_by_tag_with_tag = zip(
         user_events_tag_names, recommended_events_by_tag
     )
+    if not recommended_events_by_location and recommended_events_by_tag == []:
+        messages.warning(
+            request, "Sorry we haven't found any match! See all the events here!"
+        )
+        return redirect("events:index")
 
     context = {
         "recommended_events_by_location": recommended_events_by_location,
