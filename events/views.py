@@ -280,6 +280,14 @@ def updateEvent(request, event_id):
                 update_errors["event_location_id"] = "Invalid event location."
 
         description = request.POST.get("description", "")
+        if profanity.contains_profanity(description):
+            update_errors["event_name"] = "Description contains profanity"
+            return render(
+                request,
+                "events/update-event.html",
+                {"event": event, "tags": tag, "errors": update_errors},
+            )
+
         image = request.FILES.get("image")
 
         if update_errors:
@@ -382,6 +390,13 @@ def saveEvent(request):
             return JsonResponse(errors, status=400)
 
         description = request.POST.get("description", "")
+        if profanity.contains_profanity(description):
+            errors["event_name"] = "Description contains profanity"
+            return render(
+                request,
+                "events/create-event.html",
+                {"form": EventsForm(), "tags": Tag.objects.all(), "errors": errors},
+            )
 
         if Event.objects.filter(
             event_name=event_name,
@@ -676,6 +691,11 @@ def addComment(request, event_id):
     form = CommentForm(request.POST)
     if form.is_valid():
         comment = form.save(commit=False)
+        if profanity.contains_profanity(comment.content):
+            messages.warning(request, "The comment contains profanity")
+            return redirect(
+                "events:event-detail", event_id=event.id
+            )
         comment.user = request.user
         comment.event = event
         comment.save()
@@ -704,6 +724,11 @@ def addReply(request, event_id, comment_id):
         return redirect("events:event-detail", event_id=event.id)
     if form.is_valid():
         reply = form.save(commit=False)
+        if profanity.contains_profanity(reply.content):
+            messages.warning(request, "The reply contains profanity")
+            return redirect(
+                "events:event-detail", event_id=event.id
+            )
         reply.user = request.user
         reply.event = event
         # make sure that the parent comment is a comment not a reply
