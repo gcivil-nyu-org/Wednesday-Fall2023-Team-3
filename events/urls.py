@@ -52,4 +52,5 @@ urlpatterns = [
         name="toggle-reaction",
     ),
     path("homepage/", views.homepage, name="homepage"),
+    path("recommend-event/", views.recommendEvent, name="recommend-event"),
 ]

@@ -32,12 +32,18 @@ from django.utils import timezone
 from .forms import EventFilterForm
 from datetime import datetime, timedelta
 import pytz
-from django.db.models import Q
+from django.db.models import Q, Count
 from better_profanity import profanity
 from django.core.files.storage import FileSystemStorage
 
 
 # Existing imports and index view function...
+def is_convertible_to_float(string):
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
 
 
 def index(request):
@@ -75,23 +81,27 @@ def index(request):
         start_time_ny = None
         end_time_ny = None
         if events_near_me and events_near_me == "true":
-            user_latitude = float(request.GET.get("lat", ""))
-            user_longitude = float(request.GET.get("lon", ""))
-            print(user_latitude)
-            print(user_longitude)
-            # Filter nearby locations based on user's location
-            nearby_locations = Location.objects.filter(
-                latitude__range=(
-                    user_latitude - 0.036,
-                    user_latitude + 0.036,
-                ),  # Approx. 2 miles in latitude
-                longitude__range=(
-                    user_longitude - 0.036,
-                    user_longitude + 0.036,
-                ),  # Approx. 2 miles in longitude
-            )
-            nearby_location_ids = [location.id for location in nearby_locations]
-            events = Event.objects.filter(event_location__in=nearby_location_ids)
+            if (
+                request.GET.get("lat", "")
+                and is_convertible_to_float(request.GET.get("lat", ""))
+                and request.GET.get("lon", "")
+                and is_convertible_to_float(request.GET.get("lon", ""))
+            ):
+                user_latitude = float(request.GET.get("lat", ""))
+                user_longitude = float(request.GET.get("lon", ""))
+                # Filter nearby locations based on user's location
+                nearby_locations = Location.objects.filter(
+                    latitude__range=(
+                        user_latitude - 0.036,
+                        user_latitude + 0.036,
+                    ),  # Approx. 2 miles in latitude
+                    longitude__range=(
+                        user_longitude - 0.036,
+                        user_longitude + 0.036,
+                    ),  # Approx. 2 miles in longitude
+                )
+                nearby_location_ids = [location.id for location in nearby_locations]
+                events = Event.objects.filter(event_location__in=nearby_location_ids)
 
         # Start Time filter
         if form.cleaned_data["start_time"]:
@@ -280,6 +290,14 @@ def updateEvent(request, event_id):
                 update_errors["event_location_id"] = "Invalid event location."
 
         description = request.POST.get("description", "")
+        if profanity.contains_profanity(description):
+            update_errors["event_name"] = "Description contains profanity"
+            return render(
+                request,
+                "events/update-event.html",
+                {"event": event, "tags": tag, "errors": update_errors},
+            )
+
         image = request.FILES.get("image")
 
         if update_errors:
@@ -382,6 +400,13 @@ def saveEvent(request):
             return JsonResponse(errors, status=400)
 
         description = request.POST.get("description", "")
+        if profanity.contains_profanity(description):
+            errors["event_name"] = "Description contains profanity"
+            return render(
+                request,
+                "events/create-event.html",
+                {"form": EventsForm(), "tags": Tag.objects.all(), "errors": errors},
+            )
 
         if Event.objects.filter(
             event_name=event_name,
@@ -676,6 +701,9 @@ def addComment(request, event_id):
     form = CommentForm(request.POST)
     if form.is_valid():
         comment = form.save(commit=False)
+        if profanity.contains_profanity(comment.content):
+            messages.warning(request, "The comment contains profanity")
+            return redirect("events:event-detail", event_id=event.id)
         comment.user = request.user
         comment.event = event
         comment.save()
@@ -704,6 +732,9 @@ def addReply(request, event_id, comment_id):
         return redirect("events:event-detail", event_id=event.id)
     if form.is_valid():
         reply = form.save(commit=False)
+        if profanity.contains_profanity(reply.content):
+            messages.warning(request, "The reply contains profanity")
+            return redirect("events:event-detail", event_id=event.id)
         reply.user = request.user
         reply.event = event
         # make sure that the parent comment is a comment not a reply
@@ -847,3 +878,52 @@ def filter_event_capacity_label(capacity_label):
         + f"?min_capacity={min_capacity}&max_capacity={max_capacity}"
     )
     return redirect(url)
+
+
+# recommend event page
+@login_required
+def recommendEvent(request):
+    ny_timezone = pytz.timezone("America/New_York")
+    current_time_ny = timezone.now().astimezone(ny_timezone)
+    event_joins = EventJoin.objects.filter(
+        Q(user=request.user) & (Q(status=APPROVED) | Q(status=PENDING))
+    )
+    event_ids = event_joins.values_list("event_id", flat=True)
+    user_events = Event.objects.filter((Q(creator=request.user) | Q(id__in=event_ids)))
+    user_event_locations = Location.objects.filter(event__in=user_events).distinct()
+    user_event_tag_data = (
+        Tag.objects.filter(event__in=user_events)
+        .distinct()
+        .values("tag_name")
+        .annotate(tag_count=Count("event"))
+        .order_by("-tag_count")
+    )
+    user_events_tag_names = user_event_tag_data.values_list("tag_name", flat=True)
+    recommended_events = Event.objects.exclude(Q(id__in=user_events))
+    recommended_events = recommended_events.filter(
+        Q(is_active=True) & Q(end_time__gt=current_time_ny)
+    )
+    recommended_events_by_location = recommended_events.filter(
+        event_location__in=user_event_locations
+    )
+
+    recommended_events_by_tag = []
+    for user_events_tag in user_events_tag_names:
+        tag_id = Tag.objects.get(tag_name=user_events_tag)
+        events = recommended_events.filter(tags=tag_id)
+        recommended_events_by_tag.append(events)
+
+    recommended_events_by_tag_with_tag = zip(
+        user_events_tag_names, recommended_events_by_tag
+    )
+    if not recommended_events_by_location and recommended_events_by_tag == []:
+        messages.warning(
+            request, "Sorry we haven't found any match! See all the events here!"
+        )
+        return redirect("events:index")
+
+    context = {
+        "recommended_events_by_location": recommended_events_by_location,
+        "recommended_events_by_tag_with_tag": recommended_events_by_tag_with_tag,
+    }
+    return render(request, "events/recommend-event.html", context)

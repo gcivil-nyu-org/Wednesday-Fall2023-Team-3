@@ -2097,3 +2097,229 @@ class ProfanityCheckTest(TestCase):
             response,
             "Event Name contains profanity",
         )
+
+    def test_create_event_with_profane_description(self):
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(
+            reverse("events:save-event"),
+            {
+                "event_location_id": self.location.id,  # Missing event location
+                "event_name": "Test Event",  # Missing event name
+                "start_time": self.start_time,  # Missing start time
+                "end_time": self.end_time,  # Missing end time
+                "capacity": 10,
+                "description": "Fuck you",
+                "creator": self.user,
+            },
+        )
+        self.assertContains(
+            response,
+            "Description contains profanity",
+        )
+
+    def test_update_event_with_profane_description(self):
+        self.client.login(username="testuser", password="testpassword")
+        existing_event = Event.objects.get(pk=self.event.id)
+        response = self.client.post(
+            reverse("events:update-event", args=[existing_event.id]),
+            {
+                "event_location_id": self.location.id,
+                "event_name": "Test Event",
+                "start_time": self.start_time,
+                "end_time": self.end_time,
+                "description": "Fuck you",
+                "capacity": 100,
+            },
+        )
+        self.assertContains(
+            response,
+            "Description contains profanity",
+        )  # Replace with expected content
+
+
+class CommentProfanityTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(days=50),
+            end_time=current_time_ny + timedelta(days=52),
+            capacity=5,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.client = Client()
+
+    def test_create_comment_profanity(self):
+        self.client.login(username="testuser", password="testpassword")
+        url = reverse("events:add-comment", args=[self.event.id])
+        self.client.post(url, {"content": "Fuck you"})
+        self.assertEqual(Comment.objects.count(), 0)
+
+
+class ReplyProfanityTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=100),
+            end_time=current_time_ny + timedelta(hours=104),
+            capacity=5,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.parent = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Parent comment",
+            is_private=True,
+            parent=None,
+        )
+        self.add_reply_url = reverse(
+            "events:add-reply", args=[self.event.id, self.parent.id]
+        )
+
+    def test_profanity_create_reply(self):
+        self.client.logout()
+        self.client.login(username="testuser", password="testpassword")
+        reply_content = "This is a reply fuck"
+        self.client.post(
+            reverse("events:add-reply", args=[self.event.id, self.parent.id]),
+            {
+                "content": reply_content,
+            },
+        )
+        self.assertEqual(Comment.objects.count(), 1)
+
+
+class RecommendEventTestCase(TestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user(
+            username="testuser1", password="testpassword"
+        )
+        self.user2 = User.objects.create_user(
+            username="testuser2", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location1 = Location.objects.create(
+            location_name="Test Location 1",
+        )
+        self.location2 = Location.objects.create(
+            location_name="Test Location 2",
+        )
+        self.tag1 = Tag.objects.create(tag_name="Test Tag 1")
+        self.tag2 = Tag.objects.create(tag_name="Test Tag 2")
+        self.tag3 = Tag.objects.create(tag_name="Test Tag 3")
+        new_york_tz = pytz.timezone("America/New_York")
+        self.current_time_ny = datetime.now(new_york_tz)
+        self.event1 = Event.objects.create(
+            event_name="Test Event 1",
+            event_location=self.location1,
+            start_time=self.current_time_ny + timedelta(hours=14),
+            end_time=self.current_time_ny + timedelta(hours=17),
+            capacity=30,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event1.tags.set([self.tag1])
+        self.event2 = Event.objects.create(
+            event_name="Test Event 2",
+            event_location=self.location2,
+            start_time=self.current_time_ny + timedelta(hours=25),
+            end_time=self.current_time_ny + timedelta(hours=29),
+            capacity=50,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.event2.tags.set([self.tag2])
+        self.event3 = Event.objects.create(
+            event_name="Test Event 3",
+            event_location=self.location1,
+            start_time=self.current_time_ny + timedelta(hours=21),
+            end_time=self.current_time_ny + timedelta(hours=28),
+            capacity=5,
+            is_active=True,
+            creator=self.user2,
+        )
+        self.event3.tags.set([self.tag2])
+        self.client = Client()
+
+    def test_logged_in_user_with_record_can_see_recommend_page(self):
+        self.client.login(username="testcreator", password="testpassword")
+        response = self.client.get(reverse("events:recommend-event"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_logged_in_user_with_no_record_direct_to_events_page(self):
+        self.client.login(username="testuser1", password="testpassword")
+        response = self.client.get(reverse("events:recommend-event"))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("events:index"))
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(
+            str(messages[0]),
+            "Sorry we haven't found any match! See all the events here!",
+        )
+
+    def test_not_logged_in_user_cannot_see_recommend_page(self):
+        self.client.logout()
+        response = self.client.get(reverse("events:recommend-event"))
+        self.assertEqual(response.status_code, 302)
+
+    def test_logged_in_user_see_other_events_by_location_by_tag(self):
+        self.client.login(username="testuser2", password="testpassword")
+        response = self.client.get(reverse("events:recommend-event"))
+        self.assertContains(response, "Test Event 1")
+        self.assertContains(response, "Test Event 2")
+        self.assertNotContains(response, "Test Event 3")
+        event4 = Event.objects.create(
+            event_name="Test Event 4",
+            event_location=self.location1,
+            start_time=self.current_time_ny + timedelta(hours=9),
+            end_time=self.current_time_ny + timedelta(hours=10),
+            capacity=8,
+            is_active=True,
+            creator=self.creator,
+        )
+        event4.tags.set([self.tag3])
+        event5 = Event.objects.create(
+            event_name="Test Event 5",
+            event_location=self.location1,
+            start_time=self.current_time_ny + timedelta(hours=15),
+            end_time=self.current_time_ny + timedelta(hours=30),
+            capacity=2,
+            is_active=True,
+            creator=self.creator,
+        )
+        event5.tags.set([self.tag3])
+        EventJoin.objects.create(user=self.user2, event=event5)
+        response = self.client.get(reverse("events:recommend-event"))
+        self.assertContains(response, "Test Event 1")
+        self.assertContains(response, "Test Event 2")
+        self.assertContains(response, "Test Event 4")
+        self.assertNotContains(response, "Test Event 3")
+        self.assertNotContains(response, "Test Event 5")
