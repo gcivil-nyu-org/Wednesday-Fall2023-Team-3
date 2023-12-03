@@ -15,4 +15,72 @@
 {% else %}
   <p>No events created yet.</p>
 {% endif %}
+
+<div class="col-md-4 my-3">
+  {% if user.is_authenticated %}
+      {% if user != user_profile.user %}
+          <!-- The user is not the creator of the event -->
+          {% if join_status == PENDING %}
+              <!-- Button to withdraw request -->
+              <form action="{% url 'toggle-friend-request' user_profile.id %}" method="post">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-outline-primary btn-block join-button" id="withdraw-to-join" onclick="return confirm('Are you sure you want to withdraw your friend request?');">Remove Friend Request</button>
+              </form>   
+          {% elif join_status == WITHDRAWN or join_status == None or join_status == REJECTED or join_status == REMOVED %}
+              <!-- Button to join again or create a new EventJoin object-->
+              <form action="{% url 'toggle-friend-request' user_profile.id %}" method="post">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-primary btn-block join-button" id="request-to-join" onclick="return confirm('Ready to send a request to join?');">Send Friend Request</button>
+              </form>
+          {% elif join_status == APPROVED %}
+          <!-- show that the request is approved-->
+          <!-- <div class="btn btn-primary btn-block join-button" id="approved-fake">Friend Requests</div>   -->
+          {% endif %}
+          <div class="approved-join-list sticky-note-container my-4">
+              <h3>Friends</h3>
+              <div class="join-entry">{{ join.user }}</div>
+              {% for join in approved_join %}
+                  <div class="join-entry">
+                      {{ join.user }}</div>
+              {% endfor %}
+          </div>
+      {% else %}
+          <!-- The user is the creator of the event -->
+          <!-- <div class="btn btn-primary btn-block join-button" id="my-event-fake"></div> -->
+          <div class="pending-join-list sticky-note-container my-4">
+              <h3>Pending Friend Requests ({{ pending_join_count }})</h3>
+              {% for join in pending_join %}
+                  <div class="join-entry">
+                      <div class="join-entry-text">{{ join.user }}</div>
+                      <form action="{% url 'approve-request' user_profile.id join.user.id %}" method="post">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-primary btn-block creator-action-button" id="approve-to-join">Accept</button>
+                      </form>
+                      <form action="{% url 'reject-request' user_profile.id join.user.id %}" method="post">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-outline-primary btn-block creator-action-button" id="reject-to-join">Reject</button>
+                      </form>
+                  </div>
+              {% endfor %}
+          </div>
+          <div class="approved-join-list sticky-note-container my-4">
+              <h3>Friends ({{ approved_join_count }}) </h3>
+              {% for join in approved_join %}
+                  <div class="join-entry">
+                      <div class="join-entry-text">{{ join.user }}</div>
+                      <form action="{% url 'remove-approved-request' user_profile.id join.user.id %}" method="post">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-outline-primary btn-block creator-action-button" id="remove-approved-to-join" onclick="return confirm('Are you suer to remove this person?');">Remove</button>
+                      </form>
+                  </div>
+              {% endfor %}
+          </div>
+      {% endif %}
+  {% else %}
+      <!-- Link for non-authenticated users to log in and then join -->
+      <a href="{% url 'login' %}?next={% url 'view_profile' user_profile.id %}" class="btn btn-primary btn-block join-button">Join and See Participants</a>
+  {% endif %} 
+</div>
+
+
 {% endblock %}
