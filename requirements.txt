@@ -12,3 +12,4 @@ channels_redis>=4.1.0
 django_redis>=5.4.0
 Pillow >= 10.0.0
 better-profanity>=0.7.0
+sqlite3>=3.27
