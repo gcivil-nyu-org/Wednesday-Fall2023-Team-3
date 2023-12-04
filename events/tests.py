@@ -2117,25 +2117,6 @@ class ProfanityCheckTest(TestCase):
             "Description contains profanity",
         )
 
-    def test_create_event_with_profane_description(self):
-        self.client.login(username="testuser", password="testpassword")
-        response = self.client.post(
-            reverse("events:save-event"),
-            {
-                "event_location_id": self.location.id,  # Missing event location
-                "event_name": "Test Event",  # Missing event name
-                "start_time": self.start_time,  # Missing start time
-                "end_time": self.end_time,  # Missing end time
-                "capacity": 10,
-                "description": "Fuck you",
-                "creator": self.user,
-            },
-        )
-        self.assertContains(
-            response,
-            "Description contains profanity",
-        )
-
 
 class CommentProfanityTestCase(TestCase):
     def setUp(self):
@@ -2164,7 +2145,7 @@ class CommentProfanityTestCase(TestCase):
     def test_create_comment_profanity(self):
         self.client.login(username="testuser", password="testpassword")
         url = reverse("events:add-comment", args=[self.event.id])
-        response = self.client.post(url, {"content": "Fuck you"})
+        self.client.post(url, {"content": "Fuck you"})
         self.assertEqual(Comment.objects.count(), 0)
 
 
@@ -2205,7 +2186,7 @@ class ReplyProfanityTestCase(TestCase):
         self.client.logout()
         self.client.login(username="testuser", password="testpassword")
         reply_content = "This is a reply fuck"
-        response = self.client.post(
+        self.client.post(
             reverse("events:add-reply", args=[self.event.id, self.parent.id]),
             {
                 "content": reply_content,
