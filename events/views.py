@@ -849,7 +849,7 @@ def filter_event_capacity_label(capacity_label):
     return redirect(url)
 
 
-# recommend page
+# recommend event page
 @login_required
 def recommendEvent(request):
     ny_timezone = pytz.timezone("America/New_York")
