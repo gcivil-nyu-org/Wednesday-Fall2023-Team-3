@@ -3,6 +3,7 @@ from django.views import generic
 from django.contrib.auth import login
 from .forms import CustomUserCreationForm
 
+
 class SignUpView(generic.CreateView):
     form_class = CustomUserCreationForm
     success_url = reverse_lazy("login")
@@ -10,5 +11,7 @@ class SignUpView(generic.CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        login(self.request, self.object)  # Automatically log in the user after registration
+        login(
+            self.request, self.object
+        )  # Automatically log in the user after registration
         return response

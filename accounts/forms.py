@@ -2,6 +2,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django import forms
 from django.contrib.auth.models import User
 
+
 class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(
         label="First Name",
@@ -44,11 +45,15 @@ class CustomUserCreationForm(UserCreationForm):
     )
 
     def clean_email(self):
-        email = self.cleaned_data['email']
-        if not email.endswith('@nyu.edu'):
-            raise forms.ValidationError('Email must end with @nyu.edu')
+        email = self.cleaned_data["email"]
+        if not email.endswith("@nyu.edu"):
+            raise forms.ValidationError("Email must end with @nyu.edu")
         return email
 
     class Meta:
         model = User
-        fields = tuple(UserCreationForm.Meta.fields) + ('first_name', 'last_name', 'email')
+        fields = tuple(UserCreationForm.Meta.fields) + (
+            "first_name",
+            "last_name",
+            "email",
+        )
