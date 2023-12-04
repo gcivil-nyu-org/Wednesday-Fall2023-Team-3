@@ -2097,6 +2097,7 @@ class ProfanityCheckTest(TestCase):
             response,
             "Event Name contains profanity",
         )
+
     def test_create_event_with_profane_description(self):
         self.client.login(username="testuser", password="testpassword")
         response = self.client.post(
@@ -2211,6 +2212,7 @@ class ReplyProfanityTestCase(TestCase):
             },
         )
         self.assertEqual(Comment.objects.count(), 1)
+
 
 class RecommendEventTestCase(TestCase):
     def setUp(self):
