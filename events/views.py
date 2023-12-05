@@ -574,13 +574,11 @@ def eventDetail(request, event_id):
     user_reaction_emoji = None
     is_favorite = False
     # attempt to see if the user has logged in
-    print(request.user.is_authenticated)
     if request.user.is_authenticated:
         try:
             is_favorite = FavoriteLocation.objects.filter(
                 user=request.user, location=location
             ).exists()
-            print(is_favorite)
             user_reaction = Reaction.objects.get(
                 user=request.user, event=event, is_active=True
             )
@@ -919,6 +917,9 @@ def filter_event_capacity_label(capacity_label):
 # recommend event page
 @login_required
 def recommendEvent(request):
+    favorite_locations = FavoriteLocation.objects.filter(user=request.user)
+    favorite_location_ids = [location.id for location in favorite_locations]
+    favorite_events = Event.objects.filter(event_location__in=favorite_location_ids)
     ny_timezone = pytz.timezone("America/New_York")
     current_time_ny = timezone.now().astimezone(ny_timezone)
     event_joins = EventJoin.objects.filter(
@@ -942,7 +943,17 @@ def recommendEvent(request):
     recommended_events_by_location = recommended_events.filter(
         event_location__in=user_event_locations
     )
+    # Extract event IDs from recommended_events_by_location and favorite_events
+    recommended_event_ids = {event.id for event in recommended_events_by_location}
+    favorite_event_ids = {event.id for event in favorite_events}
 
+    # Find the event IDs that are in favorite_events but not in recommended_events_by_location
+    events_to_keep = favorite_event_ids - recommended_event_ids
+
+    # Filter favorite_events to keep only the events not present in recommended_events_by_location
+    filtered_favorite_events = [
+        event for event in favorite_events if event.id in events_to_keep
+    ]
     recommended_events_by_tag = []
     for user_events_tag in user_events_tag_names:
         tag_id = Tag.objects.get(tag_name=user_events_tag)
@@ -959,6 +970,7 @@ def recommendEvent(request):
         return redirect("events:index")
 
     context = {
+        "favorite_events": filtered_favorite_events,
         "recommended_events_by_location": recommended_events_by_location,
         "recommended_events_by_tag_with_tag": recommended_events_by_tag_with_tag,
     }

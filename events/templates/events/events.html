@@ -235,7 +235,6 @@
     }
         window.addEventListener('load', function() {
         var queryParameters = getQueryParameters();
-        console.log(queryParameters)
         // Populate the form fields if the query parameters exist
         if (queryParameters.start_time) {
             document.getElementById('start_time').value = queryParameters.start_time;
@@ -243,7 +242,6 @@
         if (queryParameters.favorite_location_events && queryParameters.favorite_location_events == "on") {
             checkbox = document.getElementById('favorite_location_events')
             checkbox.checked = true;
-            console.log(document.getElementById('favorite_location_events'))
         }
         if (queryParameters.end_time) {
             document.getElementById('end_time').value = queryParameters.end_time;
