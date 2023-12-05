@@ -73,7 +73,7 @@ def toggleFriendRequest(request, userprofile_id):
         else:
             join.status = PENDING
         join.save()
-    return redirect("view_profile", userprofile_id=userprofile_id)
+    return redirect("profiles:view_profile", userprofile_id=userprofile_id)
 
 
 @login_required
@@ -98,7 +98,7 @@ def userApproveRequest(request, userprofile_id, user_id):
             join.save()
             selfjoin.status = APPROVED
             selfjoin.save()
-        return redirect("view_profile", userprofile_id=userprofile_id)
+        return redirect("profiles:view_profile", userprofile_id=userprofile_id)
 
 
 @login_required
@@ -118,7 +118,7 @@ def userRejectRequest(request, userprofile_id, user_id):
     if join.status == PENDING:
         join.status = REJECTED
         join.save()
-    return redirect("view_profile", userprofile_id=userprofile_id)
+    return redirect("profiles:view_profile", userprofile_id=userprofile_id)
 
 
 @login_required
@@ -138,7 +138,7 @@ def userRemoveApprovedRequest(request, userprofile_id, user_id):
     if join.status == APPROVED:
         join.status = REMOVED
         join.save()
-    return redirect("view_profile", userprofile_id=userprofile_id)
+    return redirect("profiles:view_profile", userprofile_id=userprofile_id)
 
 
 """
