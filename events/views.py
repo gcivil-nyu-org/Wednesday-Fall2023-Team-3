@@ -7,7 +7,7 @@ from django.http import (
 )
 from .forms import EventsForm, CommentForm
 from django.urls import reverse
-from .models import Event, Location, EventJoin, Comment, Reaction
+from .models import Event, Location, EventJoin, Comment, Reaction, FavoriteLocation
 from tags.models import Tag
 from django.contrib.auth.decorators import login_required
 from django.core.serializers import serialize
@@ -35,6 +35,26 @@ import pytz
 from django.db.models import Q, Count
 from better_profanity import profanity
 from django.core.files.storage import FileSystemStorage
+
+
+def add_to_favorites(request, location_id):
+    # Fetch the location object based on the provided ID
+    location = get_object_or_404(Location, pk=location_id)
+
+    # Check if the user is authenticated
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "User is not authenticated"})
+
+    # Check if the location is already a favorite for the user
+    is_favorite = FavoriteLocation.objects.filter(
+        user=request.user, location=location
+    ).exists()
+    if is_favorite:
+        return JsonResponse({"success": "Location is already a favorite"})
+
+    # If the location is not a favorite yet, add it to favorites for the user
+    FavoriteLocation.objects.create(user=request.user, location=location)
+    return JsonResponse({"success": "Location added to favorites"})
 
 
 # Existing imports and index view function...
@@ -542,9 +562,15 @@ def eventDetail(request, event_id):
     ]
 
     user_reaction_emoji = None
+    is_favorite = False
     # attempt to see if the user has logged in
+    print(request.user.is_authenticated)
     if request.user.is_authenticated:
         try:
+            is_favorite = FavoriteLocation.objects.filter(
+                user=request.user, location=location
+            ).exists()
+            print(is_favorite)
             user_reaction = Reaction.objects.get(
                 user=request.user, event=event, is_active=True
             )
@@ -552,7 +578,6 @@ def eventDetail(request, event_id):
         except Reaction.DoesNotExist:
             # if the user has no reaction record
             pass
-
     context = {
         "event": event,
         "join_status": join_status,
@@ -572,6 +597,7 @@ def eventDetail(request, event_id):
         "emoji_data_list": emoji_data_list,
         "EMOJI_CHOICES": EMOJI_CHOICES,
         "user_reaction_emoji": user_reaction_emoji,
+        "is_favorite": is_favorite,
     }
     return render(request, "events/event-detail.html", context)
 

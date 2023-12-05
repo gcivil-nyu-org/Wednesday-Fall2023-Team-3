@@ -23,6 +23,12 @@ class Event(models.Model):
         return self.event_name
 
 
+class FavoriteLocation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE)
+    # Other fields if needed
+
+
 class EventJoin(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
