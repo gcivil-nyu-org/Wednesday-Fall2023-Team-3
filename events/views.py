@@ -549,15 +549,17 @@ def eventDetail(request, event_id):
     user_reaction_emoji = None
     is_favorite = False
     # attempt to see if the user has logged in
+    print(request.user.is_authenticated)
     if request.user.is_authenticated:
         try:
+            is_favorite = FavoriteLocation.objects.filter(
+                user=request.user, location=location
+            ).exists()
+            print(is_favorite)
             user_reaction = Reaction.objects.get(
                 user=request.user, event=event, is_active=True
             )
             user_reaction_emoji = user_reaction.emoji
-            is_favorite = FavoriteLocation.objects.filter(
-                user=request.user, location=location
-            ).exists()
         except Reaction.DoesNotExist:
             # if the user has no reaction record
             pass
