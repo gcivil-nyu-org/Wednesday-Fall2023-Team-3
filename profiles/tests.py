@@ -274,9 +274,9 @@ class SendFriendRequestTest(TestCase):
     def test_toggle_friend_request_create(self):
         self.client.login(username="testuser", password="testpassword")
         url = reverse("profiles:toggle-friend-request", args=[self.friend_profile.id])
-        # Initially, the user has not joined the event
+        # Initially, the user has not been added as a friend
         response = self.client.post(url)
-        # Check that the EventJoin was created with the status 'pending'
+        # Check that the UserFriends was created with the status 'pending'
         join = UserFriends.objects.get(user=self.user, friends=self.friend_profile)
         self.assertEqual(join.status, PENDING)
         # Make the POST request again to toggle the status to 'withdrawn'
@@ -294,13 +294,13 @@ class SendFriendRequestTest(TestCase):
 
     def test_user_add_friend_self(self):
         self.client.logout()
-        # The URL to which the request to join an event is sent
+        # The URL to which the request to user is sent
         url = reverse("profiles:toggle-friend-request", args=[self.user_profile.id])
         self.client.login(username="testcreator", password="testpassword")
-        # Attempt to create an EventJoin record as the creator
+        # Attempt to send a friend request to your own user profile
         self.client.post(url)
-        # Now check if an EventJoin record exists for the creator and this event
-        # We expect this to be False, as the creator should not be able to join their own event
+        # Now check if an UserFriends record exists for the user
+        # We expect this to be False, as the user should not be able to send a friend request to oneself
         self.assertFalse(
             UserFriends.objects.filter(
                 user=self.user, friends=self.user_profile
