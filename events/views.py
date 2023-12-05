@@ -547,6 +547,7 @@ def eventDetail(request, event_id):
     ]
 
     user_reaction_emoji = None
+    is_favorite = False
     # attempt to see if the user has logged in
     if request.user.is_authenticated:
         try:
@@ -554,12 +555,12 @@ def eventDetail(request, event_id):
                 user=request.user, event=event, is_active=True
             )
             user_reaction_emoji = user_reaction.emoji
+            is_favorite = FavoriteLocation.objects.filter(
+                user=request.user, location=location
+            ).exists()
         except Reaction.DoesNotExist:
             # if the user has no reaction record
             pass
-    is_favorite = FavoriteLocation.objects.filter(
-        user=request.user, location=location
-    ).exists()
     context = {
         "event": event,
         "join_status": join_status,
