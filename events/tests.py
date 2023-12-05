@@ -2209,27 +2209,55 @@ class RecommendEventTestCase(TestCase):
         self.assertNotContains(response, "Test Event 3")
         self.assertNotContains(response, "Test Event 5")
 
+
 class AddToFavoritesTestCase(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='test_user', password='test_password')
-        self.location = Location.objects.create(location_name='Test Location', address='Test Address')
+        self.user = User.objects.create_user(
+            username="test_user", password="test_password"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location", address="Test Address"
+        )
 
     def test_authenticated_user_add_to_favorites(self):
         self.client.force_login(self.user)
-        response = self.client.post(reverse('events:add_to_favorites', args=[self.location.pk]))
+        response = self.client.post(
+            reverse("events:add_to_favorites", args=[self.location.pk])
+        )
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(FavoriteLocation.objects.filter(user=self.user, location=self.location).exists())
-        self.assertJSONEqual(str(response.content, encoding='utf8'), {"success": "Location added to favorites"})
+        self.assertTrue(
+            FavoriteLocation.objects.filter(
+                user=self.user, location=self.location
+            ).exists()
+        )
+        self.assertJSONEqual(
+            str(response.content, encoding="utf8"),
+            {"success": "Location added to favorites"},
+        )
 
     def test_unauthenticated_user_add_to_favorites(self):
-        response = self.client.post(reverse('events:add_to_favorites', args=[self.location.pk]))
+        response = self.client.post(
+            reverse("events:add_to_favorites", args=[self.location.pk])
+        )
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(FavoriteLocation.objects.filter(user=self.user, location=self.location).exists())
-        self.assertJSONEqual(str(response.content, encoding='utf8'), {"error": "User is not authenticated"})
+        self.assertFalse(
+            FavoriteLocation.objects.filter(
+                user=self.user, location=self.location
+            ).exists()
+        )
+        self.assertJSONEqual(
+            str(response.content, encoding="utf8"),
+            {"error": "User is not authenticated"},
+        )
 
     def test_already_favorited_location(self):
         self.client.force_login(self.user)
         FavoriteLocation.objects.create(user=self.user, location=self.location)
-        response = self.client.post(reverse('events:add_to_favorites', args=[self.location.pk]))
+        response = self.client.post(
+            reverse("events:add_to_favorites", args=[self.location.pk])
+        )
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(str(response.content, encoding='utf8'), {"success": "Location is already a favorite"})
+        self.assertJSONEqual(
+            str(response.content, encoding="utf8"),
+            {"success": "Location is already a favorite"},
+        )
