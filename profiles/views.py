@@ -8,7 +8,13 @@ from events.models import Event
 from django.views.decorators.http import require_POST
 from django.db import transaction
 from django.contrib import messages
-from events.constants import *
+from .constants import (
+    PENDING,
+    APPROVED,
+    WITHDRAWN,
+    REJECTED,
+    REMOVED,
+)
 from django.contrib.auth.models import User
 from .models import UserFriends
 

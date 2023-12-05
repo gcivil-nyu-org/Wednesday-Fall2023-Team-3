@@ -15,12 +15,6 @@ from .constants import (
     APPROVED,
     WITHDRAWN,
     REJECTED,
-    REMOVED,
-    CHEER_UP,
-    HEART,
-    SMALL_CAPACITY,
-    MEDIUM_CAPACITY,
-    LARGE_CAPACITY,
 )
 
 
