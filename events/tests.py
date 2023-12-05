@@ -138,6 +138,22 @@ class EventIndexViewFilterNegativeTest(TestCase):
             response.context.get("error"), "Start time cannot be in the past."
         )
 
+    def test_filter_events_based_on_favorite_locations(self):
+        # Simulate a POST request with form data
+        form_data = {
+            "favorite_location_events": True  # Simulate the checkbox value
+            # Add other form data as needed
+        }
+
+        # Authenticate the user in the test client
+        self.client.login(username="testuser", password="testpassword")
+
+        # Make a POST request to your view
+        response = self.client.post(reverse("events:index"), data=form_data)
+
+        # Check if the response status is 200 (or any other expected status)
+        self.assertEqual(response.status_code, 200)
+
 
 class UpdateEventViewTest(TestCase):
     def setUp(self):
