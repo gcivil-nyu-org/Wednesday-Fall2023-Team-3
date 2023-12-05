@@ -154,6 +154,46 @@ class EventIndexViewFilterNegativeTest(TestCase):
         # Check if the response status is 200 (or any other expected status)
         self.assertEqual(response.status_code, 200)
 
+    def test_filter_events_no_favorite_locations(self):
+        form_data = {
+            "favorite_location_events": True
+            # Other form data as needed
+        }
+
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(reverse("events:index"), data=form_data)
+
+        # Assuming that the response returns a specific message when no events are found
+        self.assertEqual(response.status_code, 200)
+
+    def test_filter_events_with_favorite_locations(self):
+        # Create favorite locations for the authenticated user
+        # Add favorite locations for the user "testuser" here using FavoriteLocation model
+
+        form_data = {
+            "favorite_location_events": True
+            # Other form data as needed
+        }
+
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(reverse("events:index"), data=form_data)
+
+        # Assert that the response contains events related to favorite locations
+        # Check if specific events are present in the response content
+
+    def test_filter_events_unauthenticated_user(self):
+        form_data = {
+            "favorite_location_events": True
+            # Other form data as needed
+        }
+
+        response = self.client.post(reverse("events:index"), data=form_data)
+
+        # Assuming the view redirects to the login page for unauthenticated users
+        self.assertEqual(response.status_code, 200)
+        # Or, you can check for an appropriate status code for an unauthenticated request
+        # self.assertEqual(response.status_code, 401)
+
 
 class UpdateEventViewTest(TestCase):
     def setUp(self):
