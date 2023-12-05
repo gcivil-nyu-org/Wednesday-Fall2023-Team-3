@@ -292,7 +292,7 @@ class SendFriendRequestTest(TestCase):
             response, reverse("profiles:view_profile", args=[self.friend_profile.id])
         )
 
-    def test_user_cannot_join_own_event(self):
+    def test_user_add_friend_self(self):
         self.client.logout()
         # The URL to which the request to join an event is sent
         url = reverse("profiles:toggle-friend-request", args=[self.user_profile.id])

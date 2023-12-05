@@ -24,29 +24,31 @@ def view_profile(request, userprofile_id):
     user_profile = get_object_or_404(UserProfile, pk=userprofile_id)
     events = user_profile.user.event_set.filter(is_active=True)
 
-    join_status = None
+    friend_status = None
     if request.user.is_authenticated:
         try:
-            join = UserFriends.objects.get(user=request.user, friends=user_profile)
-            join_status = join.status
+            add_friend = UserFriends.objects.get(
+                user=request.user, friends=user_profile
+            )
+            friend_status = add_friend.status
         except UserFriends.DoesNotExist:
             # if the user has no join record
             pass
-    approved_join = user_profile.userfriends_set.filter(status=APPROVED)
-    pending_join = approved_join
+    approved_request = user_profile.userfriends_set.filter(status=APPROVED)
+    pending_request = approved_request
     if request.user == user_profile.user:
-        pending_join = user_profile.userfriends_set.filter(status=PENDING)
-    approved_join_count = approved_join.count()
-    pending_join_count = pending_join.count()
+        pending_request = user_profile.userfriends_set.filter(status=PENDING)
+    approved_request_count = approved_request.count()
+    pending_request_count = pending_request.count()
 
     context = {
         "user_profile": user_profile,
         "events": events,
-        "join_status": join_status,
-        "pending_join": pending_join,
-        "approved_join": approved_join,
-        "approved_join_count": approved_join_count,
-        "pending_join_count": pending_join_count,
+        "friend_status": friend_status,
+        "pending_request": pending_request,
+        "approved_request": approved_request,
+        "approved_request_count": approved_request_count,
+        "pending_request_count": pending_request_count,
         "APPROVED": APPROVED,
         "PENDING": PENDING,
         "WITHDRAWN": WITHDRAWN,
@@ -62,17 +64,17 @@ def view_profile(request, userprofile_id):
 def toggleFriendRequest(request, userprofile_id):
     receiver_user = get_object_or_404(UserProfile, id=userprofile_id)
     # Prevent the creator from joining their own event
-    join, created = UserFriends.objects.get_or_create(
+    add_friend, created = UserFriends.objects.get_or_create(
         user=request.user, friends=receiver_user
     )
     # If a request was just created, it's already in 'pending' state
     # If it exists, toggle between 'pending' and 'withdrawn'
     if not created:
-        if join.status == PENDING:
-            join.status = WITHDRAWN
+        if add_friend.status == PENDING:
+            add_friend.status = WITHDRAWN
         else:
-            join.status = PENDING
-        join.save()
+            add_friend.status = PENDING
+        add_friend.save()
     return redirect("profiles:view_profile", userprofile_id=userprofile_id)
 
 
@@ -82,20 +84,20 @@ def userApproveRequest(request, userprofile_id, user_id):
     with transaction.atomic():
         try:
             # Lock the participant row for updating
-            join = UserFriends.objects.select_for_update().get(
+            add_friend = UserFriends.objects.select_for_update().get(
                 friends_id=userprofile_id, user_id=user_id
             )
 
         except UserFriends.DoesNotExist:
             raise Http404("User not found.")
-        sender_user = get_object_or_404(UserProfile, user=join.user)
+        sender_user = get_object_or_404(UserProfile, user=add_friend.user)
         selfjoin, created = UserFriends.objects.get_or_create(
-            user=join.friends.user, friends=sender_user
+            user=add_friend.friends.user, friends=sender_user
         )
 
-        if join.status == PENDING:
-            join.status = APPROVED
-            join.save()
+        if add_friend.status == PENDING:
+            add_friend.status = APPROVED
+            add_friend.save()
             selfjoin.status = APPROVED
             selfjoin.save()
         return redirect("profiles:view_profile", userprofile_id=userprofile_id)
@@ -106,18 +108,18 @@ def userApproveRequest(request, userprofile_id, user_id):
 def userRejectRequest(request, userprofile_id, user_id):
     receiver_user = get_object_or_404(UserProfile, id=userprofile_id)
     user = get_object_or_404(User, id=user_id)
-    join = get_object_or_404(UserFriends, friends=receiver_user, user=user)
-    sender_user = get_object_or_404(UserProfile, user=join.user)
+    add_friend = get_object_or_404(UserFriends, friends=receiver_user, user=user)
+    sender_user = get_object_or_404(UserProfile, user=add_friend.user)
     selfjoin = get_object_or_404(
-        UserFriends, friends=sender_user, user=join.friends.user
+        UserFriends, friends=sender_user, user=add_friend.friends.user
     )
 
     if selfjoin.status == PENDING:
         selfjoin.status = REJECTED
         selfjoin.save()
-    if join.status == PENDING:
-        join.status = REJECTED
-        join.save()
+    if add_friend.status == PENDING:
+        add_friend.status = REJECTED
+        add_friend.save()
     return redirect("profiles:view_profile", userprofile_id=userprofile_id)
 
 
@@ -126,18 +128,18 @@ def userRejectRequest(request, userprofile_id, user_id):
 def userRemoveApprovedRequest(request, userprofile_id, user_id):
     receiver_user = get_object_or_404(UserProfile, id=userprofile_id)
     user = get_object_or_404(User, id=user_id)
-    join = get_object_or_404(UserFriends, friends=receiver_user, user=user)
-    sender_user = get_object_or_404(UserProfile, user=join.user)
+    add_friend = get_object_or_404(UserFriends, friends=receiver_user, user=user)
+    sender_user = get_object_or_404(UserProfile, user=add_friend.user)
     selfjoin = get_object_or_404(
-        UserFriends, friends=sender_user, user=join.friends.user
+        UserFriends, friends=sender_user, user=add_friend.friends.user
     )
 
     if selfjoin.status == APPROVED:
         selfjoin.status = REMOVED
         selfjoin.save()
-    if join.status == APPROVED:
-        join.status = REMOVED
-        join.save()
+    if add_friend.status == APPROVED:
+        add_friend.status = REMOVED
+        add_friend.save()
     return redirect("profiles:view_profile", userprofile_id=userprofile_id)
 
 
