@@ -45,7 +45,9 @@ class ProfileViewsTest(TestCase):
         self.client.login(username="testuser", password="testpassword")
 
         # Access the view_profile page
-        response = self.client.get(reverse("view_profile", args=[self.user_profile.pk]))
+        response = self.client.get(
+            reverse("profiles:view_profile", args=[self.user_profile.pk])
+        )
 
         # Check if the response status code is 200 (OK)
         self.assertEqual(response.status_code, 200)
@@ -59,7 +61,7 @@ class ProfileViewsTest(TestCase):
 
     def test_view_profile_with_nonexistent_user(self):
         # Access the view_profile page with an invalid userprofile_id
-        response = self.client.get(reverse("view_profile", args=[999]))
+        response = self.client.get(reverse("profiles:view_profile", args=[999]))
 
         # Check if the response status code is 404 (Not Found)
         self.assertEqual(response.status_code, 302)
@@ -69,7 +71,9 @@ class ProfileViewsTest(TestCase):
         self.client.logout()
 
         # Access the view_profile page without logging in
-        response = self.client.get(reverse("view_profile", args=[self.user_profile.pk]))
+        response = self.client.get(
+            reverse("profiles:view_profile", args=[self.user_profile.pk])
+        )
 
         # Check if the response status code is 302 (Redirect to login page)
         self.assertEqual(response.status_code, 302)
