@@ -277,22 +277,24 @@ class SendFriendRequestTest(TestCase):
         # Initially, the user has not been added as a friend
         response = self.client.post(url)
         # Check that the UserFriends was created with the status 'pending'
-        join = UserFriends.objects.get(user=self.user, friends=self.friend_profile)
-        self.assertEqual(join.status, PENDING)
+        friend_request = UserFriends.objects.get(
+            user=self.user, friends=self.friend_profile
+        )
+        self.assertEqual(friend_request.status, PENDING)
         # Make the POST request again to toggle the status to 'withdrawn'
         response = self.client.post(url)
         # Fetch the updated join object and check its status
-        join.refresh_from_db()
-        self.assertEqual(join.status, WITHDRAWN)
+        friend_request.refresh_from_db()
+        self.assertEqual(friend_request.status, WITHDRAWN)
         self.client.post(url)
-        join.refresh_from_db()
-        self.assertEqual(join.status, PENDING)
+        friend_request.refresh_from_db()
+        self.assertEqual(friend_request.status, PENDING)
         # Check the response to ensure the user is redirected to the event detail page
         self.assertRedirects(
             response, reverse("profiles:view_profile", args=[self.friend_profile.id])
         )
 
-    def test_user_add_friend_self(self):
+    def test_toggle_send_friend_request_to_oneself(self):
         self.client.logout()
         # The URL to which the request to user is sent
         url = reverse("profiles:toggle-friend-request", args=[self.user_profile.id])
@@ -308,9 +310,11 @@ class SendFriendRequestTest(TestCase):
         )
 
     def test_friend_request_str_representation(self):
-        join = UserFriends.objects.create(user=self.user, friends=self.friend_profile)
-        expected_str = f"{self.user.username} - {self.friend_profile.user} - {join.get_status_display()}"
-        self.assertEqual(str(join), expected_str)
+        friend_request = UserFriends.objects.create(
+            user=self.user, friends=self.friend_profile
+        )
+        expected_str = f"{self.user.username} - {self.friend_profile.user} - {friend_request.get_status_display()}"
+        self.assertEqual(str(friend_request), expected_str)
 
 
 class FriendRequestManageTest(TestCase):
