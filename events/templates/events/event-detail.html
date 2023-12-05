@@ -414,7 +414,7 @@ ul {
         <div class="col-md-4 my-3">
             {% if user.is_authenticated %}
                 {% if not is_favorite %}
-                <button id="addFavoriteButton" class="btn btn-primary btn-block join-button mb-2" data-location-id="{{ location.id }}">Add to Favorites</button>
+                <button id="addFavoriteButton" class="btn btn-primary btn-block join-button mb-2" data-location-id="{{ location.id }}">Add location to favorites</button>
                 <div id="responseContainer"></div>
                 {% endif %}
             {% endif %}
