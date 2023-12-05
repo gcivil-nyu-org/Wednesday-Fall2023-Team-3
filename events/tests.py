@@ -2117,6 +2117,25 @@ class ProfanityCheckTest(TestCase):
             "Description contains profanity",
         )
 
+    def test_update_event_with_profane_description(self):
+        self.client.login(username="testuser", password="testpassword")
+        existing_event = Event.objects.get(pk=self.event.id)
+        response = self.client.post(
+            reverse("events:update-event", args=[existing_event.id]),
+            {
+                "event_location_id": self.location.id,
+                "event_name": "Test Event",
+                "start_time": self.start_time,
+                "end_time": self.end_time,
+                "description": "Fuck you",
+                "capacity": 100,
+            },
+        )
+        self.assertContains(
+            response,
+            "Description contains profanity",
+        )  # Replace with expected content
+
 
 class CommentProfanityTestCase(TestCase):
     def setUp(self):
