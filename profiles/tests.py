@@ -337,7 +337,7 @@ class FriendRequestManageTest(TestCase):
         self.client = Client()
 
     def test_user_not_found_approve(self):
-        friend_request = UserFriends.objects.create(
+        UserFriends.objects.create(
             user=self.user, friends=self.friend_profile, status=PENDING
         )
         self.client.login(username="testcreator", password="testpassword")
