@@ -10,7 +10,12 @@ from datetime import timedelta
 from datetime import datetime
 import pytz
 from .models import UserFriends
-from events.constants import *
+from events.constants import (
+    PENDING,
+    APPROVED,
+    WITHDRAWN,
+    REJECTED,
+)
 
 
 class ProfileViewsTest(TestCase):
