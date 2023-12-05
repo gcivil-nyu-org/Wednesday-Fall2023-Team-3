@@ -280,6 +280,9 @@ class SendFriendRequestTest(TestCase):
         # Fetch the updated join object and check its status
         join.refresh_from_db()
         self.assertEqual(join.status, WITHDRAWN)
+        self.client.post(url)
+        join.refresh_from_db()
+        self.assertEqual(join.status, PENDING)
         # Check the response to ensure the user is redirected to the event detail page
         self.assertRedirects(
             response, reverse("view_profile", args=[self.friend_profile.id])
