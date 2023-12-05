@@ -10,11 +10,17 @@ from datetime import timedelta
 from datetime import datetime
 import pytz
 from .models import UserFriends
-from events.constants import (
+from .constants import (
     PENDING,
     APPROVED,
     WITHDRAWN,
     REJECTED,
+    REMOVED,
+    CHEER_UP,
+    HEART,
+    SMALL_CAPACITY,
+    MEDIUM_CAPACITY,
+    LARGE_CAPACITY,
 )
 
 
@@ -290,7 +296,7 @@ class SendFriendRequestTest(TestCase):
         url = reverse("events:toggle-join-request", args=[self.user_profile.id])
         self.client.login(username="testcreator", password="testpassword")
         # Attempt to create an EventJoin record as the creator
-        response = self.client.post(url)
+        self.client.post(url)
         # Now check if an EventJoin record exists for the creator and this event
         # We expect this to be False, as the creator should not be able to join their own event
         self.assertFalse(
@@ -351,7 +357,7 @@ class FriendRequestManageTest(TestCase):
         friend_request = UserFriends.objects.create(
             user=self.user, friends=self.friend_profile, status=PENDING
         )
-        second_request = UserFriends.objects.create(
+        UserFriends.objects.create(
             user=self.friend_profile.user, friends=self.user_profile, status=PENDING
         )
         self.client.login(username="testcreator", password="testpassword")
