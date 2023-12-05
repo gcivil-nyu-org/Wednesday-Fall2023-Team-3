@@ -2098,6 +2098,121 @@ class ProfanityCheckTest(TestCase):
             "Event Name contains profanity",
         )
 
+    def test_create_event_with_profane_description(self):
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(
+            reverse("events:save-event"),
+            {
+                "event_location_id": self.location.id,  # Missing event location
+                "event_name": "Test Event",  # Missing event name
+                "start_time": self.start_time,  # Missing start time
+                "end_time": self.end_time,  # Missing end time
+                "capacity": 10,
+                "description": "Fuck you",
+                "creator": self.user,
+            },
+        )
+        self.assertContains(
+            response,
+            "Description contains profanity",
+        )
+
+    def test_update_event_with_profane_description(self):
+        self.client.login(username="testuser", password="testpassword")
+        existing_event = Event.objects.get(pk=self.event.id)
+        response = self.client.post(
+            reverse("events:update-event", args=[existing_event.id]),
+            {
+                "event_location_id": self.location.id,
+                "event_name": "Test Event",
+                "start_time": self.start_time,
+                "end_time": self.end_time,
+                "description": "Fuck you",
+                "capacity": 100,
+            },
+        )
+        self.assertContains(
+            response,
+            "Description contains profanity",
+        )  # Replace with expected content
+
+
+class CommentProfanityTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(days=50),
+            end_time=current_time_ny + timedelta(days=52),
+            capacity=5,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.client = Client()
+
+    def test_create_comment_profanity(self):
+        self.client.login(username="testuser", password="testpassword")
+        url = reverse("events:add-comment", args=[self.event.id])
+        self.client.post(url, {"content": "Fuck you"})
+        self.assertEqual(Comment.objects.count(), 0)
+
+
+class ReplyProfanityTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=100),
+            end_time=current_time_ny + timedelta(hours=104),
+            capacity=5,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.parent = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Parent comment",
+            is_private=True,
+            parent=None,
+        )
+        self.add_reply_url = reverse(
+            "events:add-reply", args=[self.event.id, self.parent.id]
+        )
+
+    def test_profanity_create_reply(self):
+        self.client.logout()
+        self.client.login(username="testuser", password="testpassword")
+        reply_content = "This is a reply fuck"
+        self.client.post(
+            reverse("events:add-reply", args=[self.event.id, self.parent.id]),
+            {
+                "content": reply_content,
+            },
+        )
+        self.assertEqual(Comment.objects.count(), 1)
+
 
 class RecommendEventTestCase(TestCase):
     def setUp(self):
