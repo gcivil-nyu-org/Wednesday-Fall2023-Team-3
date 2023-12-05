@@ -137,18 +137,19 @@ class EventIndexViewFilterNegativeTest(TestCase):
         self.assertEqual(
             response.context.get("error"), "Start time cannot be in the past."
         )
+
     def test_filter_events_based_on_favorite_locations(self):
         # Simulate a POST request with form data
         form_data = {
-            'favorite_location_events': True  # Simulate the checkbox value
+            "favorite_location_events": True  # Simulate the checkbox value
             # Add other form data as needed
         }
 
         # Authenticate the user in the test client
-        self.client.login(username='testuser', password='testpassword')
+        self.client.login(username="testuser", password="testpassword")
 
         # Make a POST request to your view
-        response = self.client.post(reverse('events:index'), data=form_data)
+        response = self.client.post(reverse("events:index"), data=form_data)
 
         # Check if the response status is 200 (or any other expected status)
         self.assertEqual(response.status_code, 200)
@@ -2224,27 +2225,55 @@ class RecommendEventTestCase(TestCase):
         self.assertNotContains(response, "Test Event 3")
         self.assertNotContains(response, "Test Event 5")
 
+
 class AddToFavoritesTestCase(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='test_user', password='test_password')
-        self.location = Location.objects.create(location_name='Test Location', address='Test Address')
+        self.user = User.objects.create_user(
+            username="test_user", password="test_password"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location", address="Test Address"
+        )
 
     def test_authenticated_user_add_to_favorites(self):
         self.client.force_login(self.user)
-        response = self.client.post(reverse('events:add_to_favorites', args=[self.location.pk]))
+        response = self.client.post(
+            reverse("events:add_to_favorites", args=[self.location.pk])
+        )
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(FavoriteLocation.objects.filter(user=self.user, location=self.location).exists())
-        self.assertJSONEqual(str(response.content, encoding='utf8'), {"success": "Location added to favorites"})
+        self.assertTrue(
+            FavoriteLocation.objects.filter(
+                user=self.user, location=self.location
+            ).exists()
+        )
+        self.assertJSONEqual(
+            str(response.content, encoding="utf8"),
+            {"success": "Location added to favorites"},
+        )
 
     def test_unauthenticated_user_add_to_favorites(self):
-        response = self.client.post(reverse('events:add_to_favorites', args=[self.location.pk]))
+        response = self.client.post(
+            reverse("events:add_to_favorites", args=[self.location.pk])
+        )
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(FavoriteLocation.objects.filter(user=self.user, location=self.location).exists())
-        self.assertJSONEqual(str(response.content, encoding='utf8'), {"error": "User is not authenticated"})
+        self.assertFalse(
+            FavoriteLocation.objects.filter(
+                user=self.user, location=self.location
+            ).exists()
+        )
+        self.assertJSONEqual(
+            str(response.content, encoding="utf8"),
+            {"error": "User is not authenticated"},
+        )
 
     def test_already_favorited_location(self):
         self.client.force_login(self.user)
         FavoriteLocation.objects.create(user=self.user, location=self.location)
-        response = self.client.post(reverse('events:add_to_favorites', args=[self.location.pk]))
+        response = self.client.post(
+            reverse("events:add_to_favorites", args=[self.location.pk])
+        )
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(str(response.content, encoding='utf8'), {"success": "Location is already a favorite"})
+        self.assertJSONEqual(
+            str(response.content, encoding="utf8"),
+            {"success": "Location is already a favorite"},
+        )

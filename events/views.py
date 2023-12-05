@@ -122,14 +122,17 @@ def index(request):
                 )
                 nearby_location_ids = [location.id for location in nearby_locations]
                 events = events.filter(event_location__in=nearby_location_ids)
-        if form.cleaned_data["favorite_location_events"] and request.user.is_authenticated:
+        if (
+            form.cleaned_data["favorite_location_events"]
+            and request.user.is_authenticated
+        ):
             favorite_location_events = form.cleaned_data["favorite_location_events"]
             if favorite_location_events:
                 # Return an error message if start time is in the past
                 favorite_locations = FavoriteLocation.objects.filter(user=request.user)
                 favorite_location_ids = [location.id for location in favorite_locations]
                 events = events.filter(event_location__in=favorite_location_ids)
-                
+
         # Start Time filter
         if form.cleaned_data["start_time"]:
             start_time_ny = form.cleaned_data["start_time"].astimezone(ny_timezone)

@@ -5,7 +5,15 @@ from tags.models import Tag
 
 class EventsForm(forms.Form):
     model = Event
-    fields = ["event_name", "start_time", "end_time", "capacity", "tags", "image", "favorite_location_events"]
+    fields = [
+        "event_name",
+        "start_time",
+        "end_time",
+        "capacity",
+        "tags",
+        "image",
+        "favorite_location_events",
+    ]
 
 
 class EventFilterForm(forms.Form):
