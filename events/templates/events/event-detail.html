@@ -110,7 +110,7 @@
 }
 
 .emoji-container {
-    width: 60%;
+    width: 70%;
     min-width: 500px;
 }
 
@@ -180,14 +180,14 @@ ul {
                 <div class="sticky-note-container">
                     <div class="my-3"><h1>{{ event.event_name }}</h1></div>
                     {% if event.tags.all %}
-                        <div class="tags row row-cols-auto px-2">
+                        <div class="tags row row-cols-auto px-2 mb-2">
                             {% for tag in event.tags.all %}
                                 <a href="{% url 'events:event-detail' event_id=event.id %}?filter_tag={{ tag.id }}" class="col btn btn-sm rounded-pill tag-button mb-2 mx-1 px-2">{{ tag }}</a>
                             {% endfor %}
                         </div>
                     {% endif %}
                     <h4>Creator</h4>
-                    <p>{{ event.creator }}</p>
+                    <a class="nav-link mb-3 text-primary fw-bold" href="{% url 'profiles:view_profile' event.creator.userprofile.id %}">{{ event.creator }}</a>
                     <h4>Date and Time</h4>
                     <p>from {{ event.start_time }} to {{ event.end_time }}</p>
                     <!-- <img src="event-image.jpg" alt="Event Image" class="img-fluid rounded"> -->
@@ -439,20 +439,19 @@ ul {
                     {% endif %}
                     <div class="approved-join-list sticky-note-container my-4">
                         <h3>Participants</h3>
-                        <div class="join-entry">{{ event.creator }}</div>
+                        <a class="mb-1 join-entry text-dark" href="{% url 'profiles:view_profile' event.creator.userprofile.id %}">{{ event.creator }}</a>
                         {% for join in approved_join %}
-                            <div class="join-entry">
-                                {{ join.user }}</div>
+                            <a class="mb-1 join-entry text-dark" href="{% url 'profiles:view_profile' join.user.userprofile.id %}">{{ join.user }}</a>
                         {% endfor %}
                     </div>
                 {% else %}
                     <!-- The user is the creator of the event -->
                     <div class="btn btn-primary btn-block join-button" id="my-event-fake">My Event</div>
                     <div class="pending-join-list sticky-note-container my-4">
-                        <h3>Pending Participants ({{ pending_join_count }})</h3>
+                        <h3>Pending ({{ pending_join_count }})</h3>
                         {% for join in pending_join %}
                             <div class="join-entry">
-                                <div class="join-entry-text">{{ join.user }}</div>
+                                <a class="mb-1 join-entry-text text-dark" href="{% url 'profiles:view_profile' join.user.userprofile.id %}">{{ join.user }}</a>
                                 <form action="{% url 'events:approve-request' event.id join.user.id %}" method="post">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-primary btn-block creator-action-button" id="approve-to-join">Approve</button>
@@ -465,10 +464,10 @@ ul {
                         {% endfor %}
                     </div>
                     <div class="approved-join-list sticky-note-container my-4">
-                        <h3>Approved Participants ({{ approved_join_count }}) </h3>
+                        <h3>Approved ({{ approved_join_count }}) </h3>
                         {% for join in approved_join %}
                             <div class="join-entry">
-                                <div class="join-entry-text">{{ join.user }}</div>
+                                <a class="mb-1 join-entry-text text-dark" href="{% url 'profiles:view_profile' join.user.userprofile.id %}">{{ join.user }}</a>
                                 <form action="{% url 'events:remove-approved-request' event.id join.user.id %}" method="post">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-outline-primary btn-block creator-action-button" id="remove-approved-to-join" onclick="return confirm('Are you suer to remove this person?');">Remove</button>
