@@ -951,7 +951,9 @@ def recommendEvent(request):
     events_to_keep = favorite_event_ids - recommended_event_ids
 
     # Filter favorite_events to keep only the events not present in recommended_events_by_location
-    filtered_favorite_events = [event for event in favorite_events if event.id in events_to_keep]
+    filtered_favorite_events = [
+        event for event in favorite_events if event.id in events_to_keep
+    ]
     recommended_events_by_tag = []
     for user_events_tag in user_events_tag_names:
         tag_id = Tag.objects.get(tag_name=user_events_tag)
