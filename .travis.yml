@@ -5,7 +5,6 @@ python:
   - "3.11"  # Update to the actual Python 3.11 version when available
 
 before_install:
-  - sudo apt-get install sqlite3 libsqlite3-dev
   - pip install 'urllib3<2.0'
 
 # Define your build steps, for example:
