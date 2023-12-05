@@ -357,7 +357,9 @@ class FriendRequestManageTest(TestCase):
             user=self.user, friends=self.friend_profile, status=PENDING
         )
         self.client.login(username="testcreator", password="testpassword")
-        url = reverse("profiles:approve-request", args=[self.friend_profile.id, self.user.id])
+        url = reverse(
+            "profiles:approve-request", args=[self.friend_profile.id, self.user.id]
+        )
         response = self.client.post(url)
         friend_request.refresh_from_db()
         self.assertEqual(response.status_code, 302)
@@ -372,7 +374,9 @@ class FriendRequestManageTest(TestCase):
             user=self.friend_profile.user, friends=self.user_profile, status=PENDING
         )
         self.client.login(username="testcreator", password="testpassword")
-        url = reverse("profiles:reject-request", args=[self.friend_profile.id, self.user.id])
+        url = reverse(
+            "profiles:reject-request", args=[self.friend_profile.id, self.user.id]
+        )
         response = self.client.post(url)
         friend_request.refresh_from_db()
         self.assertEqual(response.status_code, 302)
@@ -418,7 +422,8 @@ class FriendRemoveTest(TestCase):
         )
         self.client.login(username="testcreator", password="testpassword")
         url = reverse(
-            "profiles:remove-approved-request", args=[self.friend_profile.id, self.user.id]
+            "profiles:remove-approved-request",
+            args=[self.friend_profile.id, self.user.id],
         )
         response = self.client.post(url)
         friend_request.refresh_from_db()
