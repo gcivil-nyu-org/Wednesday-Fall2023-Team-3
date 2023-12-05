@@ -53,4 +53,9 @@ urlpatterns = [
     ),
     path("homepage/", views.homepage, name="homepage"),
     path("recommend-event/", views.recommendEvent, name="recommend-event"),
+    path(
+        "<int:location_id>/add-to-favorites/",
+        views.add_to_favorites,
+        name="add_to_favorites",
+    ),
 ]

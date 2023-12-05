@@ -1,5 +1,5 @@
 # profiles/tests.py
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
 from .models import UserProfile, save_user_profile
@@ -8,6 +8,15 @@ from .forms import ProfileForm
 from django.utils import timezone
 from datetime import timedelta
 from datetime import datetime
+import pytz
+from .models import UserFriends
+from .constants import (
+    PENDING,
+    APPROVED,
+    WITHDRAWN,
+    REJECTED,
+    REMOVED,
+)
 
 
 class ProfileViewsTest(TestCase):
@@ -45,7 +54,9 @@ class ProfileViewsTest(TestCase):
         self.client.login(username="testuser", password="testpassword")
 
         # Access the view_profile page
-        response = self.client.get(reverse("view_profile", args=[self.user_profile.pk]))
+        response = self.client.get(
+            reverse("profiles:view_profile", args=[self.user_profile.pk])
+        )
 
         # Check if the response status code is 200 (OK)
         self.assertEqual(response.status_code, 200)
@@ -59,7 +70,7 @@ class ProfileViewsTest(TestCase):
 
     def test_view_profile_with_nonexistent_user(self):
         # Access the view_profile page with an invalid userprofile_id
-        response = self.client.get(reverse("view_profile", args=[999]))
+        response = self.client.get(reverse("profiles:view_profile", args=[999]))
 
         # Check if the response status code is 404 (Not Found)
         self.assertEqual(response.status_code, 302)
@@ -69,7 +80,9 @@ class ProfileViewsTest(TestCase):
         self.client.logout()
 
         # Access the view_profile page without logging in
-        response = self.client.get(reverse("view_profile", args=[self.user_profile.pk]))
+        response = self.client.get(
+            reverse("profiles:view_profile", args=[self.user_profile.pk])
+        )
 
         # Check if the response status code is 302 (Redirect to login page)
         self.assertEqual(response.status_code, 302)
@@ -226,3 +239,199 @@ class UserProfileSaveTest(TestCase):
         # Assert that the existing UserProfile is not affected
         self.assertIsNotNone(user_profile)
         self.assertEqual(user_profile.user, user)
+
+
+class SendFriendRequestTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.friend = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        if not hasattr(self.user, "userprofile"):
+            # Create a new user profile
+            self.user_profile = UserProfile.objects.create(
+                user=self.user,
+                bio="Test Bio",
+                # Add other required fields as needed
+            )
+        else:
+            # Use the existing user profile
+            self.user_profile = self.user.userprofile
+        if not hasattr(self.friend, "userprofile"):
+            # Create a new user profile
+            self.friend_profile = UserProfile.objects.create(
+                user=self.friend,
+                bio="Test Bio",
+                # Add other required fields as needed
+            )
+        else:
+            # Use the existing user profile
+            self.friend_profile = self.friend.userprofile
+        self.client = Client()
+
+    def test_toggle_friend_request_create(self):
+        self.client.login(username="testuser", password="testpassword")
+        url = reverse("profiles:toggle-friend-request", args=[self.friend_profile.id])
+        # Initially, the user has not been added as a friend
+        response = self.client.post(url)
+        # Check that the UserFriends was created with the status 'pending'
+        friend_request = UserFriends.objects.get(
+            user=self.user, friends=self.friend_profile
+        )
+        self.assertEqual(friend_request.status, PENDING)
+        # Make the POST request again to toggle the status to 'withdrawn'
+        response = self.client.post(url)
+        # Fetch the updated join object and check its status
+        friend_request.refresh_from_db()
+        self.assertEqual(friend_request.status, WITHDRAWN)
+        self.client.post(url)
+        friend_request.refresh_from_db()
+        self.assertEqual(friend_request.status, PENDING)
+        # Check the response to ensure the user is redirected to the event detail page
+        self.assertRedirects(
+            response, reverse("profiles:view_profile", args=[self.friend_profile.id])
+        )
+
+    def test_toggle_send_friend_request_to_oneself(self):
+        self.client.logout()
+        # The URL to which the request to user is sent
+        url = reverse("profiles:toggle-friend-request", args=[self.user_profile.id])
+        self.client.login(username="testcreator", password="testpassword")
+        # Attempt to send a friend request to your own user profile
+        self.client.post(url)
+        # Now check if an UserFriends record exists for the user
+        # We expect this to be False, as the user should not be able to send a friend request to oneself
+        self.assertFalse(
+            UserFriends.objects.filter(
+                user=self.user, friends=self.user_profile
+            ).exists()
+        )
+
+    def test_friend_request_str_representation(self):
+        friend_request = UserFriends.objects.create(
+            user=self.user, friends=self.friend_profile
+        )
+        expected_str = f"{self.user.username} - {self.friend_profile.user} - {friend_request.get_status_display()}"
+        self.assertEqual(str(friend_request), expected_str)
+
+
+class FriendRequestManageTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.friend = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        if not hasattr(self.user, "userprofile"):
+            # Create a new user profile
+            self.user_profile = UserProfile.objects.create(
+                user=self.user,
+                bio="Test Bio",
+                # Add other required fields as needed
+            )
+        else:
+            # Use the existing user profile
+            self.user_profile = self.user.userprofile
+        if not hasattr(self.friend, "userprofile"):
+            # Create a new user profile
+            self.friend_profile = UserProfile.objects.create(
+                user=self.friend,
+                bio="Test Bio",
+                # Add other required fields as needed
+            )
+        else:
+            # Use the existing user profile
+            self.friend_profile = self.friend.userprofile
+        self.client = Client()
+
+    def test_user_not_found_approve(self):
+        UserFriends.objects.create(
+            user=self.user, friends=self.friend_profile, status=PENDING
+        )
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse("profiles:approve-request", args=[202, self.user.id])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_approve_friend_request(self):
+        friend_request = UserFriends.objects.create(
+            user=self.user, friends=self.friend_profile, status=PENDING
+        )
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse(
+            "profiles:approve-request", args=[self.friend_profile.id, self.user.id]
+        )
+        response = self.client.post(url)
+        friend_request.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(friend_request.status, APPROVED)
+
+    def test_reject_friend_request(self):
+        self.client.logout()
+        friend_request = UserFriends.objects.create(
+            user=self.user, friends=self.friend_profile, status=PENDING
+        )
+        UserFriends.objects.create(
+            user=self.friend_profile.user, friends=self.user_profile, status=PENDING
+        )
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse(
+            "profiles:reject-request", args=[self.friend_profile.id, self.user.id]
+        )
+        response = self.client.post(url)
+        friend_request.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(friend_request.status, REJECTED)
+
+
+class FriendRemoveTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.friend = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        if not hasattr(self.user, "userprofile"):
+            # Create a new user profile
+            self.user_profile = UserProfile.objects.create(
+                user=self.user,
+                bio="Test Bio",
+                # Add other required fields as needed
+            )
+        else:
+            # Use the existing user profile
+            self.user_profile = self.user.userprofile
+        if not hasattr(self.friend, "userprofile"):
+            # Create a new user profile
+            self.friend_profile = UserProfile.objects.create(
+                user=self.friend,
+                bio="Test Bio",
+                # Add other required fields as needed
+            )
+        else:
+            # Use the existing user profile
+            self.friend_profile = self.friend.userprofile
+        self.client = Client()
+
+    def test_remove_friend(self):
+        friend_request = UserFriends.objects.create(
+            user=self.user, friends=self.friend_profile, status=APPROVED
+        )
+        user_request = UserFriends.objects.create(
+            user=self.friend_profile.user, friends=self.user_profile, status=APPROVED
+        )
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse(
+            "profiles:remove-approved-request",
+            args=[self.friend_profile.id, self.user.id],
+        )
+        response = self.client.post(url)
+        friend_request.refresh_from_db()
+        user_request.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(friend_request.status, REMOVED)
+        self.assertEqual(user_request.status, REMOVED)

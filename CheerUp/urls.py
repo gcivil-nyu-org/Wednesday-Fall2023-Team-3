@@ -29,7 +29,6 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("chat/", include("chat.urls")),
-    path("profiles/", include("profiles.urls")),
     path(
         "reset_password/",
         auth_views.PasswordResetView.as_view(
@@ -62,4 +61,5 @@ urlpatterns = [
         ),
         name="password_reset_complete",
     ),
+    path("profiles/", include(("profiles.urls", "profiles"), namespace="profiles")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

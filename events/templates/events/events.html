@@ -87,7 +87,7 @@
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Hello {{ user.username }}</a>
+                            <a class="nav-link" href="{% url 'profiles:view_profile' user.userprofile.id %}">Hello {{ user.username }}</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'logout' %}?next={{ request.path }}">Log out</a>
@@ -156,6 +156,9 @@
                 <br>
                 <label for="search_name">Search Events:</label>
                 <input type="text" name="search" class="search_name" id="search_name" placeholder=" Event Name or Location...">
+                <br>
+                <label for="favorite_location_events">Events on favorite locations:</label>
+                <input type="checkbox" name="favorite_location_events" id="favorite_location_events">
                 <br>
             <div class="text-center">    
                 <input type="submit" value="Filter" class="btn btn-secondary">
@@ -232,10 +235,13 @@
     }
         window.addEventListener('load', function() {
         var queryParameters = getQueryParameters();
-        
         // Populate the form fields if the query parameters exist
         if (queryParameters.start_time) {
             document.getElementById('start_time').value = queryParameters.start_time;
+        }
+        if (queryParameters.favorite_location_events && queryParameters.favorite_location_events == "on") {
+            checkbox = document.getElementById('favorite_location_events')
+            checkbox.checked = true;
         }
         if (queryParameters.end_time) {
             document.getElementById('end_time').value = queryParameters.end_time;

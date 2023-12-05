@@ -1,6 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from .models import Event, Location, EventJoin, Comment, Reaction
+from .models import Event, Location, EventJoin, Comment, Reaction, FavoriteLocation
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
@@ -137,6 +137,22 @@ class EventIndexViewFilterNegativeTest(TestCase):
         self.assertEqual(
             response.context.get("error"), "Start time cannot be in the past."
         )
+
+    def test_filter_events_based_on_favorite_locations(self):
+        # Simulate a POST request with form data
+        form_data = {
+            "favorite_location_events": True  # Simulate the checkbox value
+            # Add other form data as needed
+        }
+
+        # Authenticate the user in the test client
+        self.client.login(username="testuser", password="testpassword")
+
+        # Make a POST request to your view
+        response = self.client.post(reverse("events:index"), data=form_data)
+
+        # Check if the response status is 200 (or any other expected status)
+        self.assertEqual(response.status_code, 200)
 
 
 class UpdateEventViewTest(TestCase):
@@ -2098,6 +2114,121 @@ class ProfanityCheckTest(TestCase):
             "Event Name contains profanity",
         )
 
+    def test_create_event_with_profane_description(self):
+        self.client.login(username="testuser", password="testpassword")
+        response = self.client.post(
+            reverse("events:save-event"),
+            {
+                "event_location_id": self.location.id,  # Missing event location
+                "event_name": "Test Event",  # Missing event name
+                "start_time": self.start_time,  # Missing start time
+                "end_time": self.end_time,  # Missing end time
+                "capacity": 10,
+                "description": "Fuck you",
+                "creator": self.user,
+            },
+        )
+        self.assertContains(
+            response,
+            "Description contains profanity",
+        )
+
+    def test_update_event_with_profane_description(self):
+        self.client.login(username="testuser", password="testpassword")
+        existing_event = Event.objects.get(pk=self.event.id)
+        response = self.client.post(
+            reverse("events:update-event", args=[existing_event.id]),
+            {
+                "event_location_id": self.location.id,
+                "event_name": "Test Event",
+                "start_time": self.start_time,
+                "end_time": self.end_time,
+                "description": "Fuck you",
+                "capacity": 100,
+            },
+        )
+        self.assertContains(
+            response,
+            "Description contains profanity",
+        )  # Replace with expected content
+
+
+class CommentProfanityTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(days=50),
+            end_time=current_time_ny + timedelta(days=52),
+            capacity=5,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.client = Client()
+
+    def test_create_comment_profanity(self):
+        self.client.login(username="testuser", password="testpassword")
+        url = reverse("events:add-comment", args=[self.event.id])
+        self.client.post(url, {"content": "Fuck you"})
+        self.assertEqual(Comment.objects.count(), 0)
+
+
+class ReplyProfanityTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.creator = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location",
+        )
+        new_york_tz = pytz.timezone("America/New_York")
+        current_time_ny = datetime.now(new_york_tz)
+        self.event = Event.objects.create(
+            event_name="Test Event",
+            event_location=self.location,
+            start_time=current_time_ny + timedelta(hours=100),
+            end_time=current_time_ny + timedelta(hours=104),
+            capacity=5,
+            is_active=True,
+            creator=self.creator,
+        )
+        self.parent = Comment.objects.create(
+            user=self.user,
+            event=self.event,
+            content="Parent comment",
+            is_private=True,
+            parent=None,
+        )
+        self.add_reply_url = reverse(
+            "events:add-reply", args=[self.event.id, self.parent.id]
+        )
+
+    def test_profanity_create_reply(self):
+        self.client.logout()
+        self.client.login(username="testuser", password="testpassword")
+        reply_content = "This is a reply fuck"
+        self.client.post(
+            reverse("events:add-reply", args=[self.event.id, self.parent.id]),
+            {
+                "content": reply_content,
+            },
+        )
+        self.assertEqual(Comment.objects.count(), 1)
+
 
 class RecommendEventTestCase(TestCase):
     def setUp(self):
@@ -2208,3 +2339,56 @@ class RecommendEventTestCase(TestCase):
         self.assertContains(response, "Test Event 4")
         self.assertNotContains(response, "Test Event 3")
         self.assertNotContains(response, "Test Event 5")
+
+
+class AddToFavoritesTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="test_user", password="test_password"
+        )
+        self.location = Location.objects.create(
+            location_name="Test Location", address="Test Address"
+        )
+
+    def test_authenticated_user_add_to_favorites(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("events:add_to_favorites", args=[self.location.pk])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            FavoriteLocation.objects.filter(
+                user=self.user, location=self.location
+            ).exists()
+        )
+        self.assertJSONEqual(
+            str(response.content, encoding="utf8"),
+            {"success": "Location added to favorites"},
+        )
+
+    def test_unauthenticated_user_add_to_favorites(self):
+        response = self.client.post(
+            reverse("events:add_to_favorites", args=[self.location.pk])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            FavoriteLocation.objects.filter(
+                user=self.user, location=self.location
+            ).exists()
+        )
+        self.assertJSONEqual(
+            str(response.content, encoding="utf8"),
+            {"error": "User is not authenticated"},
+        )
+
+    def test_already_favorited_location(self):
+        self.client.force_login(self.user)
+        FavoriteLocation.objects.create(user=self.user, location=self.location)
+        response = self.client.post(
+            reverse("events:add_to_favorites", args=[self.location.pk])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            str(response.content, encoding="utf8"),
+            {"success": "Location is already a favorite"},
+        )

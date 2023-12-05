@@ -7,7 +7,7 @@ from django.http import (
 )
 from .forms import EventsForm, CommentForm
 from django.urls import reverse
-from .models import Event, Location, EventJoin, Comment, Reaction
+from .models import Event, Location, EventJoin, Comment, Reaction, FavoriteLocation
 from tags.models import Tag
 from django.contrib.auth.decorators import login_required
 from django.core.serializers import serialize
@@ -37,7 +37,33 @@ from better_profanity import profanity
 from django.core.files.storage import FileSystemStorage
 
 
+def add_to_favorites(request, location_id):
+    # Fetch the location object based on the provided ID
+    location = get_object_or_404(Location, pk=location_id)
+
+    # Check if the user is authenticated
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "User is not authenticated"})
+
+    # Check if the location is already a favorite for the user
+    is_favorite = FavoriteLocation.objects.filter(
+        user=request.user, location=location
+    ).exists()
+    if is_favorite:
+        return JsonResponse({"success": "Location is already a favorite"})
+
+    # If the location is not a favorite yet, add it to favorites for the user
+    FavoriteLocation.objects.create(user=request.user, location=location)
+    return JsonResponse({"success": "Location added to favorites"})
+
+
 # Existing imports and index view function...
+def is_convertible_to_float(string):
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
 
 
 def index(request):
@@ -75,23 +101,37 @@ def index(request):
         start_time_ny = None
         end_time_ny = None
         if events_near_me and events_near_me == "true":
-            user_latitude = float(request.GET.get("lat", ""))
-            user_longitude = float(request.GET.get("lon", ""))
-            print(user_latitude)
-            print(user_longitude)
-            # Filter nearby locations based on user's location
-            nearby_locations = Location.objects.filter(
-                latitude__range=(
-                    user_latitude - 0.036,
-                    user_latitude + 0.036,
-                ),  # Approx. 2 miles in latitude
-                longitude__range=(
-                    user_longitude - 0.036,
-                    user_longitude + 0.036,
-                ),  # Approx. 2 miles in longitude
-            )
-            nearby_location_ids = [location.id for location in nearby_locations]
-            events = Event.objects.filter(event_location__in=nearby_location_ids)
+            if (
+                request.GET.get("lat", "")
+                and is_convertible_to_float(request.GET.get("lat", ""))
+                and request.GET.get("lon", "")
+                and is_convertible_to_float(request.GET.get("lon", ""))
+            ):
+                user_latitude = float(request.GET.get("lat", ""))
+                user_longitude = float(request.GET.get("lon", ""))
+                # Filter nearby locations based on user's location
+                nearby_locations = Location.objects.filter(
+                    latitude__range=(
+                        user_latitude - 0.036,
+                        user_latitude + 0.036,
+                    ),  # Approx. 2 miles in latitude
+                    longitude__range=(
+                        user_longitude - 0.036,
+                        user_longitude + 0.036,
+                    ),  # Approx. 2 miles in longitude
+                )
+                nearby_location_ids = [location.id for location in nearby_locations]
+                events = events.filter(event_location__in=nearby_location_ids)
+        if (
+            form.cleaned_data["favorite_location_events"]
+            and request.user.is_authenticated
+        ):
+            favorite_location_events = form.cleaned_data["favorite_location_events"]
+            if favorite_location_events:
+                # Return an error message if start time is in the past
+                favorite_locations = FavoriteLocation.objects.filter(user=request.user)
+                favorite_location_ids = [location.id for location in favorite_locations]
+                events = events.filter(event_location__in=favorite_location_ids)
 
         # Start Time filter
         if form.cleaned_data["start_time"]:
@@ -280,6 +320,14 @@ def updateEvent(request, event_id):
                 update_errors["event_location_id"] = "Invalid event location."
 
         description = request.POST.get("description", "")
+        if profanity.contains_profanity(description):
+            update_errors["event_name"] = "Description contains profanity"
+            return render(
+                request,
+                "events/update-event.html",
+                {"event": event, "tags": tag, "errors": update_errors},
+            )
+
         image = request.FILES.get("image")
 
         if update_errors:
@@ -382,6 +430,13 @@ def saveEvent(request):
             return JsonResponse(errors, status=400)
 
         description = request.POST.get("description", "")
+        if profanity.contains_profanity(description):
+            errors["event_name"] = "Description contains profanity"
+            return render(
+                request,
+                "events/create-event.html",
+                {"form": EventsForm(), "tags": Tag.objects.all(), "errors": errors},
+            )
 
         if Event.objects.filter(
             event_name=event_name,
@@ -517,9 +572,13 @@ def eventDetail(request, event_id):
     ]
 
     user_reaction_emoji = None
+    is_favorite = False
     # attempt to see if the user has logged in
     if request.user.is_authenticated:
         try:
+            is_favorite = FavoriteLocation.objects.filter(
+                user=request.user, location=location
+            ).exists()
             user_reaction = Reaction.objects.get(
                 user=request.user, event=event, is_active=True
             )
@@ -527,7 +586,6 @@ def eventDetail(request, event_id):
         except Reaction.DoesNotExist:
             # if the user has no reaction record
             pass
-
     context = {
         "event": event,
         "join_status": join_status,
@@ -547,6 +605,7 @@ def eventDetail(request, event_id):
         "emoji_data_list": emoji_data_list,
         "EMOJI_CHOICES": EMOJI_CHOICES,
         "user_reaction_emoji": user_reaction_emoji,
+        "is_favorite": is_favorite,
     }
     return render(request, "events/event-detail.html", context)
 
@@ -676,6 +735,9 @@ def addComment(request, event_id):
     form = CommentForm(request.POST)
     if form.is_valid():
         comment = form.save(commit=False)
+        if profanity.contains_profanity(comment.content):
+            messages.warning(request, "The comment contains profanity")
+            return redirect("events:event-detail", event_id=event.id)
         comment.user = request.user
         comment.event = event
         comment.save()
@@ -704,6 +766,9 @@ def addReply(request, event_id, comment_id):
         return redirect("events:event-detail", event_id=event.id)
     if form.is_valid():
         reply = form.save(commit=False)
+        if profanity.contains_profanity(reply.content):
+            messages.warning(request, "The reply contains profanity")
+            return redirect("events:event-detail", event_id=event.id)
         reply.user = request.user
         reply.event = event
         # make sure that the parent comment is a comment not a reply
@@ -852,6 +917,9 @@ def filter_event_capacity_label(capacity_label):
 # recommend event page
 @login_required
 def recommendEvent(request):
+    favorite_locations = FavoriteLocation.objects.filter(user=request.user)
+    favorite_location_ids = [location.id for location in favorite_locations]
+    favorite_events = Event.objects.filter(event_location__in=favorite_location_ids)
     ny_timezone = pytz.timezone("America/New_York")
     current_time_ny = timezone.now().astimezone(ny_timezone)
     event_joins = EventJoin.objects.filter(
@@ -875,7 +943,17 @@ def recommendEvent(request):
     recommended_events_by_location = recommended_events.filter(
         event_location__in=user_event_locations
     )
+    # Extract event IDs from recommended_events_by_location and favorite_events
+    recommended_event_ids = {event.id for event in recommended_events_by_location}
+    favorite_event_ids = {event.id for event in favorite_events}
 
+    # Find the event IDs that are in favorite_events but not in recommended_events_by_location
+    events_to_keep = favorite_event_ids - recommended_event_ids
+
+    # Filter favorite_events to keep only the events not present in recommended_events_by_location
+    filtered_favorite_events = [
+        event for event in favorite_events if event.id in events_to_keep
+    ]
     recommended_events_by_tag = []
     for user_events_tag in user_events_tag_names:
         tag_id = Tag.objects.get(tag_name=user_events_tag)
@@ -892,6 +970,7 @@ def recommendEvent(request):
         return redirect("events:index")
 
     context = {
+        "favorite_events": filtered_favorite_events,
         "recommended_events_by_location": recommended_events_by_location,
         "recommended_events_by_tag_with_tag": recommended_events_by_tag_with_tag,
     }
