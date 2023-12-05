@@ -80,7 +80,6 @@ def toggleFriendRequest(request, userprofile_id):
 @require_POST
 def userApproveRequest(request, userprofile_id, user_id):
     with transaction.atomic():
-        receiver_user = get_object_or_404(UserProfile, id=userprofile_id)
         try:
             # Lock the participant row for updating
             join = UserFriends.objects.select_for_update().get(
