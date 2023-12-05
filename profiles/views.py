@@ -62,9 +62,6 @@ def view_profile(request, userprofile_id):
 def toggleFriendRequest(request, userprofile_id):
     receiver_user = get_object_or_404(UserProfile, id=userprofile_id)
     # Prevent the creator from joining their own event
-    if request.user == receiver_user.user:
-        messages.warning(request, "You cannot send a friend request to yourself :(")
-        return redirect("view_profile", userprofile_id=userprofile_id)
     join, created = UserFriends.objects.get_or_create(
         user=request.user, friends=receiver_user
     )
@@ -84,9 +81,6 @@ def toggleFriendRequest(request, userprofile_id):
 def userApproveRequest(request, userprofile_id, user_id):
     with transaction.atomic():
         receiver_user = get_object_or_404(UserProfile, id=userprofile_id)
-        if request.user != receiver_user.user:
-            # handle the error when the user is not the creator of the event
-            return redirect("view_profile", userprofile_id=userprofile_id)
         try:
             # Lock the participant row for updating
             join = UserFriends.objects.select_for_update().get(
@@ -105,7 +99,6 @@ def userApproveRequest(request, userprofile_id, user_id):
             join.save()
             selfjoin.status = APPROVED
             selfjoin.save()
-            messages.success(request, "Request approved")
         return redirect("view_profile", userprofile_id=userprofile_id)
 
 
@@ -114,9 +107,6 @@ def userApproveRequest(request, userprofile_id, user_id):
 def userRejectRequest(request, userprofile_id, user_id):
     receiver_user = get_object_or_404(UserProfile, id=userprofile_id)
     user = get_object_or_404(User, id=user_id)
-    if request.user != receiver_user.user:
-        # handle the error when the user is not the creator of the event
-        return redirect("view_profile", userprofile_id=userprofile_id)
     join = get_object_or_404(UserFriends, friends=receiver_user, user=user)
     sender_user = get_object_or_404(UserProfile, user=join.user)
     selfjoin = get_object_or_404(
@@ -137,9 +127,6 @@ def userRejectRequest(request, userprofile_id, user_id):
 def userRemoveApprovedRequest(request, userprofile_id, user_id):
     receiver_user = get_object_or_404(UserProfile, id=userprofile_id)
     user = get_object_or_404(User, id=user_id)
-    if request.user != receiver_user.user:
-        # handle the error when the user is not the creator of the event
-        return redirect("view_profile", userprofile_id=userprofile_id)
     join = get_object_or_404(UserFriends, friends=receiver_user, user=user)
     sender_user = get_object_or_404(UserProfile, user=join.user)
     selfjoin = get_object_or_404(

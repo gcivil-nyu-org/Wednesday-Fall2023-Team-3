@@ -15,6 +15,7 @@ from .constants import (
     APPROVED,
     WITHDRAWN,
     REJECTED,
+    REMOVED,
 )
 
 
@@ -335,6 +336,15 @@ class FriendRequestManageTest(TestCase):
             self.friend_profile = self.friend.userprofile
         self.client = Client()
 
+    def test_user_not_found_approve(self):
+        friend_request = UserFriends.objects.create(
+            user=self.user, friends=self.friend_profile, status=PENDING
+        )
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse("approve-request", args=[202, self.user.id])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 404)
+
     def test_approve_friend_request(self):
         friend_request = UserFriends.objects.create(
             user=self.user, friends=self.friend_profile, status=PENDING
@@ -360,3 +370,52 @@ class FriendRequestManageTest(TestCase):
         friend_request.refresh_from_db()
         self.assertEqual(response.status_code, 302)
         self.assertEqual(friend_request.status, REJECTED)
+
+
+class FriendRemoveTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.friend = User.objects.create_user(
+            username="testcreator", password="testpassword"
+        )
+        if not hasattr(self.user, "userprofile"):
+            # Create a new user profile
+            self.user_profile = UserProfile.objects.create(
+                user=self.user,
+                bio="Test Bio",
+                # Add other required fields as needed
+            )
+        else:
+            # Use the existing user profile
+            self.user_profile = self.user.userprofile
+        if not hasattr(self.friend, "userprofile"):
+            # Create a new user profile
+            self.friend_profile = UserProfile.objects.create(
+                user=self.friend,
+                bio="Test Bio",
+                # Add other required fields as needed
+            )
+        else:
+            # Use the existing user profile
+            self.friend_profile = self.friend.userprofile
+        self.client = Client()
+
+    def test_remove_friend(self):
+        friend_request = UserFriends.objects.create(
+            user=self.user, friends=self.friend_profile, status=APPROVED
+        )
+        user_request = UserFriends.objects.create(
+            user=self.friend_profile.user, friends=self.user_profile, status=APPROVED
+        )
+        self.client.login(username="testcreator", password="testpassword")
+        url = reverse(
+            "remove-approved-request", args=[self.friend_profile.id, self.user.id]
+        )
+        response = self.client.post(url)
+        friend_request.refresh_from_db()
+        user_request.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(friend_request.status, REMOVED)
+        self.assertEqual(user_request.status, REMOVED)
