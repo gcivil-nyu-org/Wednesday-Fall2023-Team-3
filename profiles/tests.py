@@ -273,7 +273,7 @@ class SendFriendRequestTest(TestCase):
 
     def test_toggle_friend_request_create(self):
         self.client.login(username="testuser", password="testpassword")
-        url = reverse("toggle-friend-request", args=[self.friend_profile.id])
+        url = reverse("profiles:toggle-friend-request", args=[self.friend_profile.id])
         # Initially, the user has not joined the event
         response = self.client.post(url)
         # Check that the EventJoin was created with the status 'pending'
@@ -289,13 +289,13 @@ class SendFriendRequestTest(TestCase):
         self.assertEqual(join.status, PENDING)
         # Check the response to ensure the user is redirected to the event detail page
         self.assertRedirects(
-            response, reverse("view_profile", args=[self.friend_profile.id])
+            response, reverse("profiles:view_profile", args=[self.friend_profile.id])
         )
 
     def test_user_cannot_join_own_event(self):
         self.client.logout()
         # The URL to which the request to join an event is sent
-        url = reverse("events:toggle-join-request", args=[self.user_profile.id])
+        url = reverse("profiles:toggle-friend-request", args=[self.user_profile.id])
         self.client.login(username="testcreator", password="testpassword")
         # Attempt to create an EventJoin record as the creator
         self.client.post(url)
@@ -348,7 +348,7 @@ class FriendRequestManageTest(TestCase):
             user=self.user, friends=self.friend_profile, status=PENDING
         )
         self.client.login(username="testcreator", password="testpassword")
-        url = reverse("approve-request", args=[202, self.user.id])
+        url = reverse("profiles:approve-request", args=[202, self.user.id])
         response = self.client.post(url)
         self.assertEqual(response.status_code, 404)
 
@@ -357,7 +357,7 @@ class FriendRequestManageTest(TestCase):
             user=self.user, friends=self.friend_profile, status=PENDING
         )
         self.client.login(username="testcreator", password="testpassword")
-        url = reverse("approve-request", args=[self.friend_profile.id, self.user.id])
+        url = reverse("profiles:approve-request", args=[self.friend_profile.id, self.user.id])
         response = self.client.post(url)
         friend_request.refresh_from_db()
         self.assertEqual(response.status_code, 302)
@@ -372,7 +372,7 @@ class FriendRequestManageTest(TestCase):
             user=self.friend_profile.user, friends=self.user_profile, status=PENDING
         )
         self.client.login(username="testcreator", password="testpassword")
-        url = reverse("reject-request", args=[self.friend_profile.id, self.user.id])
+        url = reverse("profiles:reject-request", args=[self.friend_profile.id, self.user.id])
         response = self.client.post(url)
         friend_request.refresh_from_db()
         self.assertEqual(response.status_code, 302)
@@ -418,7 +418,7 @@ class FriendRemoveTest(TestCase):
         )
         self.client.login(username="testcreator", password="testpassword")
         url = reverse(
-            "remove-approved-request", args=[self.friend_profile.id, self.user.id]
+            "profiles:remove-approved-request", args=[self.friend_profile.id, self.user.id]
         )
         response = self.client.post(url)
         friend_request.refresh_from_db()
