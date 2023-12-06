@@ -1,27 +1,25 @@
+{% extends "events/base.html" %}
+
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Events{% endblock %}</title>
-    <!-- Link Bootstrap CSS -->
-    <link rel="stylesheet" href="{% static 'events/css/bootstrap.min.css' %}">
-    <!-- Your Custom CSS -->
-    <link rel="stylesheet" href="{% static 'events/css/styles.css' %}">
-    {% block extra_styles %}
+
+{% block title %}
+Events
+{% endblock %}
+
+{% block extra_styles %}
 <style>   
     .sticky-note-container-big {
         width: 100%;
-        background-color: #a6cff4;
-        padding: 20px;
-        border-radius: 5px;
-        box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        background-color: rgba(255,255,255,0.1);
+        /* padding: 20px; */
+        /* border-radius: 5px; */
+        /* box-shadow: 5px 5px 15px rgba(0,0,0,0.2); */
         margin: 0;
     }
     .filter-form {
         padding-left: 2rem;
         margin-bottom: 20px;
+        font-weight: bold;
     }
     .search_name {
         border-radius: 5px;
@@ -38,6 +36,7 @@
     }
 
     .button-container {
+        padding-left: 2rem;
         display: flex;
         justify-content: space-between;
     }
@@ -46,72 +45,43 @@
         margin: 0;
     }
 
-</style>
-    {% endblock %}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
-</head>
-<body>
-    <header>
-        <div class="banner">
-            <h1>Cheer↑</h1>
-        </div>
-        
-        
-        <nav class="navbar navbar-expand-lg navbar-light bg-light px-5">
-            <!-- Brand/logo -->
-            <a class="navbar-brand" href="{% url 'root-homepage' %}">Cheer↑</a>
-            
-            <!-- Toggler/collapsible Button -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <!-- Navbar links -->
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'events:index' %}">Find Events</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'events:create-event' %}">Create an Event</a>
-                    </li>
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'events:recommend-event' %}">For You</a>
-                        </li>
-                    {% endif %}
-                </ul>
-                <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'profiles:view_profile' user.userprofile.id %}">Hello {{ user.username }}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}?next={{ request.path }}">Log out</a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            {% if request.resolver_match.url_name == 'signup' %}  <!-- Check if current path is the signup page -->
-                                <a class="nav-link" href="{% url 'login' %}?next={% url 'events:index' %}">Log in</a>
-                            {% else %}
-                                <a class="nav-link" href="{% url 'login' %}?next={{ request.path }}">Log in</a>
-                            {% endif %}
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'signup' %}?next={{ request.path }}">Sign up</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </nav>
-    </header>
+    .event-image img{
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
+    }
 
-    <main>
-        {% block content %}
-        <!-- Default content goes here, if any -->
+    .event-button-container {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    /* .bg-blue {
+        background-color: #a6cff4;
+    } */
+
+    #map{
+        position: sticky !important;
+        height: 100dvh;
+        width: 50%;
+        align-items: flex-start;
+        top:0;
+    }
+    .container{
+        display: flex;
+        padding: 0;
+        align-items: start;
+        
+    }
+
+    .background-transparent {
+        background-color: rgba(255,255,255,0.2);
+    }
+
+</style>
+{% endblock %}
+
+    {% block content %}
         {% if messages %}
             <div id="messages">
                 {% for message in messages %}
@@ -125,9 +95,9 @@
             </div>
         {% endif %}
         <div class="container">
-        <div class="sticky-note-container-big mt-5">
-            <div class="button-container">
-                <h1>Events</h1>    
+        <div class="sticky-note-container-big mx-4">
+            <div class="button-container my-4">
+                <h2>Find Your Next Event</h2>    
                 <input id="eventsButton" type="button" name="events_near_me" value="Events near me" class="btn btn-secondary" onclick="toggleButton()">
             </div>
 
@@ -156,14 +126,15 @@
                 <br>
                 <label for="search_name">Search Events:</label>
                 <input type="text" name="search" class="search_name" id="search_name" placeholder=" Event Name or Location...">
+                <div class="padding-16"></div>
                 <br>
                 <label for="favorite_location_events">Events on favorite locations:</label>
                 <input type="checkbox" name="favorite_location_events" id="favorite_location_events">
                 <br>
-            <div class="text-center">    
-                <input type="submit" value="Filter" class="btn btn-secondary">
-                <input type="submit" name="reset_filters" value="Reset Filters" class="btn btn-secondary">
-            </div>
+                <div class="row justify-content-end mx-1">   
+                    <input type="submit" value="Filter" class="col-auto btn btn-secondary mx-2">
+                    <input type="submit" name="reset_filters" value="Reset Filters" class="col-auto btn btn-outline-secondary">
+                </div>
 
             </form>
 
@@ -175,28 +146,35 @@
             {% endif %}
             <ul>
                 {% for event in events %}
-                <li class="event-item">
-                    <a id={{event.id}} href="{% url 'events:event-detail' event.id %}" class="event-name"><strong>{{ event.event_name }}</strong></a>
-                    <p>Event Location: {{ event.event_location }}</p>
-                    <p>Start time: {{ event.start_time }}</p>
-                    <p>End Time: {{ event.end_time }}</p>
-                    <p>Capacity: {{ event.capacity }}</p>
-                    <p>Description: {{ event.description }}</p>
-                    {% if user.is_authenticated and user == event.creator %}
-                        <div class="button-container">
-                            <form method="post" action="{% url 'events:delete-event' event.id %}" onsubmit="return confirm('Are you sure you want to delete this event?');">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="delete">
-                                <button class="btn btn-primary" type="submit">Delete Event</button>
-                            </form>
-                            <form method="GET" action="{% url 'events:update-event' event.id %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="delete">
-                                <button class="btn btn-primary" type="submit">Update Event</button>
-                            </form>
+                    <div class="card my-4 background-transparent">
+                        <div class="row g-0">
+                            <div class="col-md-5 event-image">
+                                <img src="{% static 'events/images/Image_Placeholder.jpg' %}" alt="..." class="rounded-start">
+                            </div>
+                            <div class="col-md-7">
+                                <div class="card-body">
+                                    <a href="{% url 'events:event-detail' event.id %}" class="card-title fs-4 fw-bold mb-5">{{ event.event_name }}</a>
+                                    <h5 class="card-text">{{ event.start_time }} - {{ event.end_time }}</h5>
+                                    <h6 class="card-text">Location: {{ event.event_location }}</h6>
+                                    <h6 class="card-text">Capacity: {{ event.capacity }}</h6>
+                                    {% if user.is_authenticated and user == event.creator %}
+                                        <div class="event-button-container mt-3">
+                                            <form method="GET" action="{% url 'events:update-event' event.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="delete">
+                                                <button class="btn btn-primary" type="submit">Update Event</button>
+                                            </form>
+                                            <form method="post" action="{% url 'events:delete-event' event.id %}" onsubmit="return confirm('Are you sure you want to delete this event?');">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="delete">
+                                                <button class="btn btn-outline-primary" type="submit">Delete Event</button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
-                    {% endif %}
-                </li>
+                    </div>
                 {% empty %}
                 <li>No events that fit your schedule? How about <button class="btn btn-secondary" onclick='window.location="{% url 'events:create-event' %}";'>CREATING</button> one?</li>
                 {% endfor %}
@@ -205,16 +183,12 @@
         <div id="map"></div>
     </div>
         {% endblock %}
-    </main>
 
-
-    <!-- Link Bootstrap JS -->
+    {% block extra_scripts %}
     <script src="{% static 'events/js/script.js' %}"></script>
     <script async
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDuFnfuacTqMttUXdVn24zdfGUHRi0XN5E&map_ids=9a7e26117f10196d&callback=initMap">
     </script>
-    <script src="{% static 'events/js/bootstrap.bundle.min.js' %}"></script>
-    {% block extra_scripts %}
     <script>
         
         function getQueryParameters() {
@@ -329,9 +303,4 @@
     </script>   
     
     {% endblock %}
-</body>
-<footer>
-    <!-- You can put common footer content here -->
-</footer>
-</html>
 
