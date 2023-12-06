@@ -2285,7 +2285,7 @@ class RecommendEventTestCase(TestCase):
             is_active=True,
             creator=self.user2,
         )
-        self.event3.tags.set([self.tag2])        
+        self.event3.tags.set([self.tag2])
         self.client = Client()
 
     def test_logged_in_user_with_record_can_see_recommend_page(self):
@@ -2360,8 +2360,12 @@ class RecommendEventTestCase(TestCase):
         self.assertNotContains(response, "Test Event 4")
         user2_userprofile = UserProfile.objects.get(user=self.user2)
         user1_userprofile = UserProfile.objects.get(user=self.user1)
-        UserFriends.objects.create(user=self.user2, friends=user1_userprofile, status=APPROVED)
-        UserFriends.objects.create(user=self.user1, friends=user2_userprofile, status=APPROVED)
+        UserFriends.objects.create(
+            user=self.user2, friends=user1_userprofile, status=APPROVED
+        )
+        UserFriends.objects.create(
+            user=self.user1, friends=user2_userprofile, status=APPROVED
+        )
         response = self.client.get(reverse("events:recommend-event"))
         self.assertContains(response, "Test Event 4")
 

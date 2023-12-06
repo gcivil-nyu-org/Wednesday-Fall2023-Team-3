@@ -965,15 +965,24 @@ def recommendEvent(request):
         user_events_tag_names, recommended_events_by_tag
     )
 
-    user_friends = UserFriends.objects.filter(friends=request.user.userprofile, status=APPROVED)
+    user_friends = UserFriends.objects.filter(
+        friends=request.user.userprofile, status=APPROVED
+    )
     friends_ids = user_friends.values_list("user_id", flat=True)
     user_friends_by_user = User.objects.filter(id__in=friends_ids)
     recommended_events_by_friend = []
     for user_friend_by_user in user_friends_by_user:
-        events_created_by_current_friend = recommended_events.filter(creator=user_friend_by_user)[:2]
+        events_created_by_current_friend = recommended_events.filter(
+            creator=user_friend_by_user
+        )[:2]
         recommended_events_by_friend.extend(list(events_created_by_current_friend))
 
-    if not recommended_events_by_location and recommended_events_by_tag == [] and filtered_favorite_events==[] and recommended_events_by_friend==[]:
+    if (
+        not recommended_events_by_location
+        and recommended_events_by_tag == []
+        and filtered_favorite_events == []
+        and recommended_events_by_friend == []
+    ):
         messages.warning(
             request, "Sorry we haven't found any match! See all the events here!"
         )
