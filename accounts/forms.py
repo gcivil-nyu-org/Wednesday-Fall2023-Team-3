@@ -50,6 +50,7 @@ class CustomUserCreationForm(UserCreationForm):
             raise forms.ValidationError("Email must end with @nyu.edu")
         return email
 
+    ## comment
     class Meta:
         model = User
         fields = tuple(UserCreationForm.Meta.fields) + (
