@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from .models import Event, Location, EventJoin, Comment, Reaction, FavoriteLocation
+from profiles.models import UserFriends, UserProfile
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
@@ -2247,6 +2248,9 @@ class RecommendEventTestCase(TestCase):
         self.location2 = Location.objects.create(
             location_name="Test Location 2",
         )
+        self.location3 = Location.objects.create(
+            location_name="Test Location 3",
+        )
         self.tag1 = Tag.objects.create(tag_name="Test Tag 1")
         self.tag2 = Tag.objects.create(tag_name="Test Tag 2")
         self.tag3 = Tag.objects.create(tag_name="Test Tag 3")
@@ -2281,7 +2285,7 @@ class RecommendEventTestCase(TestCase):
             is_active=True,
             creator=self.user2,
         )
-        self.event3.tags.set([self.tag2])
+        self.event3.tags.set([self.tag2])        
         self.client = Client()
 
     def test_logged_in_user_with_record_can_see_recommend_page(self):
@@ -2339,6 +2343,27 @@ class RecommendEventTestCase(TestCase):
         self.assertContains(response, "Test Event 4")
         self.assertNotContains(response, "Test Event 3")
         self.assertNotContains(response, "Test Event 5")
+
+    def test_logged_in_user_see_events_created_by_friend(self):
+        event4 = Event.objects.create(
+            event_name="Test Event 4",
+            event_location=self.location3,
+            start_time=self.current_time_ny + timedelta(hours=30),
+            end_time=self.current_time_ny + timedelta(hours=35),
+            capacity=25,
+            is_active=True,
+            creator=self.user1,
+        )
+        event4.tags.set([self.tag3])
+        self.client.login(username="testuser2", password="testpassword")
+        response = self.client.get(reverse("events:recommend-event"))
+        self.assertNotContains(response, "Test Event 4")
+        user2_userprofile = UserProfile.objects.get(user=self.user2)
+        user1_userprofile = UserProfile.objects.get(user=self.user1)
+        UserFriends.objects.create(user=self.user2, friends=user1_userprofile, status=APPROVED)
+        UserFriends.objects.create(user=self.user1, friends=user2_userprofile, status=APPROVED)
+        response = self.client.get(reverse("events:recommend-event"))
+        self.assertContains(response, "Test Event 4")
 
 
 class AddToFavoritesTestCase(TestCase):

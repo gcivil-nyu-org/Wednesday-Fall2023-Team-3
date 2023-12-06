@@ -965,7 +965,7 @@ def recommendEvent(request):
         user_events_tag_names, recommended_events_by_tag
     )
 
-    user_friends = UserFriends.objects.filter(friends=request.user.userprofile)
+    user_friends = UserFriends.objects.filter(friends=request.user.userprofile, status=APPROVED)
     friends_ids = user_friends.values_list("user_id", flat=True)
     user_friends_by_user = User.objects.filter(id__in=friends_ids)
     recommended_events_by_friend = []
