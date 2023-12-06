@@ -10,6 +10,7 @@ from datetime import timedelta
 from datetime import datetime
 import pytz
 from .models import UserFriends
+from django.core.files.uploadedfile import SimpleUploadedFile
 from .constants import (
     PENDING,
     APPROVED,
@@ -435,3 +436,34 @@ class FriendRemoveTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(friend_request.status, REMOVED)
         self.assertEqual(user_request.status, REMOVED)
+
+class EditProfileViewTest(ProfileViewsTest):
+    def test_edit_profile_authenticated_user_post_valid_data(self):
+        # Log in the user
+        self.client.login(username="testuser", password="testpassword")
+
+        # Access the edit_profile page with POST data
+        updated_bio = "Updated Bio"
+        response = self.client.post(
+            reverse("profiles:edit_profile"),
+            data={"bio": updated_bio},
+            follow=True,
+        )
+
+        # Check if the response status code is 200 (OK)
+        self.assertEqual(response.status_code, 200)
+
+        # Check if the profile has been updated in the database
+        self.user_profile.refresh_from_db()
+        self.assertEqual(self.user_profile.bio, updated_bio)
+
+        # Check if the success message is displayed
+        messages = list(response.context["messages"])
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), "Profile updated successfully.")
+
+        # Check if the user is redirected to the view_profile page
+        self.assertRedirects(
+            response, reverse("profiles:view_profile", args=[self.user_profile.pk])
+        )
+
