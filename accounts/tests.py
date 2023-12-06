@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from .forms import CustomUserCreationForm
 
+
 class LoginViewTestCase(TestCase):
     def setUp(self):
         # Create a user for testing login
@@ -22,6 +23,7 @@ class LoginViewTestCase(TestCase):
         # Test if the login form is in the context
         response = self.client.get(reverse("login"))
         self.assertIn("form", response.context)
+
 
 class SignupViewTestCase(TestCase):
     def test_form_valid(self):
