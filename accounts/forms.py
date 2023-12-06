@@ -21,11 +21,6 @@ class CustomUserCreationForm(UserCreationForm):
         strip=False,
         help_text="",
     )
-    email = forms.EmailField(
-        label="Email",
-        required=True,
-        help_text="Enter a valid email address",
-    )
 
     class Meta:
         model = User
