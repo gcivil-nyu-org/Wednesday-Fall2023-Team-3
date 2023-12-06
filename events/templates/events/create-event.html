@@ -29,7 +29,7 @@ Create Event
 {% block content %}
 
 <div class="sticky-note-container-mid mt-5">
-    <form action="{% url 'events:save-event' %}" method="post" class="create-event-form">
+    <form action="{% url 'events:save-event' %}" method="post" class="create-event-form" enctype="multipart/form-data">
         {% csrf_token %}
         <fieldset>
             <!-- <legend class="h1">Create an Event</legend> -->
@@ -39,7 +39,20 @@ Create Event
                 {{ error_message }}
             </div>
             {% endif %}
+
+            {% if errors %}
+            <div class="alert alert-danger" role="alert">
+                {% for error in errors.values %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
             
+            <div class="form-group">
+                <label for="image">Event Image:</label>
+                <input type="file" class="form-control" name="image" id="image" accept="image/*">
+            </div>
+
             <div class="form-group">
                 <label for="event_name">Event Name:</label>
                 <input type="text" class="form-control" name="event_name" id="event_name" placeholder="Add Event Name" required>

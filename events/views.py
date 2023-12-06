@@ -7,8 +7,9 @@ from django.http import (
 )
 from .forms import EventsForm, CommentForm
 from django.urls import reverse
-from .models import Event, Location, EventJoin, Comment, Reaction
+from .models import Event, Location, EventJoin, Comment, Reaction, FavoriteLocation
 from tags.models import Tag
+from profiles.models import UserFriends
 from django.contrib.auth.decorators import login_required
 from django.core.serializers import serialize
 import json
@@ -32,10 +33,38 @@ from django.utils import timezone
 from .forms import EventFilterForm
 from datetime import datetime, timedelta
 import pytz
-from django.db.models import Q
+from django.db.models import Q, Count
+from better_profanity import profanity
+from django.core.files.storage import FileSystemStorage
+
+
+def add_to_favorites(request, location_id):
+    # Fetch the location object based on the provided ID
+    location = get_object_or_404(Location, pk=location_id)
+
+    # Check if the user is authenticated
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "User is not authenticated"})
+
+    # Check if the location is already a favorite for the user
+    is_favorite = FavoriteLocation.objects.filter(
+        user=request.user, location=location
+    ).exists()
+    if is_favorite:
+        return JsonResponse({"success": "Location is already a favorite"})
+
+    # If the location is not a favorite yet, add it to favorites for the user
+    FavoriteLocation.objects.create(user=request.user, location=location)
+    return JsonResponse({"success": "Location added to favorites"})
 
 
 # Existing imports and index view function...
+def is_convertible_to_float(string):
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
 
 
 def index(request):
@@ -73,23 +102,37 @@ def index(request):
         start_time_ny = None
         end_time_ny = None
         if events_near_me and events_near_me == "true":
-            user_latitude = float(request.GET.get("lat", ""))
-            user_longitude = float(request.GET.get("lon", ""))
-            print(user_latitude)
-            print(user_longitude)
-            # Filter nearby locations based on user's location
-            nearby_locations = Location.objects.filter(
-                latitude__range=(
-                    user_latitude - 0.036,
-                    user_latitude + 0.036,
-                ),  # Approx. 2 miles in latitude
-                longitude__range=(
-                    user_longitude - 0.036,
-                    user_longitude + 0.036,
-                ),  # Approx. 2 miles in longitude
-            )
-            nearby_location_ids = [location.id for location in nearby_locations]
-            events = Event.objects.filter(event_location__in=nearby_location_ids)
+            if (
+                request.GET.get("lat", "")
+                and is_convertible_to_float(request.GET.get("lat", ""))
+                and request.GET.get("lon", "")
+                and is_convertible_to_float(request.GET.get("lon", ""))
+            ):
+                user_latitude = float(request.GET.get("lat", ""))
+                user_longitude = float(request.GET.get("lon", ""))
+                # Filter nearby locations based on user's location
+                nearby_locations = Location.objects.filter(
+                    latitude__range=(
+                        user_latitude - 0.036,
+                        user_latitude + 0.036,
+                    ),  # Approx. 2 miles in latitude
+                    longitude__range=(
+                        user_longitude - 0.036,
+                        user_longitude + 0.036,
+                    ),  # Approx. 2 miles in longitude
+                )
+                nearby_location_ids = [location.id for location in nearby_locations]
+                events = events.filter(event_location__in=nearby_location_ids)
+        if (
+            form.cleaned_data["favorite_location_events"]
+            and request.user.is_authenticated
+        ):
+            favorite_location_events = form.cleaned_data["favorite_location_events"]
+            if favorite_location_events:
+                # Return an error message if start time is in the past
+                favorite_locations = FavoriteLocation.objects.filter(user=request.user)
+                favorite_location_ids = [location.id for location in favorite_locations]
+                events = events.filter(event_location__in=favorite_location_ids)
 
         # Start Time filter
         if form.cleaned_data["start_time"]:
@@ -169,6 +212,9 @@ def index(request):
     return render(request, "events/events.html", context)
 
 
+update_errors = {}
+
+
 @login_required
 def updateEvent(request, event_id):
     tag = Tag.objects.all()
@@ -190,13 +236,21 @@ def updateEvent(request, event_id):
         tags = Tag.objects.filter(tag_name__in=selectedtags)
 
         # Create a dictionary to store validation errors
-        errors = {}
+        update_errors.clear()
 
         if not event_name:
-            errors["event_name"] = "Event name cannot be empty."
+            update_errors["event_name"] = "Event name cannot be empty."
+
+        if profanity.contains_profanity(event_name):
+            update_errors["event_name"] = "Event Name contains profanity"
+            return render(
+                request,
+                "events/update-event.html",
+                {"event": event, "tags": tag, "errors": update_errors},
+            )
 
         if not start_time:
-            errors["start_time"] = "Start time is required."
+            update_errors["start_time"] = "Start time is required."
         else:
             start_time = timezone.make_aware(
                 timezone.datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
@@ -204,43 +258,49 @@ def updateEvent(request, event_id):
             new_york_tz = pytz.timezone("America/New_York")
             current_time_ny = datetime.now(new_york_tz)
             if start_time < current_time_ny:
-                errors["start_time"] = "Start time cannot be in the past."
+                update_errors["start_time"] = "Start time cannot be in the past."
 
         if not end_time:
-            errors["end_time"] = "End time is required."
+            update_errors["end_time"] = "End time is required."
         else:
             end_time = timezone.make_aware(
                 timezone.datetime.strptime(end_time, "%Y-%m-%dT%H:%M")
             )
             if end_time < start_time:
-                errors["end_time"] = "End time cannot be earlier than start time."
+                update_errors[
+                    "end_time"
+                ] = "End time cannot be earlier than start time."
 
         if not capacity:
-            errors["capacity"] = "Capacity is required."
+            update_errors["capacity"] = "Capacity is required."
         else:
             try:
                 new_capacity = int(capacity)
                 if new_capacity < 0:
-                    errors["capacity"] = "Capacity must be a non-negative number."
+                    update_errors[
+                        "capacity"
+                    ] = "Capacity must be a non-negative number."
                 else:
                     # New capacity check against approved participants
                     approved_participants_count = EventJoin.objects.filter(
                         event=event, status=APPROVED
                     ).count()
                     if new_capacity < approved_participants_count:
-                        errors[
+                        update_errors[
                             "capacity"
                         ] = "Capacity cannot be less than the number of approved participants"
             except ValueError:
-                errors["capacity"] = "Capacity must be a valid number."
+                update_errors["capacity"] = "Capacity must be a valid number."
 
         if not event_location_id:
-            errors["event_location_id"] = "Event location is required."
+            update_errors["event_location_id"] = "Event location is required."
         else:
             try:
                 event_location_id = int(event_location_id)
                 if event_location_id <= 0:
-                    errors["event_location_id"] = "Event location must be selected."
+                    update_errors[
+                        "event_location_id"
+                    ] = "Event location must be selected."
                 else:
                     location_object = Location.objects.get(id=event_location_id)
                     if (
@@ -254,17 +314,36 @@ def updateEvent(request, event_id):
                         .exclude(pk=event_id)
                         .exists()
                     ):
-                        errors[
+                        update_errors[
                             "similar_event_error"
                         ] = "An event with these details already exists."
             except ValueError:
-                errors["event_location_id"] = "Invalid event location."
+                update_errors["event_location_id"] = "Invalid event location."
 
         description = request.POST.get("description", "")
+        if profanity.contains_profanity(description):
+            update_errors["event_name"] = "Description contains profanity"
+            return render(
+                request,
+                "events/update-event.html",
+                {"event": event, "tags": tag, "errors": update_errors},
+            )
 
-        if errors:
+        image = request.FILES.get("image")
+
+        if update_errors:
             # Return a JSON response with a 400 status code and the error messages
-            return JsonResponse(errors, status=400)
+            return JsonResponse(update_errors, status=400)
+
+        else:
+            # If an image was uploaded and an image already exists, replace it
+            if image:
+                if event.image:
+                    event.image.delete()  # Delete the old image
+                fs = FileSystemStorage()
+                filename = fs.save(image.name, image)
+                event.image = fs.url(filename)
+
         location_object = Location.objects.get(id=event_location_id)
         event.event_location = location_object
         event.event_name = event_name
@@ -276,7 +355,11 @@ def updateEvent(request, event_id):
         event.tags.set(tags)
         return redirect("events:index")  # Redirect to the event list or a success page
 
-    return render(request, "events/update-event.html", {"event": event, "tags": tag})
+    return render(
+        request,
+        "events/update-event.html",
+        {"event": event, "tags": tag, "errors": update_errors},
+    )
 
 
 @login_required
@@ -289,7 +372,7 @@ def saveEvent(request):
         end_time = request.POST.get("end_time")
         capacity = request.POST.get("capacity")
         creator = request.user
-
+        image = request.FILES.get("image")
         selectedtags = request.POST.getlist("selected_tags")
         tags = Tag.objects.filter(tag_name__in=selectedtags)
         # Create a dictionary to hold validation errors
@@ -297,6 +380,14 @@ def saveEvent(request):
         # Validate the data
         if not event_name:
             errors["event_name"] = "Event name cannot be empty."
+
+        if profanity.contains_profanity(event_name):
+            errors["event_name"] = "Event Name contains profanity"
+            return render(
+                request,
+                "events/create-event.html",
+                {"form": EventsForm(), "tags": Tag.objects.all(), "errors": errors},
+            )
 
         if not event_location_id:
             errors["event_location_id"] = "Event location is required."
@@ -340,6 +431,13 @@ def saveEvent(request):
             return JsonResponse(errors, status=400)
 
         description = request.POST.get("description", "")
+        if profanity.contains_profanity(description):
+            errors["event_name"] = "Description contains profanity"
+            return render(
+                request,
+                "events/create-event.html",
+                {"form": EventsForm(), "tags": Tag.objects.all(), "errors": errors},
+            )
 
         if Event.objects.filter(
             event_name=event_name,
@@ -365,6 +463,12 @@ def saveEvent(request):
 
         event.save()
         event.tags.set(tags)
+
+        if image:
+            fs = FileSystemStorage()
+            filename = fs.save(image.name, image)
+            event.image = filename  # Save the filename
+            event.save()
 
         return HttpResponseRedirect(reverse("events:index"))
 
@@ -400,6 +504,16 @@ def deleteEvent(request, event_id):
             event.save()
             return redirect("events:index")
     return redirect("events:index")
+
+
+def deleteEventImage(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    if request.user == event.creator:
+        event.image.delete(save=True)  # This deletes the image and saves the event
+        return redirect("events:event-detail", event_id=event.id)
+    else:
+        # Handle unauthorized attempts
+        return redirect("events:index")
 
 
 def eventDetail(request, event_id):
@@ -459,9 +573,13 @@ def eventDetail(request, event_id):
     ]
 
     user_reaction_emoji = None
+    is_favorite = False
     # attempt to see if the user has logged in
     if request.user.is_authenticated:
         try:
+            is_favorite = FavoriteLocation.objects.filter(
+                user=request.user, location=location
+            ).exists()
             user_reaction = Reaction.objects.get(
                 user=request.user, event=event, is_active=True
             )
@@ -469,7 +587,6 @@ def eventDetail(request, event_id):
         except Reaction.DoesNotExist:
             # if the user has no reaction record
             pass
-
     context = {
         "event": event,
         "join_status": join_status,
@@ -489,6 +606,7 @@ def eventDetail(request, event_id):
         "emoji_data_list": emoji_data_list,
         "EMOJI_CHOICES": EMOJI_CHOICES,
         "user_reaction_emoji": user_reaction_emoji,
+        "is_favorite": is_favorite,
     }
     return render(request, "events/event-detail.html", context)
 
@@ -618,6 +736,9 @@ def addComment(request, event_id):
     form = CommentForm(request.POST)
     if form.is_valid():
         comment = form.save(commit=False)
+        if profanity.contains_profanity(comment.content):
+            messages.warning(request, "The comment contains profanity")
+            return redirect("events:event-detail", event_id=event.id)
         comment.user = request.user
         comment.event = event
         comment.save()
@@ -646,6 +767,9 @@ def addReply(request, event_id, comment_id):
         return redirect("events:event-detail", event_id=event.id)
     if form.is_valid():
         reply = form.save(commit=False)
+        if profanity.contains_profanity(reply.content):
+            messages.warning(request, "The reply contains profanity")
+            return redirect("events:event-detail", event_id=event.id)
         reply.user = request.user
         reply.event = event
         # make sure that the parent comment is a comment not a reply
@@ -789,3 +913,86 @@ def filter_event_capacity_label(capacity_label):
         + f"?min_capacity={min_capacity}&max_capacity={max_capacity}"
     )
     return redirect(url)
+
+
+# recommend event page
+@login_required
+def recommendEvent(request):
+    favorite_locations = FavoriteLocation.objects.filter(user=request.user)
+    favorite_location_ids = [location.id for location in favorite_locations]
+    favorite_events = Event.objects.filter(event_location__in=favorite_location_ids)
+    ny_timezone = pytz.timezone("America/New_York")
+    current_time_ny = timezone.now().astimezone(ny_timezone)
+    event_joins = EventJoin.objects.filter(
+        Q(user=request.user) & (Q(status=APPROVED) | Q(status=PENDING))
+    )
+    event_ids = event_joins.values_list("event_id", flat=True)
+    user_events = Event.objects.filter((Q(creator=request.user) | Q(id__in=event_ids)))
+    user_event_locations = Location.objects.filter(event__in=user_events).distinct()
+    user_event_tag_data = (
+        Tag.objects.filter(event__in=user_events)
+        .distinct()
+        .values("tag_name")
+        .annotate(tag_count=Count("event"))
+        .order_by("-tag_count")
+    )
+    user_events_tag_names = user_event_tag_data.values_list("tag_name", flat=True)
+    recommended_events = Event.objects.exclude(Q(id__in=user_events))
+    recommended_events = recommended_events.filter(
+        Q(is_active=True) & Q(end_time__gt=current_time_ny)
+    )
+    recommended_events_by_location = recommended_events.filter(
+        event_location__in=user_event_locations
+    )
+    # Extract event IDs from recommended_events_by_location and favorite_events
+    recommended_event_ids = {event.id for event in recommended_events_by_location}
+    favorite_event_ids = {event.id for event in favorite_events}
+
+    # Find the event IDs that are in favorite_events but not in recommended_events_by_location
+    events_to_keep = favorite_event_ids - recommended_event_ids
+
+    # Filter favorite_events to keep only the events not present in recommended_events_by_location
+    filtered_favorite_events = [
+        event for event in favorite_events if event.id in events_to_keep
+    ]
+    recommended_events_by_tag = []
+    for user_events_tag in user_events_tag_names:
+        tag_id = Tag.objects.get(tag_name=user_events_tag)
+        events = recommended_events.filter(tags=tag_id)
+        recommended_events_by_tag.append(events)
+
+    recommended_events_by_tag_with_tag = zip(
+        user_events_tag_names, recommended_events_by_tag
+    )
+
+    user_friends = UserFriends.objects.filter(
+        friends=request.user.userprofile, status=APPROVED
+    )
+    friends_ids = user_friends.values_list("user_id", flat=True)
+    user_friends_by_user = User.objects.filter(id__in=friends_ids)
+    recommended_events_by_friend = []
+    for user_friend_by_user in user_friends_by_user:
+        events_created_by_current_friend = recommended_events.filter(
+            creator=user_friend_by_user
+        )[:2]
+        recommended_events_by_friend.extend(list(events_created_by_current_friend))
+
+    if (
+        not recommended_events_by_location
+        and recommended_events_by_tag == []
+        and filtered_favorite_events == []
+        and recommended_events_by_friend == []
+    ):
+        messages.warning(
+            request, "Sorry we haven't found any match! See all the events here!"
+        )
+        return redirect("events:index")
+
+    context = {
+        "favorite_events": filtered_favorite_events,
+        "recommended_events_by_location": recommended_events_by_location,
+        "recommended_events_by_tag_with_tag": recommended_events_by_tag_with_tag,
+        "recommended_events_by_friend": recommended_events_by_friend,
+        "user_friends_by_user": user_friends_by_user,
+    }
+    return render(request, "events/recommend-event.html", context)

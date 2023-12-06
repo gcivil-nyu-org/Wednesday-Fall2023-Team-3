@@ -13,6 +13,11 @@ urlpatterns = [
     path("events/", views.get_data, name="events"),
     path("locations/", views.get_locations, name="locations"),
     path(
+        "event/<int:event_id>/delete-image/",
+        views.deleteEventImage,
+        name="delete_event_image",
+    ),
+    path(
         "<int:event_id>/toggle-join/,",
         views.toggleJoinRequest,
         name="toggle-join-request",
@@ -47,4 +52,10 @@ urlpatterns = [
         name="toggle-reaction",
     ),
     path("homepage/", views.homepage, name="homepage"),
+    path("recommend-event/", views.recommendEvent, name="recommend-event"),
+    path(
+        "<int:location_id>/add-to-favorites/",
+        views.add_to_favorites,
+        name="add_to_favorites",
+    ),
 ]
