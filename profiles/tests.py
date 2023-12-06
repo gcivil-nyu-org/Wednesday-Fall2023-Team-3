@@ -437,6 +437,7 @@ class FriendRemoveTest(TestCase):
         self.assertEqual(friend_request.status, REMOVED)
         self.assertEqual(user_request.status, REMOVED)
 
+
 class EditProfileViewTest(ProfileViewsTest):
     def test_edit_profile_authenticated_user_post_valid_data(self):
         # Log in the user
@@ -466,4 +467,3 @@ class EditProfileViewTest(ProfileViewsTest):
         self.assertRedirects(
             response, reverse("profiles:view_profile", args=[self.user_profile.pk])
         )
-
