@@ -9,3 +9,5 @@
 .DS_Store
 import_data.py
 .coverage
+
+venv/
