@@ -143,25 +143,21 @@ def userRemoveApprovedRequest(request, userprofile_id, user_id):
     return redirect("profiles:view_profile", userprofile_id=userprofile_id)
 
 
-"""
 @login_required
 def edit_profile(request):
-    user_profile = request.user.userprofile
+    user_profile = get_object_or_404(UserProfile, user=request.user)
 
     if request.method == "POST":
         form = ProfileForm(request.POST, request.FILES, instance=user_profile)
         if form.is_valid():
             form.save()
-            # You can add a success message here if needed
-            return redirect(
-                "view_profile"
-            )  # Redirect to the view profile page after successful update
+            messages.success(request, "Profile updated successfully.")
+            return redirect("profiles:view_profile", userprofile_id=user_profile.id)
+        else:
+            messages.error(
+                request, "Error updating profile. Please correct the errors below."
+            )
     else:
         form = ProfileForm(instance=user_profile)
 
-    return render(
-        request,
-        "profiles/edit_profile.html",
-        {"user_profile": user_profile, "form": form},
-    )
-"""
+    return render(request, "profiles/edit_profile.html", {"form": form})
