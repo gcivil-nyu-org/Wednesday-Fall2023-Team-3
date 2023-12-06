@@ -1,6 +1,6 @@
 # profiles/urls.py
 from django.urls import path
-from .views import view_profile  # ,edit_profile
+from .views import view_profile, edit_profile
 from . import views
 
 urlpatterns = [
@@ -25,5 +25,5 @@ urlpatterns = [
         views.userRemoveApprovedRequest,
         name="remove-approved-request",
     ),
-    # path("profile/edit/", edit_profile, name="edit_profile"),
+    path("profile/edit/", edit_profile, name="edit_profile"),
 ]
