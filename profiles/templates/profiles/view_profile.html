@@ -5,7 +5,9 @@
     <div class="profile-header">
         <!-- Profile picture in a circle -->
         <div class="profile-picture">
-            <img src="{{ user_profile.profile_picture.url }}" alt="Profile Picture" class="rounded-circle">
+            {% if user_profile.profile_picture %}
+                <img src="{{ user_profile.profile_picture.url }}" alt="Profile Picture" class="rounded-circle">
+            {% endif %}
         </div>
 
         <!-- User information -->
