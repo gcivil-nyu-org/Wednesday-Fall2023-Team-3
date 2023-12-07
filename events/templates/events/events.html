@@ -1,12 +1,15 @@
-{% extends "events/base.html" %}
-
 {% load static %}
-
-{% block title %}
-Events
-{% endblock %}
-
-{% block extra_styles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Events{% endblock %}</title>
+    <!-- Link Bootstrap CSS -->
+    <link rel="stylesheet" href="{% static 'events/css/bootstrap.min.css' %}">
+    <!-- Your Custom CSS -->
+    <!-- <link rel="stylesheet" href="{% static 'events/css/styles.css' %}"> -->
+    {% block extra_styles %}
 <style>   
     .sticky-note-container-big {
         width: 100%;
@@ -56,22 +59,21 @@ Events
         justify-content: space-between;
     }
 
-    /* .bg-blue {
-        background-color: #a6cff4;
-    } */
+
 
     #map{
-        position: sticky !important;
-        height: 100dvh;
-        width: 50%;
-        align-items: flex-start;
-        top:0;
+    position: sticky !important;
+    height: 100dvh;
+    width: 50%;
+    align-items: flex-start;
+    top:0;
     }
+
     .container{
-        display: flex;
-        padding: 0;
-        align-items: start;
-        
+    display: flex;
+    /* height: 100%; */
+    padding: 0;
+    align-items: start;
     }
 
     .background-transparent {
@@ -79,9 +81,71 @@ Events
     }
 
 </style>
-{% endblock %}
+    {% endblock %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="banner">
+            <h1>Cheer↑</h1>
+        </div>
+        
+        
+        <nav class="navbar navbar-expand-lg navbar-light bg-light px-5">
+            <!-- Brand/logo -->
+            <a class="navbar-brand" href="{% url 'root-homepage' %}">Cheer↑</a>
+            
+            <!-- Toggler/collapsible Button -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Navbar links -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'events:index' %}">Find Events</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'events:create-event' %}">Create an Event</a>
+                    </li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'events:recommend-event' %}">For You</a>
+                        </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'profiles:view_profile' user.userprofile.id %}">Hello {{ user.username }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}?next={{ request.path }}">Log out</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            {% if request.resolver_match.url_name == 'signup' %}  <!-- Check if current path is the signup page -->
+                                <a class="nav-link" href="{% url 'login' %}?next={% url 'events:index' %}">Log in</a>
+                            {% else %}
+                                <a class="nav-link" href="{% url 'login' %}?next={{ request.path }}">Log in</a>
+                            {% endif %}
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'signup' %}?next={{ request.path }}">Sign up</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </nav>
+    </header>
 
-    {% block content %}
+    <main>
+        {% block content %}
+        <!-- Default content goes here, if any -->
         {% if messages %}
             <div id="messages">
                 {% for message in messages %}
@@ -97,7 +161,7 @@ Events
         <div class="container">
         <div class="sticky-note-container-big mx-4">
             <div class="button-container my-4">
-                <h2>Find Your Next Event</h2>    
+                <h2>Find Your Next Event</h2>  
                 <input id="eventsButton" type="button" name="events_near_me" value="Events near me" class="btn btn-secondary" onclick="toggleButton()">
             </div>
 
@@ -153,7 +217,7 @@ Events
                             </div>
                             <div class="col-md-7">
                                 <div class="card-body">
-                                    <a href="{% url 'events:event-detail' event.id %}" class="card-title fs-4 fw-bold mb-5">{{ event.event_name }}</a>
+                                    <a id={{event.id}} href="{% url 'events:event-detail' event.id %}" class="card-title fs-4 fw-bold mb-5 event-name">{{ event.event_name }}</a>
                                     <h5 class="card-text">{{ event.start_time }} - {{ event.end_time }}</h5>
                                     <h6 class="card-text">Location: {{ event.event_location }}</h6>
                                     <h6 class="card-text">Capacity: {{ event.capacity }}</h6>
@@ -183,12 +247,16 @@ Events
         <div id="map"></div>
     </div>
         {% endblock %}
+    </main>
 
-    {% block extra_scripts %}
+
+    <!-- Link Bootstrap JS -->
     <script src="{% static 'events/js/script.js' %}"></script>
     <script async
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDuFnfuacTqMttUXdVn24zdfGUHRi0XN5E&map_ids=9a7e26117f10196d&callback=initMap">
     </script>
+    <script src="{% static 'events/js/bootstrap.bundle.min.js' %}"></script>
+    {% block extra_scripts %}
     <script>
         
         function getQueryParameters() {
@@ -303,4 +371,8 @@ Events
     </script>   
     
     {% endblock %}
-
+</body>
+<footer>
+    <!-- You can put common footer content here -->
+</footer>
+</html>
