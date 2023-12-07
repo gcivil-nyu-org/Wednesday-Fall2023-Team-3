@@ -33,9 +33,8 @@ from django.utils import timezone
 from .forms import EventFilterForm
 from datetime import datetime, timedelta
 import pytz
-from django.db.models import Q
-from notifications.models import Notification
 from django.db.models import Q, Count
+from notifications.models import Notification
 from better_profanity import profanity
 from django.core.files.storage import FileSystemStorage
 
