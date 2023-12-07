@@ -59,6 +59,7 @@ def add_to_favorites(request, location_id):
     FavoriteLocation.objects.create(user=request.user, location=location)
     return JsonResponse({"success": "Location added to favorites"})
 
+
 # Existing imports and index view function...
 def is_convertible_to_float(string):
     try:
