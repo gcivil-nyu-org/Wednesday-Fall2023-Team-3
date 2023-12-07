@@ -41,6 +41,109 @@
 .join-entry-text {
     flex-grow: 1;
 }
+.tags{
+    display: flex;
+}
+.Tag{
+    margin-right: 10px;
+}
+.Tag:last-child{
+    margin-right: 0;
+}
+
+.comment-action {
+    justify-content: space-between;
+}
+
+.gray-container {
+    background-color: #eaeaea;
+}
+
+.sticky-note-outline-container {
+    background-color:rgba(255,255,255,0.3);
+    padding: 20px;
+    border-radius: 25px;
+    /* box-shadow: 5px 5px 15px rgba(0,0,0,0.2); */
+    margin: 0;
+    border-style: dashed;
+    border-color: #afcff3;
+
+}
+
+.replies{
+    border: 1px solid #b8b8b8;
+    background-color: rgba(175,207,243,0.3);
+}
+
+.reply {
+    border-bottom: 1px solid #b8b8b8; /* Light grey border */
+    margin-bottom: 10px; /* Optional: adds some space below the border */
+}
+
+.reply:last-child {
+    border-bottom: none;
+}
+
+.emoji-button {
+    display: inline-block;
+    background: none;
+    border: none;
+    font-size: 2.5em;  /* Adjust the font size as needed */
+    cursor: pointer;
+    text-decoration: none;
+    }
+
+.emoji-button:hover {
+    background-color: #e0e0e0; /* Change background color on hover */
+    border-radius: 20%;
+}
+.user-reaction-emoji {
+    border-radius: 20%;
+    background-color: rgba(175,207,243,0.25);
+}
+
+.emoji-button-fake {
+    display: inline-block;
+    background: none;
+    border: none;
+    font-size: 2.5em;
+}
+
+.emoji-container {
+    width: 70%;
+    min-width: 500px;
+}
+
+ul {
+    list-style-type: none;
+}
+
+.share-event-container {
+    display: flex;
+    justify-content: flex-end; 
+}
+
+.share-event-btn {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.share-event-btn:hover {
+    background-color: #0056b3;
+}
+
+.tag-button {
+    background-color: rgba(255,255,255,0.3);
+}
+
+.tag-button:hover {
+    background-color: rgba(255,255,255,0.7);
+}
+
 
 </style>
 
@@ -48,6 +151,15 @@
 {% endblock %}
 
 {% block content %}
+{% if event.image %}
+    <img src="{{ event.image.url }}" alt="{{ event.event_name }}" class="img-fluid rounded">
+{% endif %}
+{% if event.image %}
+    <form action="{% url 'events:delete_event_image' event.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete Image</button>
+    </form>
+{% endif %}
 {% if messages %}
     <div id="messages">
         {% for message in messages %}
@@ -64,31 +176,248 @@
     <div class="row">
         <!-- Left 2/3 of the page for event details -->
         <div class="col-md-8 my-3">
-            <div class="event-detail-container">
+            <div class="event-detail-container mb-4">
                 <div class="sticky-note-container">
                     <div class="my-3"><h1>{{ event.event_name }}</h1></div>
+                    {% if event.tags.all %}
+                        <div class="tags row row-cols-auto px-2 mb-2">
+                            {% for tag in event.tags.all %}
+                                <a href="{% url 'events:event-detail' event_id=event.id %}?filter_tag={{ tag.id }}" class="col btn btn-sm rounded-pill tag-button mb-2 mx-1 px-2">{{ tag }}</a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                     <h4>Creator</h4>
-                    <p>{{ event.creator }}</p>
+                    <a class="nav-link mb-3 text-primary fw-bold" href="{% url 'profiles:view_profile' event.creator.userprofile.id %}">{{ event.creator }}</a>
                     <h4>Date and Time</h4>
                     <p>from {{ event.start_time }} to {{ event.end_time }}</p>
                     <!-- <img src="event-image.jpg" alt="Event Image" class="img-fluid rounded"> -->
+                    
                     <h4>Location</h4>
                     <p>{{ location }}, {{ location.address }} ({{ location.category }})</p>
                     <h4>Capacity</h4>
                     <p>{{ event.capacity }}</p>
-                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eget tortor in eros euismod dignissim. Vivamus posuere, 
-                        justo sit amet vehicula eleifend, tortor purus viverra elit, ac convallis tortor urna at eros. 
-                        Sed ac enim at purus bibendum placerat. Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                        Nullam eget tortor in eros euismod dignissim. Vivamus posuere, justo sit amet vehicula eleifend, 
-                        tortor purus viverra elit, ac convallis tortor urna at eros. 
-                        Sed ac enim at purus bibendum placerat.
-                    </p>
+                    <h4>Description</h4>
+                    <p>{{ event.description }}</p>
+                    <!-- Container for the button that uses flexbox to align items to the right -->
+                    <div class="share-event-container">
+                        <button onclick="copyEventUrl()" class="share-event-btn">Share Event</button>
+                    </div>
                     <!-- Add more event details here -->
                 </div>
             </div>
+            <!-- emoji reaction part -->
+            <div id="emoji-container-not-creator">
+                {% for emoji, _ in EMOJI_CHOICES %} 
+                    <form action="{% url 'events:toggle-reaction' event.id emoji %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        {% if user.is_authenticated %}
+                            {% if request.user != event.creator %} <!--logged in but not event creator -->
+                                {% if user_reaction_emoji and emoji == user_reaction_emoji %}
+                                    <button type="submit" class="emoji-button mx-3 user-reaction-emoji" value="{{ emoji }}" name="emoji">
+                                        {{ emoji }}
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="emoji-button mx-3" value="{{ emoji }}" name="emoji">
+                                        {{ emoji }}
+                                    </button>
+                                {% endif %}
+                                <span class="reaction-count">
+                                    {% for emoji_item, count, _ in emoji_data_list %}
+                                        {% if emoji_item == emoji %}
+                                            {{ count }}
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                            {% endif %}         
+                        {% else %} <!-- not logged in user to be directed to log in -->
+                            <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="emoji-button mx-3">{{ emoji }}</a>
+                            <span class="reaction-count">
+                                {% for emoji_item, count, _ in emoji_data_list %}
+                                    {% if emoji_item == emoji %}
+                                        {{ count }}
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
+                            {% endif %}
+                    </form>
+                {% endfor %}
+            </div>    
+                    {% if user.is_authenticated and request.user == event.creator%}
+                        <div class="row emoji-container" id="emoji-container-creator">
+                            {% for emoji, _ in EMOJI_CHOICES %}
+                            
+                                {% for emoji_item, count, emoji_users in emoji_data_list %}
+                                
+                                    {% if emoji_item == emoji %}
+                                    <div class="col">
+                                        <div class="row">
+                                            <button class="emoji-button mx-3 text-center" id="emoji-button-fake" data-bs-toggle="collapse" href="#{{ emoji }}-users" role="button" aria-expanded="false" aria-controls="{{ emoji }}-users">{{ emoji }}</button>
+                                        </div>
+                                        <div class="row collapse" id="{{ emoji }}-users"> 
+                                            <p class="text-center">{{ count }}</p>
+                                            {% if emoji_users %}
+                                            <ul class="sticky-note-outline-container mx-1">
+                                                {% for emoji_user in emoji_users %}
+                                                    <li>{{ emoji_user }}</li>
+                                                {% endfor %}
+                                            </ul>  
+                                            {% endif %}
+                                        </div>
+                                    </div>  
+                                    {% endif %}
+                                
+                                {% endfor %}
+                            {% endfor %}
+                        </div>   
+                    {% endif %}
+                
+            <div class="add-comment-form event-detail-container my-5">
+                <div class="sticky-note-container gray-container">
+                    <form action="{% url 'events:add-comment' event.id %}" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <textarea class="form-control" name="content" id="content-comment" placeholder="Share what you think about the event" required></textarea>
+                            {% if comment_form.content.errors %}
+                                <div class="invalid-feedback">
+                                    {{ comment_form.content.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group d-flex align-items-center mt-3 comment-action">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" name="is_private" id="is_private" class="form-check-input" {% if comment_form.is_private.value %} checked {% endif %}>
+                                <label for="is_private" class="form-check-label">Make This Comment Private</label>
+                                {% if comment_form.is_private.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ comment_form.is_private.errors.as_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% if user.is_authenticated %}
+                                <button type="submit" class="btn btn-primary btn-block comment-button" id="add-comment">Comment</button>
+                            {% else %}
+                                <!-- Link for non-authenticated users to log in and then comment -->
+                                <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="btn btn-primary btn-block comment-button">Comment</a>
+                            {% endif %}
+                        </div>  
+                    </form>
+                </div>
+            </div>
+            <div class="custom-control custom-switch my-5 mx-1">
+                <input type="checkbox" class="custom-control-input" id="creator-comments-only" onchange="toggleCreatorComments()" {% if creator_comments_only %} checked {% endif %}>
+                <label class="custom-control-label" for="creator-comments-only">Converstaions Started by Event Creator Only</label>
+            </div>
+            <div class="event-detail-container my-5">            
+                {% for comment, replies in comments_with_replies %}
+                    <!-- Check if the comment is visible to the current user -->
+                    {% if not comment.is_private or request.user == comment.user or request.user == event.creator %}
+                        <div class="comment sticky-note-outline-container my-4">
+                            <div class="row">
+                                <div class="col-md-auto">
+                                    {% if comment.is_private %}
+                                        <h5>{{ comment.user }}: (private comment)</h5>
+                                    {% else %}
+                                        <h5>{{ comment.user }}:</h5>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-auto">
+                                    <p> at {{ comment.created_at|date:"Y-m-d H:i" }}</p>
+                                </div>
+                            </div>
+                            <p>{{ comment.content }}</p>
+                            <div class="row">
+                                <!-- Toggle reply form -->
+                                <div class="col-md-auto flex-fill">
+                                    <button type="button" class="btn btn-outline-primary btn-block comment-button" onclick="showReplyForm({{ event.id }},{{ comment.id }},{{ comment.is_private|lower }})">Reply</button>
+                                </div>
+                                <div class="col-md-auto">
+                                    {% if user.is_authenticated %}
+                                        {% if user == comment.user or user == comment.event.creator %}
+                                            {% if not comment.replies.exists %}
+                                                <form action="{% url 'events:delete-comment' comment.id %}" method="post">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="delete">
+                                                    <button type="submit" class="btn btn-outline-secondary btn-block" onclick="return confirm('Are you sure to delete this comment?');">Delete</button>
+                                                </form>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <!-- Hidden Reply form -->
+                            <div id="reply-form-placeholder-{{ comment.id }}"></div>
+                            
+                            {% if replies %}
+                                <div class="replies sticky-note-outline-container my-4">
+                                    {% for reply in replies %}
+                                        {% if not reply.is_private or request.user == reply.parent.user or request.user == event.creator %}
+                                            <div class="reply">
+                                                <div class="row">
+                                                    <div class="col-md-auto">
+                                                        {% if reply.is_private %}
+                                                            <h5>{{ reply.user }}: (private comment)</h5>
+                                                        {% else %}
+                                                            <h5>{{ reply.user }}:</h5>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="col-md-auto flex-fill">
+                                                        <p> at {{ reply.created_at|date:"Y-m-d H:i" }}</p>
+                                                    </div>
+                                                    <div class="col-md-auto">
+                                                        {% if user.is_authenticated %}
+                                                            {% if user == reply.user or user == comment.event.creator %}
+                                                                <form action="{% url 'events:delete-comment' reply.id %}" method="post">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" name="action" value="delete">
+                                                                    <button type="submit" class="btn btn-outline-secondary btn-sm btn-block" onclick="return confirm('Are you sure to delete this reply?');">Delete</button>
+                                                                </form>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </div>
+                                                    <p>{{ reply.content }}</p>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                <div id="reply-form" style="display:none;">
+                    <div class="sticky-note-container gray-container mt-3">
+                        <form action="" method="post" id="reply-form-content">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <input type="hidden" name="parent_id" value="{{ comment.id }}" id="parent_id">
+                                <textarea class="form-control" name="content" id="content-reply" placeholder="Wanna know more?" required></textarea>
+                            </div>
+                            <div class="form-group d-flex align-items-center mt-3 comment-action">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="is_private" id="is_private-reply" class="form-check-input">             
+                                    <label for="is_private" class="form-check-label">Make This Comment Private</label>
+                                </div>
+                                {% if user.is_authenticated %}
+                                    <button type="submit" class="btn btn-primary btn-block reply-button" id="add-reply">Reply</button>
+                                {% else %}
+                                    <!-- Link for non-authenticated users to log in and then reply -->
+                                    <a href="{% url 'login' %}?next={% url 'events:event-detail' event_id=event.id %}" class="btn btn-primary btn-block comment-button">Comment</a>
+                                {% endif %}
+                            </div>  
+                        </form>
+                    </div>
+                </div>     
+            </div>
+            
         </div>
         <!-- Right 1/3 of the page for the "Join Us" button -->
         <div class="col-md-4 my-3">
+            {% if user.is_authenticated %}
+                {% if not is_favorite %}
+                <button id="addFavoriteButton" class="btn btn-primary btn-block join-button mb-2" data-location-id="{{ location.id }}">Add location to favorites</button>
+                <div id="responseContainer"></div>
+                {% endif %}
+            {% endif %}
             {% if user.is_authenticated %}
                 {% if user != event.creator %}
                     <!-- The user is not the creator of the event -->
@@ -110,20 +439,19 @@
                     {% endif %}
                     <div class="approved-join-list sticky-note-container my-4">
                         <h3>Participants</h3>
-                        <div class="join-entry">{{ event.creator }}</div>
+                        <a class="mb-1 join-entry text-dark" href="{% url 'profiles:view_profile' event.creator.userprofile.id %}">{{ event.creator }}</a>
                         {% for join in approved_join %}
-                            <div class="join-entry">
-                                {{ join.user }}
+                            <a class="mb-1 join-entry text-dark" href="{% url 'profiles:view_profile' join.user.userprofile.id %}">{{ join.user }}</a>
                         {% endfor %}
                     </div>
                 {% else %}
                     <!-- The user is the creator of the event -->
                     <div class="btn btn-primary btn-block join-button" id="my-event-fake">My Event</div>
                     <div class="pending-join-list sticky-note-container my-4">
-                        <h3>Pending Participants ({{ pending_join_count }})</h3>
+                        <h3>Pending ({{ pending_join_count }})</h3>
                         {% for join in pending_join %}
                             <div class="join-entry">
-                                <div class="join-entry-text">{{ join.user }}</div>
+                                <a class="mb-1 join-entry-text text-dark" href="{% url 'profiles:view_profile' join.user.userprofile.id %}">{{ join.user }}</a>
                                 <form action="{% url 'events:approve-request' event.id join.user.id %}" method="post">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-primary btn-block creator-action-button" id="approve-to-join">Approve</button>
@@ -136,10 +464,10 @@
                         {% endfor %}
                     </div>
                     <div class="approved-join-list sticky-note-container my-4">
-                        <h3>Approved Participants ({{ approved_join_count }}) </h3>
+                        <h3>Approved ({{ approved_join_count }}) </h3>
                         {% for join in approved_join %}
                             <div class="join-entry">
-                                <div class="join-entry-text">{{ join.user }}</div>
+                                <a class="mb-1 join-entry-text text-dark" href="{% url 'profiles:view_profile' join.user.userprofile.id %}">{{ join.user }}</a>
                                 <form action="{% url 'events:remove-approved-request' event.id join.user.id %}" method="post">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-outline-primary btn-block creator-action-button" id="remove-approved-to-join" onclick="return confirm('Are you suer to remove this person?');">Remove</button>
@@ -154,6 +482,119 @@
             {% endif %} 
         </div>
     </div>
-</div>
 
+    
+    
+    
+</div>
+  
 {% endblock %}
+
+{% block extra_scripts %}
+
+<script type="text/javascript">
+document.getElementById("addFavoriteButton").addEventListener("click", function() {
+    var locationId = this.getAttribute("data-location-id");
+    var xhr = new XMLHttpRequest();
+
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                var responseContainer = document.getElementById("responseContainer");
+                var jsonResponse = JSON.parse(xhr.responseText);
+                if (jsonResponse.hasOwnProperty('success')) {
+                    responseContainer.textContent = jsonResponse['success'];
+                    // Hide the button if the request was successful
+                    document.getElementById("addFavoriteButton").style.display = "none";
+                } else {
+                    // Handle other responses or errors
+                    responseContainer.textContent = jsonResponse['error'];
+                }
+            } else {
+                console.error('Request failed with status:', xhr.status);
+            }
+        }
+    };
+
+    xhr.open("POST", "{% url 'events:add_to_favorites' 0 %}".replace('0', locationId), true);
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
+    // Get the CSRF token from cookies
+    var csrftoken = getCookie('csrftoken');
+    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+
+    xhr.send();
+});
+
+// Function to get the CSRF token from cookies
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+
+    function toggleCreatorComments() {
+        var isChecked = document.getElementById('creator-comments-only').checked;
+        var url = new URL(window.location);
+        url.searchParams.set('creator_comments_only', isChecked);
+        window.location = url;
+    }
+
+    function showReplyForm(eventId, commentId, isParentPrivate) {
+        console.log("Event ID:", eventId, "Comment ID:", commentId);
+        // Move the reply form to the placeholder of the selected comment
+        var placeholder = document.getElementById('reply-form-placeholder-' + commentId);  
+        var form = document.getElementById("reply-form");
+        var formContent = document.getElementById('reply-form-content');
+
+        if (!placeholder || !form) {
+        console.error("Element not found. Placeholder is null.");
+        return;
+    }
+        if (!form) {
+            console.error("Element not found. form is null.");
+            return;
+        }
+        placeholder.appendChild(form);
+        // Set the parent_id value
+        document.getElementById('parent_id').value = commentId;
+        
+
+        var isPrivateCheckbox = document.getElementById('is_private-reply');
+        if (isParentPrivate) {
+            isPrivateCheckbox.checked = true;
+            isPrivateCheckbox.disabled = true;
+        } else {
+            isPrivateCheckbox.checked = false;
+            isPrivateCheckbox.disabled = false;
+        }
+        // Show the form
+        form.style.display = 'block';
+
+        formContent.action = '/events/' + eventId + '/comment/' + commentId + '/reply/';
+        console.log(formContent.action); 
+
+    }
+    function copyEventUrl() {
+        // Create a temporary hidden text element
+        const tempInput = document.createElement('input');
+        tempInput.value = window.location.href; 
+        document.body.appendChild(tempInput);
+        tempInput.select(); 
+        document.execCommand('copy'); 
+        document.body.removeChild(tempInput); 
+        alert("Event URL copied to clipboard!"); 
+}  
+</script>   
+{% endblock %}
+

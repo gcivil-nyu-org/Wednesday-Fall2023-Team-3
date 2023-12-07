@@ -72,6 +72,20 @@ Log In
 .signup-link:hover {
     text-decoration: underline; 
 }
+.reset-text {
+    text-align: left;
+    margin-top: 20px; 
+    font-size: 16px; 
+}
+
+.reset-link {
+    color: #3498db; 
+    text-decoration: none; 
+}
+
+.reset-link:hover {
+    text-decoration: underline; 
+}
 
 </style>
 
@@ -89,6 +103,10 @@ Log In
 </form>
 <div class="signup-text">
   Are you new to CheerUp? <a href="{% url 'signup' %}" class="signup-link">Sign up now</a>
+</div>
+<div class="reset-text">
+  Forgot Password?
+  <a href="{% url 'reset_password' %}" class="reset-link" >Reset Password</a>
 </div>
 </div>
 
