@@ -1,15 +1,12 @@
+{% extends "events/base.html" %}
+
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Events{% endblock %}</title>
-    <!-- Link Bootstrap CSS -->
-    <link rel="stylesheet" href="{% static 'events/css/bootstrap.min.css' %}">
-    <!-- Your Custom CSS -->
-    <!-- <link rel="stylesheet" href="{% static 'events/css/styles.css' %}"> -->
-    {% block extra_styles %}
+
+{% block title %}
+Events
+{% endblock %}
+
+{% block extra_styles %}
 <style>   
     .sticky-note-container-big {
         width: 100%;
@@ -59,8 +56,6 @@
         justify-content: space-between;
     }
 
-
-
     #map{
     position: sticky !important;
     height: 100dvh;
@@ -81,84 +76,22 @@
     }
 
 </style>
-    {% endblock %}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
-</head>
-<body>
-    <header>
-        <div class="banner">
-            <h1>Cheer↑</h1>
+{% endblock %}
+    
+{% block content %}
+    {% if messages %}
+        <div id="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dimissable fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
         </div>
-        
-        
-        <nav class="navbar navbar-expand-lg navbar-light bg-light px-5">
-            <!-- Brand/logo -->
-            <a class="navbar-brand" href="{% url 'root-homepage' %}">Cheer↑</a>
-            
-            <!-- Toggler/collapsible Button -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <!-- Navbar links -->
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'events:index' %}">Find Events</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'events:create-event' %}">Create an Event</a>
-                    </li>
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'events:recommend-event' %}">For You</a>
-                        </li>
-                    {% endif %}
-                </ul>
-                <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'profiles:view_profile' user.userprofile.id %}">Hello {{ user.username }}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}?next={{ request.path }}">Log out</a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            {% if request.resolver_match.url_name == 'signup' %}  <!-- Check if current path is the signup page -->
-                                <a class="nav-link" href="{% url 'login' %}?next={% url 'events:index' %}">Log in</a>
-                            {% else %}
-                                <a class="nav-link" href="{% url 'login' %}?next={{ request.path }}">Log in</a>
-                            {% endif %}
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'signup' %}?next={{ request.path }}">Sign up</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </nav>
-    </header>
-
-    <main>
-        {% block content %}
-        <!-- Default content goes here, if any -->
-        {% if messages %}
-            <div id="messages">
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dimissable fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-        <div class="container">
+    {% endif %}
+    <div class="container">
         <div class="sticky-note-container-big mx-4">
             <div class="button-container my-4">
                 <h2>Find Your Next Event</h2>  
@@ -246,17 +179,12 @@
         </div>
         <div id="map"></div>
     </div>
-        {% endblock %}
-    </main>
-
-
-    <!-- Link Bootstrap JS -->
+{% endblock %}
+    
+{% block extra_scripts %}
     <script src="{% static 'events/js/script.js' %}"></script>
     <script async
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDuFnfuacTqMttUXdVn24zdfGUHRi0XN5E&map_ids=9a7e26117f10196d&callback=initMap">
-    </script>
-    <script src="{% static 'events/js/bootstrap.bundle.min.js' %}"></script>
-    {% block extra_scripts %}
     <script>
         
         function getQueryParameters() {
