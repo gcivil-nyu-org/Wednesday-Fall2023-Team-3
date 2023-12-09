@@ -11,12 +11,9 @@ Events
     .filter-form {
         padding-left: 2rem;
         margin-bottom: 20px;
-        font-weight: bold;
     }
     .search_name {
-        border-radius: 5px;
         box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
-        margin-right: 20px;
     }
 
     li.event-item {
@@ -63,11 +60,19 @@ Events
     }
 
     #filter {
-        position: static !important;
+        position: sticky !important;
     }
 
     .event-name {
         text-decoration: none;
+    }
+
+    #id_tags {
+        width: 100%;
+        height: 40px;
+        color: #495057;
+        border-color: #dfe2e6;
+        border-radius: 5px;
     }
 
 </style>
@@ -96,34 +101,40 @@ Events
                 <div class="col-md-4" id="filter">
                     <!-- Filtering form -->
                     <form method="get" action="{% url 'events:index' %}" class="filter-form" onsubmit="return validateForm()">
-                        <label for="search_name">Search Events:</label>
-                        <input type="text" name="search" class="search_name" id="search_name" placeholder=" Event Name or Location...">
-                        <br>
-                        <br>
-                        <label for="start_time">Start Time:</label>
-                        <input type="datetime-local" name="start_time" id="start_time">
-                        <label for="end_time">End Time:</label>
-                        <input type="datetime-local" name="end_time" id="end_time">
-                        <br>
-                        <br>
-                        <label for="min_capacity">Minimum Capacity:</label>
-                        <input type="number" id="min_capacity" name="min_capacity" min="0" value="0">
-                        <label for="max_capacity">Maximum Capacity:</label>
-                        <input type="number" id="max_capacity" name="max_capacity" min="0" value="100">
-                        <br>
-                        <br>
-                        <label for="tags">Tags</label>
-                        {{form.tags}}
-                        <br>
-                        <br>
-                        <label for="favorite_location_events">Events on favorite locations:</label>
-                        <input type="checkbox" name="favorite_location_events" id="favorite_location_events">
-                        <br>
-                        <br>
+                        <div class="form-group mb-3">
+                            <label for="search_name" class="form-label">Search Events: *</label>
+                            <input type="text" name="search" class="form-control search_name" id="search_name" placeholder=" Event Name or Location...">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="start_time" class="form-label">Start Time:</label>
+                            <input type="datetime-local" class="form-control" name="start_time" id="start_time">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="end_time" class="form-label">End Time:</label>
+                            <input type="datetime-local" class="form-control" name="end_time" id="end_time">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="min_capacity" class="form-label">Minimum Capacity:</label>
+                            <input type="number" id="min_capacity" class="form-control" name="min_capacity" min="0" value="0">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="max_capacity" class="form-label">Maximum Capacity:</label>
+                            <input type="number" id="max_capacity" class="form-control" name="max_capacity" min="0" value="100">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="tags" class="form-label">Tags</label>
+                            {{ form.tags }}
+                            <!-- {{form.tags}} -->
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="favorite_location_events" class="form-label form-check-label">Events at Favorite Locations:</label>
+                            <input type="checkbox" name="favorite_location_events" class="form-check-input" id="favorite_location_events">
+                        </div>
+                    
                         <div class="row">   
                             <input type="submit" value="Filter" class="col-auto btn btn-secondary mx-2">
                             <input type="submit" name="reset_filters" value="Reset Filters" class="col-auto btn btn-outline-secondary">
-                        </div>
+                        </div> 
 
                     </form>
 
