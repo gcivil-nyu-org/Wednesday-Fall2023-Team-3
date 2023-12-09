@@ -8,14 +8,6 @@ Events
 
 {% block extra_styles %}
 <style>   
-    .sticky-note-container-big {
-        width: 100%;
-        background-color: rgba(255,255,255,0.1);
-        /* padding: 20px; */
-        /* border-radius: 5px; */
-        /* box-shadow: 5px 5px 15px rgba(0,0,0,0.2); */
-        margin: 0;
-    }
     .filter-form {
         padding-left: 2rem;
         margin-bottom: 20px;
@@ -56,139 +48,147 @@ Events
         justify-content: space-between;
     }
 
-    /* .bg-blue {
-        background-color: #a6cff4;
-    } */
-
     #map{
-        position: sticky !important;
-        height: 100dvh;
-        width: 50%;
-        align-items: flex-start;
-        top:0;
-    }
-    .container{
-        display: flex;
-        padding: 0;
-        align-items: start;
-        
+    position: sticky !important;
+    top:0;
     }
 
     .background-transparent {
         background-color: rgba(255,255,255,0.2);
+        border:none;
+    }
+
+    .background-transparent:hover {
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+    }
+
+    #filter {
+        position: static !important;
+    }
+
+    .event-name {
+        text-decoration: none;
     }
 
 </style>
 {% endblock %}
-
-    {% block content %}
-        {% if messages %}
-            <div id="messages">
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dimissable fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-        <div class="container">
-        <div class="sticky-note-container-big mx-4">
-            <div class="button-container my-4">
-                <h2>Find Your Next Event</h2>    
-                <input id="eventsButton" type="button" name="events_near_me" value="Events near me" class="btn btn-secondary" onclick="toggleButton()">
-            </div>
-
-            <!-- Filtering form -->
-            <form method="get" action="{% url 'events:index' %}" class="filter-form" onsubmit="return validateForm()">
-                
-                <label for="start_time">Start Time:</label>
-                <input type="datetime-local" name="start_time" id="start_time">
-
-                <label for="end_time">End Time:</label>
-                <input type="datetime-local" name="end_time" id="end_time">
-                <div class="padding-16"></div>
-                <br>
-                <label for="min_capacity">Minimum Capacity:</label>
-                <input type="number" id="min_capacity" name="min_capacity" min="0" value="0">
-                
-                <label for="max_capacity">Maximum Capacity:</label>
-                <input type="number" id="max_capacity" name="max_capacity" min="0" value="100">
-                <br>
-                <br>
-                <label for="tags">Tags</label>
-                {{form.tags}}
-                <br>
-
-                <div class="padding-16"></div>
-                <br>
-                <label for="search_name">Search Events:</label>
-                <input type="text" name="search" class="search_name" id="search_name" placeholder=" Event Name or Location...">
-                <div class="padding-16"></div>
-                <br>
-                <label for="favorite_location_events">Events on favorite locations:</label>
-                <input type="checkbox" name="favorite_location_events" id="favorite_location_events">
-                <br>
-                <div class="row justify-content-end mx-1">   
-                    <input type="submit" value="Filter" class="col-auto btn btn-secondary mx-2">
-                    <input type="submit" name="reset_filters" value="Reset Filters" class="col-auto btn btn-outline-secondary">
+    
+{% block content %}
+    {% if messages %}
+        <div id="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dimissable fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
-
-            </form>
-
-            <!-- Error messages for invalid input -->
-            {% if error %}
-            <div class="alert alert-danger" role="alert">
-                {{ error }}
+            {% endfor %}
+        </div>
+    {% endif %}
+    <div class="row pl-5">
+        <div class="col-md-7">
+            <div class="row button-container my-4 mx-1">
+                <h2 class="col">Find Your Next Event</h2>  
+                <input id="eventsButton" type="button" name="events_near_me" value="Events near me" class="col-md-auto btn btn-outline-secondary btn-block" onclick="toggleButton()">
             </div>
-            {% endif %}
-            <ul>
-                {% for event in events %}
-                    <div class="card my-4 background-transparent">
-                        <div class="row g-0">
-                            <div class="col-md-5 event-image">
-                                <img src="{% static 'events/images/Image_Placeholder.jpg' %}" alt="..." class="rounded-start">
-                            </div>
-                            <div class="col-md-7">
-                                <div class="card-body">
-                                    <a href="{% url 'events:event-detail' event.id %}" class="card-title fs-4 fw-bold mb-5">{{ event.event_name }}</a>
-                                    <h5 class="card-text">{{ event.start_time }} - {{ event.end_time }}</h5>
-                                    <h6 class="card-text">Location: {{ event.event_location }}</h6>
-                                    <h6 class="card-text">Capacity: {{ event.capacity }}</h6>
-                                    {% if user.is_authenticated and user == event.creator %}
-                                        <div class="event-button-container mt-3">
-                                            <form method="GET" action="{% url 'events:update-event' event.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="action" value="delete">
-                                                <button class="btn btn-primary" type="submit">Update Event</button>
-                                            </form>
-                                            <form method="post" action="{% url 'events:delete-event' event.id %}" onsubmit="return confirm('Are you sure you want to delete this event?');">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="action" value="delete">
-                                                <button class="btn btn-outline-primary" type="submit">Delete Event</button>
-                                            </form>
+            <div class="row mx-1">
+                <div class="col-md-4" id="filter">
+                    <!-- Filtering form -->
+                    <form method="get" action="{% url 'events:index' %}" class="filter-form" onsubmit="return validateForm()">
+                        <label for="search_name">Search Events:</label>
+                        <input type="text" name="search" class="search_name" id="search_name" placeholder=" Event Name or Location...">
+                        <br>
+                        <br>
+                        <label for="start_time">Start Time:</label>
+                        <input type="datetime-local" name="start_time" id="start_time">
+                        <label for="end_time">End Time:</label>
+                        <input type="datetime-local" name="end_time" id="end_time">
+                        <br>
+                        <br>
+                        <label for="min_capacity">Minimum Capacity:</label>
+                        <input type="number" id="min_capacity" name="min_capacity" min="0" value="0">
+                        <label for="max_capacity">Maximum Capacity:</label>
+                        <input type="number" id="max_capacity" name="max_capacity" min="0" value="100">
+                        <br>
+                        <br>
+                        <label for="tags">Tags</label>
+                        {{form.tags}}
+                        <br>
+                        <br>
+                        <label for="favorite_location_events">Events on favorite locations:</label>
+                        <input type="checkbox" name="favorite_location_events" id="favorite_location_events">
+                        <br>
+                        <br>
+                        <div class="row">   
+                            <input type="submit" value="Filter" class="col-auto btn btn-secondary mx-2">
+                            <input type="submit" name="reset_filters" value="Reset Filters" class="col-auto btn btn-outline-secondary">
+                        </div>
+
+                    </form>
+
+                    <!-- Error messages for invalid input -->
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-8 pr-5">
+                    <ul>
+                        {% for event in events %}
+                            <div class="card mb-5 background-transparent p-1">
+                                <div class="row g-0">
+                                    <div class="col-md-5 event-image">
+                                        <img src="{% static 'events/images/Image_Placeholder.jpg' %}" alt="..." class="rounded-3">
+                                    </div>
+                                    <div class="col-md-7">
+                                        <div class="card-body">
+                                            <a id={{event.id}} href="{% url 'events:event-detail' event.id %}" class="card-title fs-4 fw-bold mb-5 event-name">{{ event.event_name }}</a>
+                                            <br>
+                                            {{ event.start_time }} -
+                                            <br>
+                                            {{ event.end_time }}
+                                            <br>
+                                            <div class="mb-1"></div>
+                                            {{ event.event_location }}
+                                            <br>
+                                            <div class="mb-1"></div>
+                                            {{ event.capacity }} people
+                                            <br>
+                                            {% if user.is_authenticated and user == event.creator %}
+                                                <div class="event-button-container mt-3">
+                                                    <form method="GET" action="{% url 'events:update-event' event.id %}">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="action" value="delete">
+                                                        <button class="btn btn-primary" type="submit">Update Event</button>
+                                                    </form>
+                                                    <form method="post" action="{% url 'events:delete-event' event.id %}" onsubmit="return confirm('Are you sure you want to delete this event?');">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="action" value="delete">
+                                                        <button class="btn btn-outline-primary" type="submit">Delete Event</button>
+                                                    </form>
+                                                </div>
+                                            {% endif %}
                                         </div>
-                                    {% endif %}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                {% empty %}
-                <li>No events that fit your schedule? How about <button class="btn btn-secondary" onclick='window.location="{% url 'events:create-event' %}";'>CREATING</button> one?</li>
-                {% endfor %}
-            </ul>
+                        {% empty %}
+                        <li>No events that fit your schedule? How about <button class="btn btn-secondary" onclick='window.location="{% url 'events:create-event' %}";'>CREATING</button> one?</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
         </div>
-        <div id="map"></div>
+        <div class="col-md-5 vh-100" id="map"></div>
     </div>
-        {% endblock %}
-
-    {% block extra_scripts %}
+{% endblock %}
+    
+{% block extra_scripts %}
     <script src="{% static 'events/js/script.js' %}"></script>
     <script async
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDuFnfuacTqMttUXdVn24zdfGUHRi0XN5E&map_ids=9a7e26117f10196d&callback=initMap">
-    </script>
     <script>
         
         function getQueryParameters() {
@@ -303,4 +303,8 @@ Events
     </script>   
     
     {% endblock %}
-
+</body>
+<footer>
+    <!-- You can put common footer content here -->
+</footer>
+</html>
