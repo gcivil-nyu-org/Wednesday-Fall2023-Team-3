@@ -200,8 +200,10 @@ def display_notifications(request):
             Notification.objects.filter(id=notification_id).delete()
             return redirect("profiles:display_notifications")
     for notification in Notification.objects.filter(user=request.user.id):
-        is_read = notification.is_read
-        Notification.objects.filter(id=notification.id).update(is_read=is_read + 1)
+        is_read = notification.is_read + 1
+        if is_read > 2:
+            is_read = 2
+        Notification.objects.filter(id=notification.id).update(is_read=is_read)
     notifications = Notification.objects.filter(user=request.user.id).order_by("-id")
     cond1 = Q(user=request.user.id)
     cond2 = Q(is_read__lte=0)
