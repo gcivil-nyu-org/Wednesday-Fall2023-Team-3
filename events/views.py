@@ -76,8 +76,6 @@ def is_convertible_to_float(string):
 
 
 def index(request):
-    for noti in Notification.objects.values():
-        print(noti)
     if "reset_filters" in request.GET:
         # If so, redirect to the same page without query parameters to show all events
         return redirect("events:index")
