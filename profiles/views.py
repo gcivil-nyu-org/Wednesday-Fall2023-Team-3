@@ -43,7 +43,7 @@ def view_profile(request, userprofile_id):
     approved_request_count = approved_request.count()
     pending_request_count = pending_request.count()
     cond1 = Q(user=request.user.id)
-    cond2 = Q(is_read__lte=1)
+    cond2 = Q(is_read__lte=0)
     unread_notifications = Notification.objects.filter(cond1 & cond2).order_by("-id")
     context = {
         "user_profile": user_profile,
