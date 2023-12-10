@@ -13,9 +13,48 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
 </head>
 <body>
+    <style>
+        .icon-button {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      color: #333333;
+      background: #dddddd;
+      border: none;
+      outline: none;
+      border-radius: 50%;
+    }
+    
+    .icon-button:hover {
+      cursor: pointer;
+    }
+    
+    .icon-button:active {
+      background: #cccccc;
+    }
+    
+    .icon-button__badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 18px;
+      height: 18px;
+      background: red;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      font-size: 80%;
+    }
+    </style>
     <header>
         <div class="banner">
             <h1>Cheer↑</h1>
@@ -48,6 +87,12 @@
                     {% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'profiles:view_profile' user.id %}">Hello {{ user.username }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <button type="button" class="icon-button" onclick="window.location.href='{% url 'profiles:display_notifications' %}'">
+                                <span class="material-icons">notifications</span>
+                                <span class="icon-button__badge">{{notifications.count}}</span>
+                              </button>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'logout' %}?next={{ request.path }}">Log out</a>

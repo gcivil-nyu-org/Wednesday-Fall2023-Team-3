@@ -17,6 +17,7 @@ from .constants import (
 )
 from django.contrib.auth.models import User
 from .models import UserFriends
+from events.models import Notification
 
 
 @login_required
@@ -40,7 +41,7 @@ def view_profile(request, userprofile_id):
         pending_request = user_profile.userfriends_set.filter(status=PENDING)
     approved_request_count = approved_request.count()
     pending_request_count = pending_request.count()
-
+    notifications = Notification.objects.filter(user=request.user.id).order_by("-id")
     context = {
         "user_profile": user_profile,
         "events": events,
@@ -54,6 +55,7 @@ def view_profile(request, userprofile_id):
         "WITHDRAWN": WITHDRAWN,
         "REJECTED": REJECTED,
         "REMOVED": REMOVED,
+        "notifications": notifications,
     }
 
     return render(request, "profiles/view_profile.html", context)
@@ -72,8 +74,16 @@ def toggleFriendRequest(request, userprofile_id):
     if not created:
         if add_friend.status == PENDING:
             add_friend.status = WITHDRAWN
+            Notification.objects.create(
+                user=receiver_user.user,
+                message=f"'{request.user}' has removed their request to be your friend.",
+            )
         else:
             add_friend.status = PENDING
+            Notification.objects.create(
+                user=receiver_user.user,
+                message=f"'{request.user}' has requested to be your friend.",
+            )
         add_friend.save()
     return redirect("profiles:view_profile", userprofile_id=userprofile_id)
 
@@ -97,6 +107,10 @@ def userApproveRequest(request, userprofile_id, user_id):
 
         if add_friend.status == PENDING:
             add_friend.status = APPROVED
+            Notification.objects.create(
+                user=add_friend.user,
+                message=f"'{request.user}' has accepted your friend request.",
+            )
             add_friend.save()
             selfjoin.status = APPROVED
             selfjoin.save()
@@ -119,6 +133,10 @@ def userRejectRequest(request, userprofile_id, user_id):
         selfjoin.save()
     if add_friend.status == PENDING:
         add_friend.status = REJECTED
+        Notification.objects.create(
+            user=add_friend.user,
+            message=f"'{request.user}' has rejected your friend request.",
+        )
         add_friend.save()
     return redirect("profiles:view_profile", userprofile_id=userprofile_id)
 
@@ -139,6 +157,10 @@ def userRemoveApprovedRequest(request, userprofile_id, user_id):
         selfjoin.save()
     if add_friend.status == APPROVED:
         add_friend.status = REMOVED
+        Notification.objects.create(
+            user=add_friend.user,
+            message=f"'{request.user}' has removed you from the friend list.",
+        )
         add_friend.save()
     return redirect("profiles:view_profile", userprofile_id=userprofile_id)
 
@@ -159,5 +181,16 @@ def edit_profile(request):
             )
     else:
         form = ProfileForm(instance=user_profile)
-
     return render(request, "profiles/edit_profile.html", {"form": form})
+
+
+@login_required
+def display_notifications(request):
+    if request.method == "POST":
+        notification_id = request.POST.get("notification_id")
+        if notification_id:
+            Notification.objects.filter(id=notification_id).delete()
+            return redirect("profiles:display_notifications")
+    notifications = Notification.objects.filter(user=request.user.id).order_by("-id")
+    context = {"notifications": notifications}
+    return render(request, "profiles/notifications.html", context)
