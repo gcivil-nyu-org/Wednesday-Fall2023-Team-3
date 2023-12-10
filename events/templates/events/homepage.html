@@ -8,16 +8,17 @@ Cheer↑
 <style>
 .slogan-container {
     width: 90%;
-    margin: 5% 5% 3% 5%;
-    background-color: rgba(175,207,243,0.3);
-    padding: 3%;
+    margin: 2% 5% 1% 5%;
+    background-color: rgba(175,207,243,1);
+    padding: 4% 3% 4% 3%;
     border-radius: 25px;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
     /* border: 1px solid #b8b8b8; */
 }
 
 .label-container {
     width: 90%;
-    margin: 5% 5% 3% 5%;
+    margin: 3% 5% 3% 5%;
     /* background-color: rgba(175,207,243,0.3); */
     padding: 3%;
     border-radius: 25px;
@@ -33,8 +34,8 @@ Cheer↑
     justify-content: center;
     border: 1px solid #b8b8b8;
     margin: 0 auto;
-    width: 135px;
-    height: 135px;
+    width: 120px;
+    height: 120px;
 }
 
 .label-container {
@@ -78,16 +79,74 @@ Cheer↑
 .round-corner {
     border-radius: 25%;
 }
+
+.carousel-image {
+    width: 90%;
+    margin: 2% 5% 1% 5%;
+    height: auto;
+}
+
+.carousel-image img {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    border-radius: 25px;
+    object-position: center center;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+}
+
+.blue {
+    color: rgb(124, 179, 243);
+}
+
+
+
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="slogan-container">
-    <h1 class="display-2 my-3">CheerUp </h1>
-    <p class="lead"> Where Every Day Sparks Events</p>
-    <hr class="my-4">
-    <p> Your NYU social hub. Discover meet-up spots, plan events, and connect with your neighbors in New York City. Explore parks, museums, and more. You can list your tasks, share your goals, and keep motivated through receiving cheer and support from your neighbors. Share what you want to do and we help you find: places, teammates and support!
-    </p>
+<div id="slide-show" class="carousel slide" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+        <button type="button" data-bs-target="#slide-show" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+        <button type="button" data-bs-target="#slide-show" data-bs-slide-to="1" aria-label="Slide 2"></button>
+        <button type="button" data-bs-target="#slide-show" data-bs-slide-to="2" aria-label="Slide 3"></button>
+        <button type="button" data-bs-target="#slide-show" data-bs-slide-to="3" aria-label="Slide 4"></button>
+    </div>
+    <div class="carousel-inner">
+        <div class="carousel-item active" data-bs-interval="4000">
+            <div class="slogan-container">
+                <h1 class="display-2 my-3">CheerUp </h1>
+                <p class="lead"> Where Every Day Sparks Events</p>
+                <hr class="my-4">
+                <p> Your NYU social hub. Discover meet-up spots, plan events, and connect with your neighbors in New York City. Explore parks, museums, and more. You can list your tasks, share your goals, and keep motivated through receiving cheer and support from your neighbors. Share what you want to do and we help you find: places, teammates and support!
+                </p>
+            </div>
+        </div>
+        
+        <div class="carousel-item" data-bs-interval="4000">
+            <div class="carousel-image">
+                <img src="static/events/images/Washington-Square-Park.jpg" class="d-block w-100 " alt="Event Image">
+            </div>
+        </div>
+        <div class="carousel-item" data-bs-interval="4000">
+            <div class="carousel-image">
+                <img src="static/events/images/Met.jpg" class="d-block w-100" alt="Event Image">
+            </div>
+        </div>
+        <div class="carousel-item" data-bs-interval="4000">
+            <div class="carousel-image">
+                <img src="static/events/images/NYPL.jpg" class="d-block w-100" alt="Event Image">
+            </div>
+        </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#slide-show" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#slide-show" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
 </div>
 <div class="label-container">
     <ul class="nav nav-tabs">
@@ -95,13 +154,13 @@ Cheer↑
             <p class="nav-link fw-bold fs-5 m-3 disabled">PICK ONE!</p>
         </li>
         <li class="nav-item">
-            <a class="nav-link active fw-bold fs-5 m-3" id="tag-tab" data-bs-toggle="tab" data-bs-target="#tag_label">TAG</a>
+            <a class="nav-link active fw-bold fs-5 m-3 blue" id="tag-tab" data-bs-toggle="tab" data-bs-target="#tag_label">TAG</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link fw-bold fs-5 m-3" id="time-tab" data-bs-toggle="tab" data-bs-target="#time_label">TIME</a>
+            <a class="nav-link fw-bold fs-5 m-3 blue" id="time-tab" data-bs-toggle="tab" data-bs-target="#time_label">TIME</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link fw-bold fs-5 m-3" id="capacity-tab" data-bs-toggle="tab" data-bs-target="#capacity_label">CAPACITY</a>
+            <a class="nav-link fw-bold fs-5 m-3 blue" id="capacity-tab" data-bs-toggle="tab" data-bs-target="#capacity_label">CAPACITY</a>
         </li>
     </ul>
     <div class="tab-content my-3">
@@ -164,4 +223,17 @@ Cheer↑
     </div>  
 </div>
 
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        var sloganContainer = document.querySelector('.slogan-container');
+        var carouselImages = document.querySelectorAll('.carousel-image');
+
+        carouselImages.forEach(function (image) {
+            image.style.height = sloganContainer.clientHeight + 'px';
+        });
+    });
+</script>
 {% endblock %}

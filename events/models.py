@@ -23,6 +23,12 @@ class Event(models.Model):
         return self.event_name
 
 
+class FavoriteLocation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE)
+    # Other fields if needed
+
+
 class EventJoin(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
@@ -58,3 +64,10 @@ class Reaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.event.event_name} - {self.get_emoji_display()}"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.IntegerField(default=0)
