@@ -20,6 +20,8 @@ from .models import UserFriends
 from events.models import Notification, FavoriteLocation
 from django.db.models import Q
 from location.models import Location
+
+
 @login_required
 def view_profile(request, userprofile_id):
     user_profile = get_object_or_404(UserProfile, pk=userprofile_id)
@@ -45,7 +47,9 @@ def view_profile(request, userprofile_id):
     cond2 = Q(is_read__lte=0)
     unread_notifications = Notification.objects.filter(cond1 & cond2).order_by("-id")
     favorite_locations = FavoriteLocation.objects.filter(user=request.user)
-    favorite_location_ids = [favorite_location.location.id for favorite_location in favorite_locations]
+    favorite_location_ids = [
+        favorite_location.location.id for favorite_location in favorite_locations
+    ]
     favorite_locations_details = Location.objects.filter(id__in=favorite_location_ids)
     context = {
         "user_profile": user_profile,
@@ -61,7 +65,7 @@ def view_profile(request, userprofile_id):
         "REJECTED": REJECTED,
         "REMOVED": REMOVED,
         "unread_notifications": unread_notifications,
-        'favorite_locations': favorite_locations_details,
+        "favorite_locations": favorite_locations_details,
     }
 
     return render(request, "profiles/view_profile.html", context)
