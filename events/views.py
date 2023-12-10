@@ -338,12 +338,8 @@ def updateEvent(request, event_id):
             )
 
         image = request.FILES.get("image")
-<<<<<<< HEAD
-        if errors:
-=======
 
         if update_errors:
->>>>>>> 42b9731c14b864ebd60ec50ab37bffee7610a136
             # Return a JSON response with a 400 status code and the error messages
             return JsonResponse(update_errors, status=400)
 
