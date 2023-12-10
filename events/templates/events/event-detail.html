@@ -444,6 +444,7 @@ ul {
                             <a class="mb-1 join-entry text-dark" href="{% url 'profiles:view_profile' join.user.userprofile.id %}">{{ join.user }}</a>
                         {% endfor %}
                     </div>
+                    <button type="submit" class="btn btn-primary btn-block join-button" id="chat" onclick="startChat('{{ event.creator.userprofile.id }}');">Chat with event creator</button>
                 {% else %}
                     <!-- The user is the creator of the event -->
                     <div class="btn btn-primary btn-block join-button" id="my-event-fake">My Event</div>
@@ -595,6 +596,12 @@ function getCookie(name) {
         document.body.removeChild(tempInput); 
         alert("Event URL copied to clipboard!"); 
 }  
-</script>   
+function startChat(recipientId) {
+// Logic to start a chat or navigate to the chat page with recipient ID
+// For example:
+window.location.href = `/chat/${recipientId}/`;  // Redirect to chat with the recipient
+}
+
+</script>
 {% endblock %}
 
