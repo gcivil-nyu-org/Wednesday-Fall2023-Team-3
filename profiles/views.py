@@ -204,7 +204,7 @@ def display_notifications(request):
         Notification.objects.filter(id=notification.id).update(is_read=is_read + 1)
     notifications = Notification.objects.filter(user=request.user.id).order_by("-id")
     cond1 = Q(user=request.user.id)
-    cond2 = Q(is_read__lte=1)
+    cond2 = Q(is_read__lte=0)
     unread_notifications = Notification.objects.filter(cond1 & cond2).order_by("-id")
     context = {
         "notifications": notifications,
