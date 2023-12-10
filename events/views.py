@@ -913,6 +913,11 @@ def toggleReaction(request, event_id, emoji):
                 message=f"User '{request.user}' has removed reaction from event '{event.event_name}'.",
             )
         reaction.save()
+    else:
+        Notification.objects.create(
+            user=event.creator,
+            message=f"User '{request.user}' has reacted to event '{event.event_name}'.",
+        )
 
     return redirect("events:event-detail", event_id=event.id)
 
