@@ -1,6 +1,14 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from .models import Event, Location, EventJoin, Comment, Reaction, FavoriteLocation
+from .models import (
+    Event,
+    Location,
+    EventJoin,
+    Comment,
+    Notification,
+    Reaction,
+    FavoriteLocation,
+)
 from profiles.models import UserFriends, UserProfile
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -461,11 +469,13 @@ class EventJoinRequestTest(TestCase):
         # Check that the EventJoin was created with the status 'pending'
         join = EventJoin.objects.get(user=self.user, event=self.event)
         self.assertEqual(join.status, PENDING)
+        self.assertEqual(Notification.objects.count(), 1)
         # Make the POST request again to toggle the status to 'withdrawn'
         response = self.client.post(url)
         # Fetch the updated join object and check its status
         join.refresh_from_db()
         self.assertEqual(join.status, WITHDRAWN)
+        self.assertEqual(Notification.objects.count(), 2)
         # Check the response to ensure the user is redirected to the event detail page
         self.assertRedirects(
             response, reverse("events:event-detail", args=[self.event.id])
@@ -525,6 +535,7 @@ class EventCreatorManageRequestTest(TestCase):
         response = self.client.post(url)
         self.join_request.refresh_from_db()
         self.assertEqual(response.status_code, 302)
+        self.assertEqual(Notification.objects.count(), 1)
         self.assertEqual(self.join_request.status, APPROVED)
 
     def test_reject_join_request(self):
@@ -533,6 +544,7 @@ class EventCreatorManageRequestTest(TestCase):
         response = self.client.post(url)
         self.join_request.refresh_from_db()
         self.assertEqual(response.status_code, 302)
+        self.assertEqual(Notification.objects.count(), 1)
         self.assertEqual(self.join_request.status, REJECTED)
 
     def test_non_creator_cannot_approve(self):
@@ -634,6 +646,7 @@ class EventCreatorRemoveApprovedRequestTest(TestCase):
         response = self.client.post(url)
         self.join_request.refresh_from_db()
         self.assertEqual(response.status_code, 302)
+        self.assertEqual(Notification.objects.count(), 1)
         self.assertEqual(self.join_request.status, REMOVED)
 
     def test_non_creator_cannot_remove(self):
@@ -970,6 +983,7 @@ class CommentTestCase(TestCase):
         response = self.client.post(url, {"content": "Test comment"})
         # Check that the Comment was created
         self.assertEqual(Comment.objects.count(), 1)
+        self.assertEqual(Notification.objects.count(), 1)
         comment = Comment.objects.latest("id")
         self.assertEqual(comment.content, "Test comment")
         self.assertEqual(comment.user, self.user)
@@ -1100,6 +1114,7 @@ class ReplyTestCase(TestCase):
             response.status_code, 302
         )  # Assuming a redirect after successful posting
         self.assertEqual(Comment.objects.count(), 2)
+        self.assertEqual(Notification.objects.count(), 1)
         reply = Comment.objects.latest("id")
         self.assertEqual(reply.content, reply_content)
         self.assertEqual(reply.parent, self.parent)
@@ -1353,6 +1368,7 @@ class ReactionTestCase(TestCase):
         # Make the POST request again to withdraw the reaction
         response = self.client.post(url)
         reaction.refresh_from_db()
+        self.assertEqual(Notification.objects.count(), 1)
         self.assertFalse(reaction.is_active)
         self.assertRedirects(
             response, reverse("events:event-detail", args=[self.event.id])

@@ -85,6 +85,11 @@ def toggleFriendRequest(request, userprofile_id):
                 message=f"'{request.user}' has requested to be your friend.",
             )
         add_friend.save()
+    else:
+        Notification.objects.create(
+            user=receiver_user.user,
+            message=f"'{request.user}' has requested to be your friend.",
+        )
     return redirect("profiles:view_profile", userprofile_id=userprofile_id)
 
 
