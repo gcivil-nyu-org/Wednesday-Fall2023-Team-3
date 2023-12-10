@@ -10,7 +10,7 @@ Cheer↑
     width: 90%;
     margin: 2% 5% 1% 5%;
     background-color: rgba(175,207,243,1);
-    padding: 3%;
+    padding: 4% 3% 4% 3%;
     border-radius: 25px;
     box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
     /* border: 1px solid #b8b8b8; */
@@ -95,6 +95,10 @@ Cheer↑
     box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
 }
 
+.blue {
+    color: rgb(124, 179, 243);
+}
+
 
 
 </style>
@@ -150,13 +154,13 @@ Cheer↑
             <p class="nav-link fw-bold fs-5 m-3 disabled">PICK ONE!</p>
         </li>
         <li class="nav-item">
-            <a class="nav-link active fw-bold fs-5 m-3" id="tag-tab" data-bs-toggle="tab" data-bs-target="#tag_label">TAG</a>
+            <a class="nav-link active fw-bold fs-5 m-3 blue" id="tag-tab" data-bs-toggle="tab" data-bs-target="#tag_label">TAG</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link fw-bold fs-5 m-3" id="time-tab" data-bs-toggle="tab" data-bs-target="#time_label">TIME</a>
+            <a class="nav-link fw-bold fs-5 m-3 blue" id="time-tab" data-bs-toggle="tab" data-bs-target="#time_label">TIME</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link fw-bold fs-5 m-3" id="capacity-tab" data-bs-toggle="tab" data-bs-target="#capacity_label">CAPACITY</a>
+            <a class="nav-link fw-bold fs-5 m-3 blue" id="capacity-tab" data-bs-toggle="tab" data-bs-target="#capacity_label">CAPACITY</a>
         </li>
     </ul>
     <div class="tab-content my-3">
@@ -223,14 +227,6 @@ Cheer↑
 
 {% block extra_scripts %}
 <script>
-    // document.addEventListener('DOMContentLoaded', function(){
-    //     var sloganContainer = document.querySelector('.slogan-container');
-    //     var carouselImages = document.querySelectorAll('.carousel-image');
-
-    //     carouselImages.forEach(function (image) {
-    //         image.style.height = sloganContainer.clientHeight + 'px';
-    //     });
-    // });
     document.addEventListener('DOMContentLoaded', function(){
         var sloganContainer = document.querySelector('.slogan-container');
         var carouselImages = document.querySelectorAll('.carousel-image');
