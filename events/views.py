@@ -348,7 +348,10 @@ def updateEvent(request, event_id):
             if image:
                 if event.image:
                     event.image.delete()  # Delete the old image
+                fs = FileSystemStorage()
+                fs.save(image.name, image)
                 event.image = image.name
+                event.save()
             elif event.image:
                 event.image.delete()
 
