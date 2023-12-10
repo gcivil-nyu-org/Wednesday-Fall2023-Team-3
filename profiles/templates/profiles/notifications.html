@@ -26,7 +26,20 @@
             padding-bottom: 20px;
             margin-bottom: 10px;
             font-weight: 600;
-            background-color: #e2e2e2
+            background-color: #51a1d7;
+            color: #fff;
+        }
+        .notification-read {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #ccc;
+            padding: 10px;
+            padding-top: 20px;
+            padding-bottom: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            background-color: #e2e2e2;
         }
 
         .delete-button {
@@ -42,6 +55,16 @@
 
     <div class="notifications-container">
         {% for notification in notifications %}
+            {% if notification.is_read > 1 %}
+            <div class="notification-read">
+                <span class="notification-text">{{ notification.message }}</span>
+                <form method="post" action="{% url 'profiles:display_notifications' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                    <button type="submit" class="delete-button">X</button>
+                </form>
+            </div>
+            {% else %}
             <div class="notification">
                 <span class="notification-text">{{ notification.message }}</span>
                 <form method="post" action="{% url 'profiles:display_notifications' %}">
@@ -50,6 +73,8 @@
                     <button type="submit" class="delete-button">X</button>
                 </form>
             </div>
+            {% endif %}
+            
         {% endfor %}
     </div>
 {% endblock %}

@@ -91,7 +91,9 @@
                         <li class="nav-item">
                             <button type="button" class="icon-button" onclick="window.location.href='{% url 'profiles:display_notifications' %}'">
                                 <span class="material-icons">notifications</span>
-                                <span class="icon-button__badge">{{notifications.count}}</span>
+                                {% if unread_notifications.count > 0 %}
+                                <span class="icon-button__badge">{{unread_notifications.count}}</span>
+                                {% endif %}
                               </button>
                         </li>
                         <li class="nav-item">

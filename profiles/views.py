@@ -18,6 +18,7 @@ from .constants import (
 from django.contrib.auth.models import User
 from .models import UserFriends
 from events.models import Notification
+from django.db.models import Q
 
 
 @login_required
@@ -41,7 +42,9 @@ def view_profile(request, userprofile_id):
         pending_request = user_profile.userfriends_set.filter(status=PENDING)
     approved_request_count = approved_request.count()
     pending_request_count = pending_request.count()
-    notifications = Notification.objects.filter(user=request.user.id).order_by("-id")
+    cond1 = Q(user=request.user.id)
+    cond2 = Q(is_read__lte=1)
+    unread_notifications = Notification.objects.filter(cond1 & cond2).order_by("-id")
     context = {
         "user_profile": user_profile,
         "events": events,
@@ -55,7 +58,7 @@ def view_profile(request, userprofile_id):
         "WITHDRAWN": WITHDRAWN,
         "REJECTED": REJECTED,
         "REMOVED": REMOVED,
-        "notifications": notifications,
+        "unread_notifications": unread_notifications,
     }
 
     return render(request, "profiles/view_profile.html", context)
@@ -196,6 +199,15 @@ def display_notifications(request):
         if notification_id:
             Notification.objects.filter(id=notification_id).delete()
             return redirect("profiles:display_notifications")
+    for notification in Notification.objects.filter(user=request.user.id):
+        is_read = notification.is_read
+        Notification.objects.filter(id=notification.id).update(is_read=is_read + 1)
     notifications = Notification.objects.filter(user=request.user.id).order_by("-id")
-    context = {"notifications": notifications}
+    cond1 = Q(user=request.user.id)
+    cond2 = Q(is_read__lte=1)
+    unread_notifications = Notification.objects.filter(cond1 & cond2).order_by("-id")
+    context = {
+        "notifications": notifications,
+        "unread_notifications": unread_notifications,
+    }
     return render(request, "profiles/notifications.html", context)
