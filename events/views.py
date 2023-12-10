@@ -263,7 +263,6 @@ def updateEvent(request, event_id):
 
         description = request.POST.get("description", "")
         image = request.FILES.get("image")
-
         if errors:
             # Return a JSON response with a 400 status code and the error messages
             return JsonResponse(errors, status=400)
@@ -274,7 +273,9 @@ def updateEvent(request, event_id):
                     event.image.delete()  # Delete the old image
                 fs = FileSystemStorage()
                 filename = fs.save(image.name, image)
-                event.image = fs.url(filename)
+                event.image = image.name
+            elif event.image:
+                event.image.delete()
 
         location_object = Location.objects.get(id=event_location_id)
         event.event_location = location_object
@@ -422,6 +423,7 @@ def deleteEvent(request, event_id):
 def deleteEventImage(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     if request.user == event.creator:
+        print(event.image)
         event.image.delete(save=True)  # This deletes the image and saves the event
         return redirect("events:event-detail", event_id=event.id)
     else:
