@@ -6,13 +6,22 @@ Create Event
 
 {% block extra_styles %}
 <style>
-.create-event-form label, 
-.create-event-form textarea {
-    font-size: 2rem;
+.create-event-form label
+ {
     margin-top: 15px;
     margin-bottom: 2px;
-    font-family: 'Caveat', cursive;
-    font-weight: 700
+    font-family: "Helvetica";
+    font-weight: 400;
+    font-size: 25px;
+}
+
+.create-event-form textarea
+{
+    margin-top: 0px;
+    margin-bottom: 2px;
+    font-family: "Helvetica";
+    font-weight: 200;
+    font-size: 20px;
 }
 
 #create-event-button {
@@ -23,7 +32,7 @@ Create Event
 .tags-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px; 
+    gap: 20px;
     justify-content: flex-start; 
     align-items: center;
 }
@@ -32,11 +41,12 @@ Create Event
     background-color: #ffffff;
     border: 1px solid #ccc;
     border-radius: 5px;
-    padding: 5px 10px;
+    padding: 5px 15px;
     margin-bottom:10px;
-    font-family: Arial, sans-serif !important;
+    margin-top: 0px !important;
+    font-family: Helvetica !important;
     font-weight: normal !important;
-    font-size: 20px !important; 
+    font-size: 18px !important; 
     white-space: nowrap;
 }
 
@@ -51,8 +61,7 @@ Create Event
     <form action="{% url 'events:save-event' %}" method="post" class="create-event-form" enctype="multipart/form-data">
         {% csrf_token %}
         <fieldset>
-            <!-- <legend class="h1">Create an Event</legend> -->
-            
+        <legend class="h1" style="text-align: center; display: block; width: 100%;">Create an Event</legend>    
             {% if error_message %}
             <div class="alert alert-danger" role="alert">
                 {{ error_message }}
