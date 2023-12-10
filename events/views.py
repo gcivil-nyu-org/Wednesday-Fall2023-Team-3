@@ -349,8 +349,11 @@ def updateEvent(request, event_id):
                 if event.image:
                     event.image.delete()  # Delete the old image
                 fs = FileSystemStorage()
-                filename = fs.save(image.name, image)
-                event.image = fs.url(filename)
+                fs.save(image.name, image)
+                event.image = image.name
+                event.save()
+            elif event.image:
+                event.image.delete()
 
         Notification.objects.create(
             user=request.user, message=f"Event '{event_name}' updated."
@@ -526,6 +529,7 @@ def deleteEvent(request, event_id):
 def deleteEventImage(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     if request.user == event.creator:
+        print(event.image)
         event.image.delete(save=True)  # This deletes the image and saves the event
         return redirect("events:event-detail", event_id=event.id)
     else:
