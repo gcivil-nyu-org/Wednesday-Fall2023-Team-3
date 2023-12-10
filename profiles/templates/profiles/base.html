@@ -1,3 +1,4 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -13,18 +14,57 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Sedgwick+Ave+Display&display=swap" rel="stylesheet">
 </head>
 <body>
+    <style>
+        .icon-button {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      color: #333333;
+      background: #dddddd;
+      border: none;
+      outline: none;
+      border-radius: 50%;
+    }
+    
+    .icon-button:hover {
+      cursor: pointer;
+    }
+    
+    .icon-button:active {
+      background: #cccccc;
+    }
+    
+    .icon-button__badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 18px;
+      height: 18px;
+      background: red;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      font-size: 80%;
+    }
+    </style>
     <header>
-        <div class="banner">
+        <!-- <div class="banner">
             <h1>Cheer↑</h1>
         </div>
-        
+         -->
         
         <nav class="navbar navbar-expand-lg navbar-light bg-light px-5">
             <!-- Brand/logo -->
-            <a class="navbar-brand" href="{% url 'events:index' %}">Cheer↑</a>
+            <a class="navbar-brand fw-bold logo" href="{% url 'root-homepage' %}">Cheer↑</a>
             
             <!-- Toggler/collapsible Button -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,14 +80,24 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'events:create-event' %}">Create an Event</a>
                     </li>
-                    <!-- <li class="nav-item">
-                        <a class="nav-link" href="#">Contact</a>
-                    </li> -->
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'events:recommend-event' %}">For You</a>
+                        </li>
+                    {% endif %}
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'profiles:view_profile' user.id %}">Hello {{ user.username }}</a>
+                            <a class="nav-link" href="{% url 'profiles:view_profile' user.userprofile.id %}">Hello {{ user.username }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <button type="button" class="icon-button" onclick="window.location.href='{% url 'profiles:display_notifications' %}'">
+                                <span class="material-icons">notifications</span>
+                                {% if unread_notifications.count > 0 %}
+                                <span class="icon-button__badge">{{unread_notifications.count}}</span>
+                                {% endif %}
+                              </button>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'logout' %}?next={{ request.path }}">Log out</a>
