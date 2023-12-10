@@ -11,18 +11,19 @@ Sign Up
     font-size: 1rem;
     margin-top: 15px;
     margin-bottom: 2px;
-    font-family: 'Poppins', sans-serif;    
+    font-family: 'Helvetica', sans-serif;    
 }
 
 .title {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Helvetica', sans-serif;
     font-size: 2rem;
     font-weight: bold;
     text-align: center;
 }
 
 .signup-form input[type="text"],
-.signup-form input[type="password"] {
+.signup-form input[type="password"],
+.signup-form input[type="email"] {
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
@@ -69,4 +70,20 @@ Sign Up
         <button type="submit" id="signup-button">Sign Up</button>
     </form>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Assuming the ID of the email field is 'id_email' and the help text is in a <span> with class 'helptext'
+      var emailField = document.getElementById('id_email');
+      if (emailField) {
+          // Set the placeholder to the help text and then remove the help text element
+          var helpText = emailField.nextElementSibling;
+          if (helpText && helpText.classList.contains('helptext')) {
+              emailField.setAttribute('placeholder', helpText.textContent || helpText.innerText);
+              helpText.style.display = 'none';
+          }
+      }
+    });
+  </script>
+
 {% endblock %}
