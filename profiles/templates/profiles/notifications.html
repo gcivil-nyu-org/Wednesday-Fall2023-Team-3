@@ -43,7 +43,9 @@ Notifications
             font-weight: 600;
             background-color: #e2e2e2;
         }
-
+        .notification-date{
+            margin-left: auto;
+        }
         .delete-button {
             background-color: #818181; /* Red color for delete button */
             color: #fff;
@@ -60,6 +62,7 @@ Notifications
             {% if notification.is_read > 1 %}
             <div class="notification-read">
                 <span class="notification-text">{{ notification.message }}</span>
+                <span class="notification-date">{{ notification.timestamp }}</span>
                 <form method="post" action="{% url 'profiles:display_notifications' %}">
                     {% csrf_token %}
                     <input type="hidden" name="notification_id" value="{{ notification.id }}">
@@ -69,6 +72,7 @@ Notifications
             {% else %}
             <div class="notification">
                 <span class="notification-text">{{ notification.message }}</span>
+                <span class="notification-date">{{ notification.timestamp }}</span>
                 <form method="post" action="{% url 'profiles:display_notifications' %}">
                     {% csrf_token %}
                     <input type="hidden" name="notification_id" value="{{ notification.id }}">
