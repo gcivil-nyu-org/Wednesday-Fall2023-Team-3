@@ -3,7 +3,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
 from .models import UserProfile, save_user_profile
-from events.models import Event, Location
+from events.models import Event, Location, Notification
 from .forms import ProfileForm
 from django.utils import timezone
 from datetime import timedelta
@@ -282,14 +282,17 @@ class SendFriendRequestTest(TestCase):
             user=self.user, friends=self.friend_profile
         )
         self.assertEqual(friend_request.status, PENDING)
+        self.assertEqual(Notification.objects.count(), 1)
         # Make the POST request again to toggle the status to 'withdrawn'
         response = self.client.post(url)
         # Fetch the updated join object and check its status
         friend_request.refresh_from_db()
         self.assertEqual(friend_request.status, WITHDRAWN)
+        self.assertEqual(Notification.objects.count(), 2)
         self.client.post(url)
         friend_request.refresh_from_db()
         self.assertEqual(friend_request.status, PENDING)
+        self.assertEqual(Notification.objects.count(), 3)
         # Check the response to ensure the user is redirected to the event detail page
         self.assertRedirects(
             response, reverse("profiles:view_profile", args=[self.friend_profile.id])
@@ -368,6 +371,7 @@ class FriendRequestManageTest(TestCase):
         response = self.client.post(url)
         friend_request.refresh_from_db()
         self.assertEqual(response.status_code, 302)
+        self.assertEqual(Notification.objects.count(), 1)
         self.assertEqual(friend_request.status, APPROVED)
 
     def test_reject_friend_request(self):
@@ -384,6 +388,7 @@ class FriendRequestManageTest(TestCase):
         )
         response = self.client.post(url)
         friend_request.refresh_from_db()
+        self.assertEqual(Notification.objects.count(), 1)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(friend_request.status, REJECTED)
 
@@ -433,6 +438,7 @@ class FriendRemoveTest(TestCase):
         response = self.client.post(url)
         friend_request.refresh_from_db()
         user_request.refresh_from_db()
+        self.assertEqual(Notification.objects.count(), 1)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(friend_request.status, REMOVED)
         self.assertEqual(user_request.status, REMOVED)
@@ -467,3 +473,44 @@ class EditProfileViewTest(ProfileViewsTest):
         self.assertRedirects(
             response, reverse("profiles:view_profile", args=[self.user_profile.pk])
         )
+
+
+class ProfileNotificationsTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        self.notification1 = Notification.objects.create(
+            user=self.user, message="Notification 1"
+        )
+        self.notification2 = Notification.objects.create(
+            user=self.user, message="Notification 2"
+        )
+        self.url = reverse("profiles:display_notifications")
+
+    def test_display_notifications_authenticated_user(self):
+        # Log in the user
+        self.client.login(username="testuser", password="testpassword")
+
+        # Make a GET request to the view
+        response = self.client.get(self.url)
+
+        # Check if the response is successful (status code 200)
+        self.assertEqual(response.status_code, 200)
+
+        # Check if the context contains the notifications for the user
+
+    def test_display_notifications_post_request_delete_notification(self):
+        # Log in the user
+        self.client.login(username="testuser", password="testpassword")
+
+        # Make a POST request to delete a notification
+        response = self.client.post(
+            self.url, {"notification_id": self.notification1.id}
+        )
+
+        # Check if the notification is deleted
+        self.assertFalse(Notification.objects.filter(id=self.notification1.id).exists())
+
+        # Check if the response redirects to the display_notifications view
+        self.assertRedirects(response, self.url)

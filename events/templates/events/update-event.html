@@ -31,7 +31,7 @@ Update Event
     width: 50px;
     height: 50px;
     animation: spin 2s linear infinite;
-    z-index: 9999; /* Ensure it appears on top of other elements */
+    z-index: 9999; /
 }
 
 @keyframes spin {
@@ -39,13 +39,43 @@ Update Event
     100% { transform: rotate(360deg); }
 }
 
-.update-event-form label, 
-.update-event-form textarea {
-    font-size: 2rem;
+.update-event-form label
+ {
     margin-top: 15px;
     margin-bottom: 2px;
-    font-family: 'Caveat', cursive;
-    font-weight: 700
+    font-family: "Helvetica";
+    font-weight: 400;
+    font-size: 25px;
+}
+
+.update-event-form textarea 
+{
+    margin-top: 0px;
+    margin-bottom: 2px;
+    font-family: "Helvetica";
+    font-weight: 200;
+    font-size: 20px;
+}
+
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px; 
+    justify-content: flex-start; 
+    align-items: center;
+}
+
+.tag-label {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 5px 15px;
+    margin-bottom:10px;
+    margin-top: 0px !important;
+    font-family: Helvetica !important;
+    font-weight: normal !important;
+    font-size: 18px !important; 
+    white-space: nowrap;
 }
 
 #update-event-button {
@@ -63,6 +93,7 @@ Update Event
     <form action="{% url 'events:update-event' event.id %}" method="post" class="update-event-form" enctype="multipart/form-data">
         {% csrf_token %}
         <fieldset>
+        <legend class="h1" style="text-align: center; display: block; width: 100%;">Update your Event</legend>   
             {% if error_message %}
             <div class="alert alert-danger" role="alert">
                 {{ error_message }}
@@ -109,13 +140,16 @@ Update Event
                 <label for="capacity">Capacity:</label>
                 <input type="number" class="form-control" name="capacity" id="capacity" value="{{ event.capacity }}" required>
             </div>
+
             <div class="form-group">
-                <label for="tags">Tags:</label><br>
+                <label for="tags">Tags:</label>
+                <div class="tags-container">
                 {% for tag in tags %}
                     <input type="checkbox" id="{{ tag.id }}" name="selected_tags" value="{{ tag }}" {% if tag in event.tags.all %}checked{% endif %}>
-                    <label for="{{ tag.id }}">{{ tag }}</label><br>
+                    <label class="tag-label"  for="{{ tag.id }}">{{ tag }}</label>
                 {% endfor %}
-            </div>
+                </div>
+            </div> 
 
             <div class="form-group">
                 <label for="description">Description:</label>
@@ -129,7 +163,7 @@ Update Event
                 <ul id="autocomplete-list" class="list-group mt-2"></ul>
             </div>
 
-            <button type="submit" class="btn btn-primary" id="update-event-button">UPDATE EVENT</button>
+            <button type="submit" class="btn btn-primary" id="update-event-button">Update Event</button>
         </fieldset>
     </form>
     <div class="alert alert-danger" role="alert" id="json-response" style="display: none;">
