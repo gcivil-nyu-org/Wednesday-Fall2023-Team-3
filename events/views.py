@@ -929,6 +929,12 @@ def toggleReaction(request, event_id, emoji):
 # homepage related views
 def homepage(request):
     tags = Tag.objects.all()
+    ny_timezone = pytz.timezone("America/New_York")
+    current_time_ny = timezone.now().astimezone(ny_timezone)
+    latest_events = Event.objects.filter(
+        Q(is_active=True) & Q(start_time__gt=current_time_ny)
+    )
+    latest_events = latest_events.order_by('start_time')[:3]
     if request.method == "GET":
         if "filter_time" in request.GET:
             time_label = request.GET.get("filter_time", "")
@@ -940,7 +946,7 @@ def homepage(request):
             capacity_label = request.GET.get("filter_capacity", "")
             return filter_event_capacity_label(capacity_label)
     tags_icons = zip(tags, TAG_ICON_PATHS)
-    context = {"tags_icons": tags_icons}
+    context = {"tags_icons": tags_icons, "latest_events": latest_events}
     return render(request, "events/homepage.html", context)
 
 

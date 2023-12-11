@@ -99,6 +99,13 @@ Cheer↑
     color: rgb(124, 179, 243);
 }
 
+.latest_event_name {
+    color: black;
+    background-color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    text-align: right;
+}
+
 
 
 </style>
@@ -122,13 +129,18 @@ Cheer↑
                 </p>
             </div>
         </div>
-        
+        {% for latest_event in latest_events %}
         <div class="carousel-item" data-bs-interval="4000">
             <div class="carousel-image">
-                <img src="static/events/images/Washington-Square-Park.jpg" class="d-block w-100 " alt="Event Image">
+                <img src="{{ latest_event.image.url }}" alt="{{ latest_event.event_name }}" class="d-block w-100 ">
+                <div class="carousel-caption d-none d-md-block">
+                    <!-- <h5>{{ latest_event.event_name }}</h5> -->
+                    <a href="{% url 'events:event-detail' latest_event.id %}" class="fs-5 fw-bold mt-5 latest_event_name rounded-3 p-2">{{ latest_event.event_name }}</a>
+                </div>
             </div>
         </div>
-        <div class="carousel-item" data-bs-interval="4000">
+        {% endfor %}
+        <!-- <div class="carousel-item" data-bs-interval="4000">
             <div class="carousel-image">
                 <img src="static/events/images/Met.jpg" class="d-block w-100" alt="Event Image">
             </div>
@@ -137,7 +149,7 @@ Cheer↑
             <div class="carousel-image">
                 <img src="static/events/images/NYPL.jpg" class="d-block w-100" alt="Event Image">
             </div>
-        </div>
+        </div> -->
     </div>
     <button class="carousel-control-prev" type="button" data-bs-target="#slide-show" data-bs-slide="prev">
         <span class="carousel-control-prev-icon" aria-hidden="true"></span>
