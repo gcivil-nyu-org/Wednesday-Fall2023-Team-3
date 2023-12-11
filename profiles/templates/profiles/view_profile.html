@@ -56,6 +56,7 @@
                         {% csrf_token %}
                         <button type="submit" class="btn btn-primary btn-block join-button" id="request-to-join" onclick="return confirm('Ready to send a friend request?');">Send Friend Request</button>
                     </form>
+                    <button type="submit" class="btn btn-primary btn-block join-button" id="chat" onclick="startChat('{{ user_profile.id }}');">Start Chat</button>
                 {% elif friend_status == APPROVED %}
                     <!-- show that the request is approved-->
                     <!-- <div class="btn btn-primary btn-block join-button" id="approved-fake">Friend Requests</div>   -->
@@ -131,41 +132,69 @@
         {% endif %}
     </div>
 
+    <style>
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+    
+        .profile-picture img {
+            width: 100px; /* Adjust the size as needed */
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-right: 20px;
+        }
+        .join-button {
+            margin-top: 12px;
+        }
+        .user-info {
+            flex-grow: 1;
+        }
+        .edit-profile-button {
+            background-color: #007bff; /* Button color */
+            color: #fff; /* Text color */
+            padding: 10px 20px; /* Adjust padding as needed */
+            border: none;
+            border-radius: 5px; /* Adjust border radius as needed */
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 16px; /* Adjust font size as needed */
+        }   
+        
+            .profile-picture img {
+                width: 100px; /* Adjust the size as needed */
+                height: 100px;
+                object-fit: cover;
+                border-radius: 50%;
+                margin-right: 20px;
+            }
+        
+            .user-info {
+                flex-grow: 1;
+            }
+            .edit-profile-button {
+                background-color: #007bff; /* Button color */
+                color: #fff; /* Text color */
+                padding: 10px 20px; /* Adjust padding as needed */
+                border: none;
+                border-radius: 5px; /* Adjust border radius as needed */
+                cursor: pointer;
+                text-decoration: none;
+                font-size: 16px; /* Adjust font size as needed */
+            }   
+    </style>
 {% endblock %}
-
-<style>
-    .profile-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .profile-picture img {
-        width: 100px; /* Adjust the size as needed */
-        height: 100px;
-        object-fit: cover;
-        border-radius: 50%;
-        margin-right: 20px;
-    }
-
-    .user-info {
-        flex-grow: 1;
-    }
-    .edit-profile-button {
-        background-color: #007bff; /* Button color */
-        color: #fff; /* Text color */
-        padding: 10px 20px; /* Adjust padding as needed */
-        border: none;
-        border-radius: 5px; /* Adjust border radius as needed */
-        cursor: pointer;
-        text-decoration: none;
-        font-size: 16px; /* Adjust font size as needed */
-    }   
 </style>
 
 {% block extra_scripts %}
 <script>
-
+    function startChat(recipientId) {
+    // Logic to start a chat or navigate to the chat page with recipient ID
+    // For example:
+    window.location.href = `/chat/${recipientId}/`;  // Redirect to chat with the recipient
+}
     // JavaScript for location input
 const input = document.getElementById('autocomplete-input');
 const list = document.getElementById('autocomplete-list');
