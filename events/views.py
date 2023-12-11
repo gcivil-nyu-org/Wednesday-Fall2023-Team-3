@@ -934,7 +934,7 @@ def homepage(request):
     latest_events = Event.objects.filter(
         Q(is_active=True) & Q(start_time__gt=current_time_ny)
     )
-    latest_events = latest_events.order_by('start_time')[:3]
+    latest_events = latest_events.order_by("start_time")[:3]
     if request.method == "GET":
         if "filter_time" in request.GET:
             time_label = request.GET.get("filter_time", "")

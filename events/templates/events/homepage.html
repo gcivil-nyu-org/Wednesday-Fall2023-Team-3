@@ -1,5 +1,7 @@
 {% extends "events/base.html" %}
 
+{% load static %}
+
 {% block title %}
 Cheer↑
 {% endblock %}
@@ -132,7 +134,11 @@ Cheer↑
         {% for latest_event in latest_events %}
         <div class="carousel-item" data-bs-interval="4000">
             <div class="carousel-image">
-                <img src="{{ latest_event.image.url }}" alt="{{ latest_event.event_name }}" class="d-block w-100 ">
+                {% if recommended_event_by_location.image %}
+                    <img src="{{ latest_event.image.url }}" alt="{{ latest_event.event_name }}" class="d-block w-100 ">
+                {% else %}
+                    <img src="{% static 'events/images/Image_Placeholder_2.png' %}" class="card-img-top">
+                {% endif %}
                 <div class="carousel-caption d-none d-md-block">
                     <!-- <h5>{{ latest_event.event_name }}</h5> -->
                     <a href="{% url 'events:event-detail' latest_event.id %}" class="fs-5 fw-bold mt-5 latest_event_name rounded-3 p-2">{{ latest_event.event_name }}</a>
