@@ -134,7 +134,7 @@ Cheer↑
         {% for latest_event in latest_events %}
         <div class="carousel-item" data-bs-interval="4000">
             <div class="carousel-image">
-                {% if recommended_event_by_location.image %}
+                {% if latest_event.image %}
                     <img src="{{ latest_event.image.url }}" alt="{{ latest_event.event_name }}" class="d-block w-100 ">
                 {% else %}
                     <img src="{% static 'events/images/Image_Placeholder_2.png' %}" class="card-img-top">
