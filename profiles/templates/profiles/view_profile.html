@@ -1,138 +1,166 @@
-<!-- profiles/templates/profiles/view_profile.html -->
 {% extends 'profiles/base.html' %}
 
 {% block content %}
     <div class="profile-header">
-        <!-- Profile picture in a circle -->
         <div class="profile-picture">
             {% if user_profile.profile_picture %}
                 <img src="{{ user_profile.profile_picture.url }}" alt="Profile Picture" class="rounded-circle">
             {% endif %}
         </div>
-
-        <!-- User information -->
         <div class="user-info">
             <h2>{{ user_profile.user.username }}'s Profile</h2>
-            <p>Bio: {{ user_profile.bio }}</p>
+            <p class="bio">{{ user_profile.bio }}</p>
         </div>
     </div>
 
-    <!-- Edit Profile link -->
-    <h3>Edit Profile:</h3>
-    <button onclick="window.location.href='{% url 'profiles:edit_profile' %}'" class="edit-profile-button">
-        Edit Your Profile
-    </button>
-
-    <h3>Created Events:</h3>
-    {% if events %}
-        <ul>
-            {% for event in events %}
-                <li>{{ event.event_name }} - {{ event.start_time }}</li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No events created yet.</p>
-    {% endif %}
-
-    <div class="col-md-4 my-3">
-        <!-- ... existing content ... -->
-
+    <div class="edit-profile">
+        <button onclick="window.location.href='{% url 'profiles:edit_profile' %}'" class="btn btn-primary edit-profile-button">
+            Edit Your Profile
+        </button>
     </div>
-    
-    <div class="col-md-4 my-3">
+
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="showTab('createdEvents')">Created Events</button>
+        <button class="tab-btn" onclick="showTab('attendingEvents')">Attending Events</button>
+    </div>
+
+    <div id="createdEvents" class="tab-content">
+        <div class="created-events">
+            <h3>Created Events:</h3>
+            {% if events %}
+                <ul class="event-list">
+                    {% for event in events %}
+                        <li>
+                            <a href="{% url 'events:event-detail' event.id %}" class="card-title fs-4 fw-bold mb-5">{{ event.event_name }}</a>
+                            - {{ event.start_time }}
+                        </a>
+                    </li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <p>No events created yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="attendingEvents" class="tab-content" style="display: none;">
+        <div class="attending-events">
+            <h3>Attending Events:</h3>
+            {% if attending_events %}
+                <ul class="event-list">
+                    {% for event in attending_events %}
+                        <li>
+                            <a href="{% url 'events:event-detail' event.id %}" class="card-title fs-4 fw-bold mb-5">{{ event.event_name }}</a>
+                            - {{ event.start_time }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Not attending any events yet.</p>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+
+
+    <div class="friend-actions">
         {% if user.is_authenticated %}
             {% if user != user_profile.user %}
-                <!-- The user is not the creator of the event -->
                 {% if friend_status == PENDING %}
-                    <!-- Button to withdraw request -->
                     <form action="{% url 'profiles:toggle-friend-request' user_profile.id %}" method="post">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-primary btn-block join-button" id="withdraw-to-join" onclick="return confirm('Are you sure you want to withdraw your friend request?');">Remove Friend Request</button>
+                        <button type="submit" class="btn btn-outline-danger withdraw-button">Withdraw Friend Request</button>
                     </form>
                 {% elif friend_status == WITHDRAWN or friend_status == None or friend_status == REJECTED or friend_status == REMOVED %}
-                    <!-- Button to join again or create a new EventJoin object-->
                     <form action="{% url 'profiles:toggle-friend-request' user_profile.id %}" method="post">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-primary btn-block join-button" id="request-to-join" onclick="return confirm('Ready to send a friend request?');">Send Friend Request</button>
+                        <button type="submit" class="btn btn-primary send-request-button">Send Friend Request</button>
                     </form>
                 {% elif friend_status == APPROVED %}
-                    <!-- show that the request is approved-->
-                    <!-- <div class="btn btn-primary btn-block join-button" id="approved-fake">Friend Requests</div>   -->
+                    <div class="approved-friends">
+                        <h3>Friends</h3>
+                        {% for add_friend in approved_request %}
+                            <div class="friend-entry">{{ add_friend.user }}</div>
+                        {% endfor %}
+                    </div>
                 {% endif %}
-                <div class="approved-join-list sticky-note-container my-4">
-                    <h3>Friends</h3>
-                    <div class="join-entry">{{ add_friend.user }}</div>
-                    {% for add_friend in approved_request %}
-                        <div class="join-entry">
-                            {{ add_friend.user }}</div>
-                    {% endfor %}
-                </div>
             {% else %}
-                <!-- The user is the creator of the event -->
-                <!-- <div class="btn btn-primary btn-block join-button" id="my-event-fake"></div> -->
-                <div class="pending-join-list sticky-note-container my-4">
+                <div class="pending-friends">
                     <h3>Pending Friend Requests ({{ pending_request_count }})</h3>
                     {% for add_friend in pending_request %}
-                        <div class="join-entry">
-                            <div class="join-entry-text">{{ add_friend.user }}</div>
+                        <div class="friend-entry">
+                            <span class="friend-entry-text">{{ add_friend.user }}</span>
                             <form action="{% url 'profiles:approve-request' user_profile.id add_friend.user.id %}" method="post">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-primary btn-block creator-action-button" id="approve-to-join">Accept</button>
+                                <button type="submit" class="btn btn-success approve-button">Accept</button>
                             </form>
                             <form action="{% url 'profiles:reject-request' user_profile.id add_friend.user.id %}" method="post">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-primary btn-block creator-action-button" id="reject-to-join">Reject</button>
+                                <button type="submit" class="btn btn-outline-danger reject-button">Reject</button>
                             </form>
                         </div>
                     {% endfor %}
                 </div>
-                <div class="approved-join-list sticky-note-container my-4">
-                    <h3>Friends ({{ approved_request_count }}) </h3>
+                <div class="approved-friends">
+                    <h3>Friends ({{ approved_request_count }})</h3>
                     {% for add_friend in approved_request %}
-                        <div class="join-entry">
-                            <div class="join-entry-text">{{ add_friend.user }}</div>
+                        <div class="friend-entry">
+                            <span class="friend-entry-text">{{ add_friend.user }}</span>
                             <form action="{% url 'profiles:remove-approved-request' user_profile.id add_friend.user.id %}" method="post">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-primary btn-block creator-action-button" id="remove-approved-to-join" onclick="return confirm('Are you sure to remove this person?');">Remove</button>
+                                <button type="submit" class="btn btn-outline-danger remove-button">Remove</button>
                             </form>
                         </div>
                     {% endfor %}
                 </div>
             {% endif %}
         {% else %}
-            <!-- Link for non-authenticated users to log in and then join -->
-            <a href="{% url 'login' %}?next={% url 'profiles:view_profile' user_profile.id %}" class="btn btn-primary btn-block join-button">Join and See Participants</a>
+            <a href="{% url 'login' %}?next={% url 'profiles:view_profile' user_profile.id %}" class="btn btn-primary join-button">Join and See Participants</a>
         {% endif %}
     </div>
-
 {% endblock %}
 
 <style>
-    .profile-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
+    /* Add your existing styles here */
+    .bio {
+        margin-top: 10px;
     }
 
-    .profile-picture img {
-        width: 100px; /* Adjust the size as needed */
-        height: 100px;
-        object-fit: cover;
-        border-radius: 50%;
-        margin-right: 20px;
-    }
-
-    .user-info {
-        flex-grow: 1;
-    }
     .edit-profile-button {
-        background-color: #007bff; /* Button color */
-        color: #fff; /* Text color */
-        padding: 10px 20px; /* Adjust padding as needed */
-        border: none;
-        border-radius: 5px; /* Adjust border radius as needed */
-        cursor: pointer;
-        text-decoration: none;
-        font-size: 16px; /* Adjust font size as needed */
-    }   
+        /* Add your existing styles here */
+    }
+
+    .event-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .withdraw-button,
+    .send-request-button,
+    .approve-button,
+    .reject-button,
+    .remove-button {
+        margin-top: 10px;
+    }
+
+    .friend-entry {
+        margin-top: 10px;
+    }
 </style>
+
+<script>
+    function showTab(tabName) {
+        var tabs = document.getElementsByClassName('tab-content');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].style.display = 'none';
+        }
+
+        var buttons = document.getElementsByClassName('tab-btn');
+        for (var i = 0; i < buttons.length; i++) {
+            buttons[i].classList.remove('active');
+        }
+
+        document.getElementById(tabName).style.display = 'block';
+        document.querySelector('[onclick="showTab(\'' + tabName + '\')"]').classList.add('active');
+    }
+</script>
