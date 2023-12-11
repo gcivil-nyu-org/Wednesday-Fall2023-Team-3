@@ -150,9 +150,15 @@ Events
                         {% for event in events %}
                             <div class="card mb-5 background-transparent p-1">
                                 <div class="row g-0">
-                                    <div class="col-md-5 event-image">
-                                        <img src="{% static 'events/images/Image_Placeholder.jpg' %}" alt="..." class="rounded-3">
-                                    </div>
+                                    {% if event.image %}
+                                        <div class="col-md-5 event-image">
+                                            <img src="{{ event.image.url }}" alt="{{ event.event_name }}" class="rounded-3">
+                                        </div>
+                                    {% else %}
+                                        <div class="col-md-5 event-image">
+                                            <img src="{% static 'events/images/Image_Placeholder.jpg' %}" alt="..." class="rounded-3">
+                                        </div>
+                                    {% endif %}
                                     <div class="col-md-7">
                                         <div class="card-body">
                                             <a id={{event.id}} href="{% url 'events:event-detail' event.id %}" class="card-title fs-4 fw-bold mb-5 event-name">{{ event.event_name }}</a>

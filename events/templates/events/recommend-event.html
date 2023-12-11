@@ -30,6 +30,7 @@ For YOU
 .tag-big-button:hover {
     background-color: rgba(255,255,255,0.7);
 }
+
 </style>
 
 {% endblock %}
@@ -44,8 +45,12 @@ For YOU
     <div class="row row-cols-md-4 g-4">
       {% for recommended_event_by_friend in recommended_events_by_friend %}
         <div class="col">
-          <div class="card h-100 round-corner background-transparent mx-3">
-            <img src="{% static 'events/images/Image_Placeholder_2.png' %}" class="card-img-top">
+          <div class="card round-corner background-transparent mx-3">
+            {% if recommended_event_by_friend.image %}
+              <img src="{{ recommended_event_by_friend.image.url }}" alt="{{ recommended_event_by_friend.event_name }}" class="card-img-top">
+            {% else %}
+              <img src="{% static 'events/images/Image_Placeholder_2.png' %}" class="card-img-top">
+            {% endif %}
             <div class="card-body">
               <a href="{% url 'events:event-detail' recommended_event_by_friend.id %}" class="card-title fs-4 fw-bold">{{ recommended_event_by_friend.event_name }}</a>
               <h5 class="card-text">{{ recommended_event_by_friend.start_time }}</h5>
@@ -63,8 +68,12 @@ For YOU
     <div class="row row-cols-md-4 g-4">
       {% for recommended_event_by_location in recommended_events_by_location %}
         <div class="col">
-          <div class="card h-100 round-corner background-transparent mx-3">
-            <img src="{% static 'events/images/Image_Placeholder_2.png' %}" class="card-img-top">
+          <div class="card round-corner background-transparent mx-3">
+            {% if recommended_event_by_location.image %}
+              <img src="{{ recommended_event_by_location.image.url }}" alt="{{ recommended_event_by_location.event_name }}" class="card-img-top">
+            {% else %}
+              <img src="{% static 'events/images/Image_Placeholder_2.png' %}" class="card-img-top">
+            {% endif %}
             <div class="card-body">
               <a href="{% url 'events:event-detail' recommended_event_by_location.id %}" class="card-title fs-4 fw-bold">{{ recommended_event_by_location.event_name }}</a>
               <h5 class="card-text">{{ recommended_event_by_location.start_time }}</h5>
@@ -82,8 +91,12 @@ For YOU
   <div class="row row-cols-md-4 g-4">
     {% for favorite_event in favorite_events %}
       <div class="col">
-        <div class="card h-100 round-corner background-transparent mx-3">
-          <img src="{% static 'events/images/Image_Placeholder_2.png' %}" class="card-img-top">
+        <div class="card round-corner background-transparent mx-3">
+          {% if favorite_event.image %}
+            <img src="{{ favorite_event.image.url }}" alt="{{ favorite_event.event_name }}" class="card-img-top">
+          {% else %}
+            <img src="{% static 'events/images/Image_Placeholder.jpg' %}" class="card-img-top">
+          {% endif %}
           <div class="card-body">
             <a href="{% url 'events:event-detail' favorite_event.id %}" class="card-title fs-4 fw-bold">{{ favorite_event.event_name }}</a>
             <h5 class="card-text">{{ favorite_event.start_time }}</h5>
@@ -101,8 +114,12 @@ For YOU
     <div class="row row-cols-md-4 g-4">
       {% for recommended_event_by_tag in recommended_events_by_tag %}
         <div class="col">
-          <div class="card h-100 round-corner mx-3 background-transparent">
-            <img src="{% static 'events/images/Image_Placeholder.jpg' %}" class="card-img-top">
+          <div class="card round-corner mx-3 background-transparent">
+            {% if recommended_event_by_tag.image %}
+              <img src="{{ recommended_event_by_tag.image.url }}" alt="{{ recommended_event_by_tag.event_name }}" class="card-img-top">
+            {% else %}
+              <img src="{% static 'events/images/Image_Placeholder.jpg' %}" class="card-img-top">
+            {% endif %}
             <div class="card-body">
               <a href="{% url 'events:event-detail' recommended_event_by_tag.id %}" class="card-title fs-4 fw-bold">{{ recommended_event_by_tag.event_name }}</a>
               <h5 class="card-text">{{ recommended_event_by_tag.start_time }}</h5>
