@@ -349,7 +349,9 @@ def updateEvent(request, event_id):
                 if event.image:
                     event.image.delete()  # Delete the old image
                 fs = FileSystemStorage()
+                fs.save(image.name, image)
                 event.image = image.name
+                event.save()
             elif event.image:
                 event.image.delete()
 
@@ -915,6 +917,11 @@ def toggleReaction(request, event_id, emoji):
                 message=f"User '{request.user}' has removed reaction from event '{event.event_name}'.",
             )
         reaction.save()
+    else:
+        Notification.objects.create(
+            user=event.creator,
+            message=f"User '{request.user}' has reacted to event '{event.event_name}'.",
+        )
 
     return redirect("events:event-detail", event_id=event.id)
 

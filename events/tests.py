@@ -1368,7 +1368,7 @@ class ReactionTestCase(TestCase):
         # Make the POST request again to withdraw the reaction
         response = self.client.post(url)
         reaction.refresh_from_db()
-        self.assertEqual(Notification.objects.count(), 1)
+        self.assertEqual(Notification.objects.count(), 2)
         self.assertFalse(reaction.is_active)
         self.assertRedirects(
             response, reverse("events:event-detail", args=[self.event.id])
