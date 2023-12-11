@@ -6,6 +6,8 @@
 
 
 {% block extra_styles %}
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+
 <style>
 
 .join-button {
@@ -32,8 +34,8 @@
 
 .join-entry {
     display: flex;
-    justify-content: space-between; /* This will space out the child elements */
-    align-items: center; /* This will vertically align the child elements */
+    justify-content: space-between;
+    align-items: center;
     padding: 1%;
     gap: 10px;
 }
@@ -63,7 +65,6 @@
     background-color:rgba(255,255,255,0.3);
     padding: 20px;
     border-radius: 25px;
-    /* box-shadow: 5px 5px 15px rgba(0,0,0,0.2); */
     margin: 0;
     border-style: dashed;
     border-color: #afcff3;
@@ -143,6 +144,48 @@ ul {
 .tag-button:hover {
     background-color: rgba(255,255,255,0.7);
 }
+.image-container {
+    position: relative;
+    max-width: 1800px;
+    margin: auto;
+    max-height: 600px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.event-image {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    width: auto;
+    height: auto;
+}
+
+.delete-image-form {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    margin: 0;
+}
+
+.delete-image-button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.delete-image-button i {
+    font-size: 16px;
+}
+
+.delete-image-button:hover {
+    background-color: #0056b3;
+}
 
 
 </style>
@@ -152,13 +195,15 @@ ul {
 
 {% block content %}
 {% if event.image %}
-    <img src="{{ event.image.url }}" alt="{{ event.event_name }}" class="img-fluid rounded">
-{% endif %}
-{% if event.image %}
-    <form action="{% url 'events:delete_event_image' event.id %}" method="post">
+<div class="image-container">
+    <img src="{{ event.image.url }}" alt="{{ event.event_name }}" class="img-fluid rounded event-image">
+    <form action="{% url 'events:delete_event_image' event.id %}" method="post" class="delete-image-form">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Delete Image</button>
+        <button type="submit" class="btn btn-danger delete-image-button">
+            <i class="fas fa-trash"></i>
+        </button>
     </form>
+</div>
 {% endif %}
 {% if messages %}
     <div id="messages">
