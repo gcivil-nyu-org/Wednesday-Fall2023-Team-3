@@ -19,10 +19,14 @@
     </div>
 
     <!-- Edit Profile link -->
+    {% if user.is_authenticated %}
+    {% if user == user_profile.user %}
     <h3>Edit Profile:</h3>
     <button onclick="window.location.href='{% url 'profiles:edit_profile' %}'" class="edit-profile-button">
         Edit Your Profile
     </button>
+    {% endif %}
+    {% endif %}
 
     <h3>Created Events:</h3>
     {% if events %}
