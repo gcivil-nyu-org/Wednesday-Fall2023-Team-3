@@ -7,7 +7,15 @@ from django.http import (
 )
 from .forms import EventsForm, CommentForm
 from django.urls import reverse
-from .models import Event, Location, EventJoin, Comment, Reaction, FavoriteLocation
+from .models import (
+    Event,
+    Location,
+    EventJoin,
+    Comment,
+    Notification,
+    Reaction,
+    FavoriteLocation,
+)
 from tags.models import Tag
 from profiles.models import UserFriends
 from django.contrib.auth.decorators import login_required
@@ -341,9 +349,15 @@ def updateEvent(request, event_id):
                 if event.image:
                     event.image.delete()  # Delete the old image
                 fs = FileSystemStorage()
-                filename = fs.save(image.name, image)
-                event.image = fs.url(filename)
+                fs.save(image.name, image)
+                event.image = image.name
+                event.save()
+            elif event.image:
+                event.image.delete()
 
+        Notification.objects.create(
+            user=request.user, message=f"Event '{event_name}' updated."
+        )
         location_object = Location.objects.get(id=event_location_id)
         event.event_location = location_object
         event.event_name = event_name
@@ -451,6 +465,9 @@ def saveEvent(request):
                 reverse("events:index") + f"?error_message={error_message}"
             )
         # All validations passed; create the event
+        Notification.objects.create(
+            user=request.user, message=f"Event '{event_name}' created."
+        )
         event = Event(
             event_name=event_name,
             event_location=location_object,
@@ -500,6 +517,9 @@ def deleteEvent(request, event_id):
     if request.method == "POST":
         if request.POST.get("action") == "delete":
             # Set is_active to False instead of deleting
+            Notification.objects.create(
+                user=request.user, message=f"Event '{event.event_name}' deleted."
+            )
             event.is_active = False
             event.save()
             return redirect("events:index")
@@ -509,6 +529,7 @@ def deleteEvent(request, event_id):
 def deleteEventImage(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     if request.user == event.creator:
+        print(event.image)
         event.image.delete(save=True)  # This deletes the image and saves the event
         return redirect("events:event-detail", event_id=event.id)
     else:
@@ -630,9 +651,22 @@ def toggleJoinRequest(request, event_id):
     if not created:
         if join.status == PENDING:
             join.status = WITHDRAWN
+            Notification.objects.create(
+                user=event.creator,
+                message=f"'{request.user}' Withdrew request to join event '{event.event_name}'.",
+            )
         else:
             join.status = PENDING
+            Notification.objects.create(
+                user=event.creator,
+                message=f"'{request.user}' Requested to join event '{event.event_name}'.",
+            )
         join.save()
+    else:
+        Notification.objects.create(
+            user=event.creator,
+            message=f"'{request.user}' Requested to join event '{event.event_name}'.",
+        )
 
     return redirect("events:event-detail", event_id=event.id)
 
@@ -664,6 +698,10 @@ def creatorApproveRequest(request, event_id, user_id):
             if join.status == PENDING:
                 join.status = APPROVED
                 join.save()
+                Notification.objects.create(
+                    user=join.user,
+                    message=f"Request to join event '{event.event_name}' has been approved.",
+                )
                 messages.success(request, "Request approved")
         return redirect("events:event-detail", event_id=event.id)
 
@@ -683,6 +721,10 @@ def creatorRejectRequest(request, event_id, user_id):
     if join.status == PENDING:
         join.status = REJECTED
         join.save()
+        Notification.objects.create(
+            user=join.user,
+            message=f"Request to join event '{event.event_name}' has been rejected.",
+        )
     return redirect("events:event-detail", event_id=event.id)
 
 
@@ -701,6 +743,10 @@ def creatorRemoveApprovedRequest(request, event_id, user_id):
     if join.status == APPROVED:
         join.status = REMOVED
         join.save()
+        Notification.objects.create(
+            user=join.user,
+            message=f"You have been removed from the event '{event.event_name}'.",
+        )
     return redirect("events:event-detail", event_id=event.id)
 
 
@@ -742,6 +788,11 @@ def addComment(request, event_id):
         comment.user = request.user
         comment.event = event
         comment.save()
+        if request.user != event.creator:
+            Notification.objects.create(
+                user=event.creator,
+                message=f"Comment added by user '{request.user}' to event '{event.event_name}'.",
+            )
         return redirect(
             "events:event-detail", event_id=event.id
         )  # redirect to event detail page
@@ -780,6 +831,11 @@ def addReply(request, event_id, comment_id):
         else:
             # handle the case when it's a reply of a reply
             return HttpResponseBadRequest("Cantnot reply to a nested comment")
+        if request.user != event.creator:
+            Notification.objects.create(
+                user=event.creator,
+                message=f"Reply added by user '{request.user}' to event '{event.event_name}'.",
+            )
         reply.save()
         return redirect(
             "events:event-detail", event_id=event.id
@@ -808,6 +864,10 @@ def deleteComment(request, comment_id):
         if not comment.replies.exists():
             comment.is_active = False
             comment.save()
+            Notification.objects.create(
+                user=comment.event.creator,
+                message=f"Comment by user '{request.user}' has been removed from '{comment.event.event_name}'.",
+            )
             return redirect("events:event-detail", event_id=comment.event.id)
         else:
             messages.warning(
@@ -846,13 +906,35 @@ def toggleReaction(request, event_id, emoji):
     )
     if not created:
         reaction.is_active = not reaction.is_active
+        if reaction.is_active:
+            Notification.objects.create(
+                user=event.creator,
+                message=f"User '{request.user}' has reacted to event '{event.event_name}'.",
+            )
+        else:
+            Notification.objects.create(
+                user=event.creator,
+                message=f"User '{request.user}' has removed reaction from event '{event.event_name}'.",
+            )
         reaction.save()
+    else:
+        Notification.objects.create(
+            user=event.creator,
+            message=f"User '{request.user}' has reacted to event '{event.event_name}'.",
+        )
+
     return redirect("events:event-detail", event_id=event.id)
 
 
 # homepage related views
 def homepage(request):
     tags = Tag.objects.all()
+    ny_timezone = pytz.timezone("America/New_York")
+    current_time_ny = timezone.now().astimezone(ny_timezone)
+    latest_events = Event.objects.filter(
+        Q(is_active=True) & Q(start_time__gt=current_time_ny)
+    )
+    latest_events = latest_events.order_by("start_time")[:3]
     if request.method == "GET":
         if "filter_time" in request.GET:
             time_label = request.GET.get("filter_time", "")
@@ -864,7 +946,7 @@ def homepage(request):
             capacity_label = request.GET.get("filter_capacity", "")
             return filter_event_capacity_label(capacity_label)
     tags_icons = zip(tags, TAG_ICON_PATHS)
-    context = {"tags_icons": tags_icons}
+    context = {"tags_icons": tags_icons, "latest_events": latest_events}
     return render(request, "events/homepage.html", context)
 
 

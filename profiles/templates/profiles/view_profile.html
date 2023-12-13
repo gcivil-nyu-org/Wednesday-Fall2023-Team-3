@@ -2,6 +2,7 @@
 {% extends 'profiles/base.html' %}
 
 {% block content %}
+
     <div class="profile-header">
         <!-- Profile picture in a circle -->
         <div class="profile-picture">
@@ -18,10 +19,14 @@
     </div>
 
     <!-- Edit Profile link -->
+    {% if user.is_authenticated %}
+    {% if user == user_profile.user %}
     <h3>Edit Profile:</h3>
     <button onclick="window.location.href='{% url 'profiles:edit_profile' %}'" class="edit-profile-button">
         Edit Your Profile
     </button>
+    {% endif %}
+    {% endif %}
 
     <h3>Created Events:</h3>
     {% if events %}
@@ -55,6 +60,7 @@
                         {% csrf_token %}
                         <button type="submit" class="btn btn-primary btn-block join-button" id="request-to-join" onclick="return confirm('Ready to send a friend request?');">Send Friend Request</button>
                     </form>
+                    <button type="submit" class="btn btn-primary btn-block join-button" id="chat" onclick="startChat('{{ user_profile.id }}');">Start Chat</button>
                 {% elif friend_status == APPROVED %}
                     <!-- show that the request is approved-->
                     <!-- <div class="btn btn-primary btn-block join-button" id="approved-fake">Friend Requests</div>   -->
@@ -70,7 +76,32 @@
             {% else %}
                 <!-- The user is the creator of the event -->
                 <!-- <div class="btn btn-primary btn-block join-button" id="my-event-fake"></div> -->
-                <div class="pending-join-list sticky-note-container my-4">
+                    <h2>Manage Favorite Locations</h2>
+
+                    <ul>
+                        {% for fav_location in favorite_locations %}
+                            <li>
+                                {{ fav_location.location_name }}
+                                <form action="{% url 'locations:remove_favorite_location' fav_location.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit">Remove</button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                
+                    <!-- Form to add a new favorite location -->
+                    <form action="{% url 'locations:add_favorite_location' %}" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="autocomplete-input">Add Favorite Location:</label>
+                            <input type="text" class="form-control" name="location_name" placeholder="Location Name" id="autocomplete-input" required>
+                            <ul id="autocomplete-list" class="list-group mt-2"></ul>
+                            <input type="hidden" id="selected-location-id" name="location_id"> <!-- Hidden input to store the ID -->
+                        </div>
+                        <button type="submit" id="add-favorite-location">Add Favorite</button>
+                    </form>
+                    <div class="pending-join-list sticky-note-container my-4">
                     <h3>Pending Friend Requests ({{ pending_request_count }})</h3>
                     {% for add_friend in pending_request %}
                         <div class="join-entry">
@@ -105,34 +136,102 @@
         {% endif %}
     </div>
 
+    <style>
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+    
+        .profile-picture img {
+            width: 100px; /* Adjust the size as needed */
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-right: 20px;
+        }
+        .join-button {
+            margin-top: 12px;
+        }
+        .user-info {
+            flex-grow: 1;
+        }
+        .edit-profile-button {
+            background-color: #007bff; /* Button color */
+            color: #fff; /* Text color */
+            padding: 10px 20px; /* Adjust padding as needed */
+            border: none;
+            border-radius: 5px; /* Adjust border radius as needed */
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 16px; /* Adjust font size as needed */
+        }   
+        
+            .profile-picture img {
+                width: 100px; /* Adjust the size as needed */
+                height: 100px;
+                object-fit: cover;
+                border-radius: 50%;
+                margin-right: 20px;
+            }
+        
+            .user-info {
+                flex-grow: 1;
+            }
+            .edit-profile-button {
+                background-color: #007bff; /* Button color */
+                color: #fff; /* Text color */
+                padding: 10px 20px; /* Adjust padding as needed */
+                border: none;
+                border-radius: 5px; /* Adjust border radius as needed */
+                cursor: pointer;
+                text-decoration: none;
+                font-size: 16px; /* Adjust font size as needed */
+            }   
+    </style>
 {% endblock %}
-
-<style>
-    .profile-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .profile-picture img {
-        width: 100px; /* Adjust the size as needed */
-        height: 100px;
-        object-fit: cover;
-        border-radius: 50%;
-        margin-right: 20px;
-    }
-
-    .user-info {
-        flex-grow: 1;
-    }
-    .edit-profile-button {
-        background-color: #007bff; /* Button color */
-        color: #fff; /* Text color */
-        padding: 10px 20px; /* Adjust padding as needed */
-        border: none;
-        border-radius: 5px; /* Adjust border radius as needed */
-        cursor: pointer;
-        text-decoration: none;
-        font-size: 16px; /* Adjust font size as needed */
-    }   
 </style>
+
+{% block extra_scripts %}
+<script>
+    function startChat(recipientId) {
+    // Logic to start a chat or navigate to the chat page with recipient ID
+    // For example:
+    window.location.href = `/chat/${recipientId}/`;  // Redirect to chat with the recipient
+}
+    // JavaScript for location input
+const input = document.getElementById('autocomplete-input');
+const list = document.getElementById('autocomplete-list');
+const selectedIdInput = document.getElementById('selected-location-id');
+const addFavoriteButton = document.getElementById('add-favorite-location');
+const API_ENDPOINT = '/locations/autocomplete/?term=';
+
+input.addEventListener('input', async function () {
+    const query = input.value.toLowerCase();
+    list.innerHTML = '';
+    
+    if (query) {
+        try {
+            const response = await fetch(API_ENDPOINT + query);
+            const data = await response.json();
+            
+            data.forEach(function (item) {
+                const listItem = document.createElement('li');
+                listItem.textContent = item.text; // Display the name
+                listItem.addEventListener('click', function () {
+                    input.value = item.text; // Set the name as the input field's value
+                    console.log(item.id)
+                    selectedIdInput.value = item.id; // Store the ID in the hidden input
+                    list.innerHTML = '';
+                });
+                list.appendChild(listItem);
+            });
+        } catch (error) {
+            console.error('Error fetching data from the API:', error);
+        }
+    } else {
+        // Handle when the input is empty
+    }
+});
+</script>
+{% endblock %}

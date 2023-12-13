@@ -26,4 +26,5 @@ urlpatterns = [
         name="remove-approved-request",
     ),
     path("profile/edit/", edit_profile, name="edit_profile"),
+    path("notifications/", views.display_notifications, name="display_notifications"),
 ]
