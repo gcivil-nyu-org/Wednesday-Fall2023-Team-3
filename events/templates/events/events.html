@@ -77,7 +77,7 @@ Events
 
 </style>
 {% endblock %}
-    
+
 {% block content %}
     {% if messages %}
         <div id="messages">
@@ -98,7 +98,7 @@ Events
                 <input id="eventsButton" type="button" name="events_near_me" value="Events near me" class="col-md-auto btn btn-outline-secondary btn-block" onclick="toggleButton()">
             </div>
             <div class="row mx-1">
-                <div class="col-md-4" id="filter">
+                <div class="col-md-4">
                     <!-- Filtering form -->
                     <form method="get" action="{% url 'events:index' %}" class="filter-form" onsubmit="return validateForm()">
                         <div class="form-group mb-3">
@@ -130,7 +130,7 @@ Events
                             <label for="favorite_location_events" class="form-label form-check-label">Events at Favorite Locations:</label>
                             <input type="checkbox" name="favorite_location_events" class="form-check-input" id="favorite_location_events">
                         </div>
-                    
+                        
                         <div class="row">   
                             <input type="submit" value="Filter" class="col-auto btn btn-secondary mx-2">
                             <input type="submit" name="reset_filters" value="Reset Filters" class="col-auto btn btn-outline-secondary">
@@ -200,12 +200,13 @@ Events
         </div>
         <div class="col-md-5 vh-100" id="map"></div>
     </div>
-{% endblock %}
-    
-{% block extra_scripts %}
+        {% endblock %}
+
+    {% block extra_scripts %}
     <script src="{% static 'events/js/script.js' %}"></script>
     <script async
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDuFnfuacTqMttUXdVn24zdfGUHRi0XN5E&map_ids=9a7e26117f10196d&callback=initMap">
+    </script>
     <script>
         
         function getQueryParameters() {
@@ -320,8 +321,3 @@ Events
     </script>   
     
     {% endblock %}
-</body>
-<footer>
-    <!-- You can put common footer content here -->
-</footer>
-</html>
